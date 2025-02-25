@@ -26,10 +26,9 @@ import {
   Package, 
   Trash, 
   ExternalLink, 
-  BarChart, 
-  RefreshCw
+  BarChart,
+  RefreshCw,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils';
 
 interface Store {
@@ -55,7 +54,10 @@ export function StoreList({ stores }: StoreListProps) {
   };
   
   const handleSyncStore = (storeId: string) => {
+    if (isLoading[storeId]) return;
+    
     setIsLoading(prev => ({ ...prev, [storeId]: true }));
+    
     // Simular uma sincronização
     setTimeout(() => {
       setIsLoading(prev => ({ ...prev, [storeId]: false }));
@@ -78,22 +80,19 @@ export function StoreList({ stores }: StoreListProps) {
   if (stores.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-center">
-        <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center mb-4">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
           <Package className="h-6 w-6 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-medium mb-1">Nenhuma loja encontrada</h3>
         <p className="text-muted-foreground max-w-sm mb-4">
           Você ainda não conectou nenhuma loja à plataforma. Adicione sua primeira loja para começar.
         </p>
-        <Button onClick={() => router.push('/dashboard/stores/new')}>
-          Adicionar Loja
-        </Button>
       </div>
     );
   }
 
   return (
-    <div className="relative overflow-hidden rounded-md border">
+    <div className="border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
@@ -109,17 +108,17 @@ export function StoreList({ stores }: StoreListProps) {
           {stores.map((store) => (
             <TableRow 
               key={store.id}
-              className="cursor-pointer hover:bg-muted/30 transition-colors"
+              className="cursor-pointer"
               onClick={() => navigateToStore(store.id)}
             >
               <TableCell className="font-medium">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary/70" />
-                  {store.name}
+                <div>
+                  <div className="font-medium">{store.name}</div>
+                  <div className="text-xs text-muted-foreground hidden sm:block">{store.url}</div>
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className={cn("font-normal", getPlatformBadgeColor(store.platform))}>
+                <Badge variant="outline" className={getPlatformBadgeColor(store.platform)}>
                   {store.platform}
                 </Badge>
               </TableCell>
@@ -133,7 +132,7 @@ export function StoreList({ stores }: StoreListProps) {
                 {formatCurrency(store.revenue)}
               </TableCell>
               <TableCell className="text-right">
-                <div onClick={(e) => e.stopPropagation()}>
+                <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end gap-1">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -144,35 +143,36 @@ export function StoreList({ stores }: StoreListProps) {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => navigateToStore(store.id)}>
+                      <DropdownMenuItem 
+                        onClick={() => navigateToStore(store.id)}
+                        className="cursor-pointer"
+                      >
                         <BarChart className="h-4 w-4 mr-2" />
-                        Ver Detalhes
+                        <span>Ver Detalhes</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => window.open(store.url, '_blank')}>
+                      <DropdownMenuItem 
+                        onClick={() => window.open(store.url, '_blank')}
+                        className="cursor-pointer"
+                      >
                         <ExternalLink className="h-4 w-4 mr-2" />
-                        Visitar Loja
+                        <span>Visitar Loja</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSyncStore(store.id)}>
-                        {isLoading[store.id] ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                            Sincronizando...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Sincronizar
-                          </>
-                        )}
+                      <DropdownMenuItem 
+                        onClick={() => handleSyncStore(store.id)}
+                        disabled={isLoading[store.id]}
+                        className="cursor-pointer"
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading[store.id] ? 'animate-spin' : ''}`} />
+                        <span>{isLoading[store.id] ? 'Sincronizando...' : 'Sincronizar'}</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer">
                         <Edit className="h-4 w-4 mr-2" />
-                        Editar
+                        <span>Editar</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-rose-500 focus:text-rose-500">
+                      <DropdownMenuItem className="cursor-pointer text-destructive">
                         <Trash className="h-4 w-4 mr-2" />
-                        Excluir
+                        <span>Excluir</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -9,20 +9,28 @@ import { ShoppingBag, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 export function AuthenticationPage() {
   const [activeTab, setActiveTab] = useState('login');
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
+
+  // Se o usuário já estiver autenticado, redirecione para o dashboard
+  if (user) {
+    router.push('/dashboard');
+    return null;
+  }
 
   const handleDemoAccess = async () => {
     setIsDemoLoading(true);
     try {
-      // Simulate API call
+      // Simular chamada API
       await new Promise(resolve => setTimeout(resolve, 1500));
       router.push('/dashboard');
     } catch (error) {
-      toast.error('Failed to access demo. Please try again.');
+      toast.error('Falha ao acessar a versão demo. Por favor, tente novamente.');
     } finally {
       setIsDemoLoading(false);
     }
@@ -51,7 +59,7 @@ export function AuthenticationPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid grid-cols-2 w-full mb-8">
               <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              <TabsTrigger value="signup">Cadastro</TabsTrigger>
             </TabsList>
             <AnimatePresence mode="wait">
               <motion.div
@@ -79,7 +87,7 @@ export function AuthenticationPage() {
               disabled={isDemoLoading}
             >
               <PlayCircle className="mr-2 h-4 w-4" />
-              {isDemoLoading ? 'Loading Demo...' : 'Try Demo Version'}
+              {isDemoLoading ? 'Carregando Demo...' : 'Testar Versão Demo'}
             </Button>
           </div>
         </div>

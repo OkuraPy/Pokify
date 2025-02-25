@@ -1,21 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Plus, Store as StoreIcon, AlertTriangle, AlertCircle } from 'lucide-react';
-import { StoreForm } from './store-form';
-import { StoreList } from './store-list';
-import { StoreCounter } from '@/components/stores/store-counter';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle, Plus, Store, Loader2 } from 'lucide-react';
+import { StoreList } from '@/components/stores/store-list';
+import { StoreForm } from './store-form';
+import { getStores } from '@/lib/supabase';
+import { toast } from 'sonner';
 
-// Definir interface que corresponde à expectativa do componente StoreList
 interface Store {
   id: string;
   name: string;
@@ -27,100 +21,139 @@ interface Store {
 }
 
 export default function StoresPage() {
+  const [stores, setStores] = useState<Store[]>([]);
   const [isCreateStoreOpen, setIsCreateStoreOpen] = useState(false);
-  const [stores, setStores] = useState<Store[]>([
-    {
-      id: '1',
-      name: 'Loja Pokémon',
-      platform: 'Shopify',
-      url: 'https://lojakpokemon.com.br',
-      products: 124,
-      orders: 56,
-      revenue: 4500,
-    },
-    {
-      id: '2',
-      name: 'Loja Digimon',
-      platform: 'WooCommerce',
-      url: 'https://lojadigimon.com.br',
-      products: 87,
-      orders: 32,
-      revenue: 2800,
-    },
-  ]);
-
-  const storeCount = stores.length;
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Constantes para limites
   const maxStores = 5;
-  const canAddStore = storeCount < maxStores;
-  const storePercentage = (storeCount / maxStores) * 100;
+  const storesCount = stores.length;
+  const canAddStore = storesCount < maxStores;
+  
+  // Buscar lojas do Supabase
+  const fetchStores = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await getStores();
+      
+      if (error) {
+        console.error('Erro ao buscar lojas:', error);
+        toast.error('Erro ao carregar suas lojas');
+        return;
+      }
+      
+      // Converter dados do Supabase para o formato esperado pelo componente
+      const formattedStores = data?.map((store: any) => ({
+        id: store.id,
+        name: store.name,
+        platform: store.platform,
+        url: store.url || '',
+        products: store.products_count || 0,
+        orders: store.orders_count || 0,
+        revenue: 0, // Valor padrão já que não temos essa informação no Supabase
+      })) || [];
+      
+      setStores(formattedStores);
+    } catch (error) {
+      console.error('Erro ao buscar lojas:', error);
+      toast.error('Erro ao carregar suas lojas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Buscar lojas ao montar o componente
+  useEffect(() => {
+    fetchStores();
+  }, []);
+  
+  // Atualizar lojas ao fechar o modal de criação
+  const handleStoreFormClose = () => {
+    setIsCreateStoreOpen(false);
+    fetchStores(); // Atualizar a lista após adicionar uma nova loja
+  };
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-3xl font-bold tracking-tight">Suas Lojas</h2>
-          <p className="text-muted-foreground">
-            Gerencie suas lojas e conecte-as à plataforma Pokify
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="w-full sm:w-auto">
-            <StoreCounter storesCount={storeCount} maxStores={maxStores} variant="visual" />
-          </div>
-          <Button
-            onClick={() => setIsCreateStoreOpen(true)}
-            disabled={!canAddStore}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Loja
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex flex-col space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight">Suas Lojas</h1>
+        <p className="text-muted-foreground">
+          Gerencie suas lojas conectadas à plataforma Pokify
+        </p>
       </div>
-
-      {storePercentage >= 100 ? (
-        <Alert variant="destructive" className="bg-rose-50 border-rose-200">
-          <AlertCircle className="h-4 w-4 text-rose-600" />
-          <AlertTitle className="text-rose-700 font-medium">Limite de lojas atingido</AlertTitle>
-          <AlertDescription className="text-rose-600">
-            Você atingiu o limite de {maxStores} lojas do seu plano atual. Para adicionar 
-            mais lojas, considere fazer upgrade do seu plano.
-          </AlertDescription>
-        </Alert>
-      ) : storePercentage >= 80 ? (
-        <Alert className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
-          <AlertTitle className="text-amber-700 font-medium">Quase no limite de lojas</AlertTitle>
-          <AlertDescription className="text-amber-600">
-            Você está chegando ao limite de lojas permitidas. Ainda pode adicionar 
-            {maxStores - storeCount === 1 
-              ? ' mais 1 loja.' 
-              : ` mais ${maxStores - storeCount} lojas.`}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-            <div>
-              <CardTitle>Suas Lojas</CardTitle>
-              <CardDescription className="mt-1">
-                Visualize e gerencie todas as suas lojas conectadas
-              </CardDescription>
-            </div>
+      
+      {/* Contador de lojas e botão de criação */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
+        <div className="space-y-1">
+          <h3 className="font-medium">Limite de Lojas</h3>
+          <div className="flex items-center gap-2">
+            <Store className="h-4 w-4 text-blue-600" />
+            <span className="text-sm text-blue-800 font-medium">{storesCount} de {maxStores} lojas utilizadas</span>
           </div>
+          {!canAddStore ? (
+            <p className="text-xs text-rose-600">Você atingiu o limite de lojas disponíveis</p>
+          ) : (
+            <p className="text-xs text-blue-600">Você ainda pode adicionar {maxStores - storesCount} {maxStores - storesCount === 1 ? 'loja' : 'lojas'}</p>
+          )}
+        </div>
+        <Button 
+          onClick={() => setIsCreateStoreOpen(true)}
+          disabled={!canAddStore}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nova Loja
+        </Button>
+      </div>
+      
+      {/* Alerta de limite de lojas */}
+      {!canAddStore && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Limite de lojas atingido</AlertTitle>
+          <AlertDescription>
+            Você atingiu o limite de {maxStores} lojas do seu plano atual. 
+            Para adicionar mais lojas, considere fazer upgrade do seu plano.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Lista de lojas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciar Lojas</CardTitle>
+          <CardDescription>
+            Visualize e gerencie todas as suas lojas conectadas
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <StoreList stores={stores} />
+          {isLoading ? (
+            <div className="py-8 flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : stores.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-muted-foreground">Você ainda não possui lojas cadastradas</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => setIsCreateStoreOpen(true)}
+                disabled={!canAddStore}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Primeira Loja
+              </Button>
+            </div>
+          ) : (
+            <StoreList stores={stores} />
+          )}
         </CardContent>
       </Card>
-
+      
+      {/* Formulário de criação de loja */}
       <StoreForm 
         open={isCreateStoreOpen} 
-        onClose={() => setIsCreateStoreOpen(false)} 
-        storesCount={storeCount}
+        onClose={handleStoreFormClose} 
+        storesCount={storesCount}
       />
     </div>
   );

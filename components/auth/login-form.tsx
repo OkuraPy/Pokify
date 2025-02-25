@@ -10,28 +10,72 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { signIn } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  email: z.string().email('Por favor, insira um email válido'),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
   rememberMe: z.boolean().optional(),
 });
 
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const router = useRouter();
+  const { refreshUser } = useAuth();
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      rememberMe: false
+    }
   });
 
-  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
+  const onSubmit = async (formData: LoginFormValues) => {
     setIsLoading(true);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Login data:', data);
-      toast.success('Successfully logged in!');
-    } catch (error) {
-      toast.error('Failed to login. Please try again.');
+      // 1. Realizamos o login
+      const { data, error } = await signIn(formData.email, formData.password);
+      
+      if (error) {
+        throw new Error((error as any).message || 'Erro ao fazer login');
+      }
+      
+      console.log('Login realizado, atualizando estado do usuário...');
+      
+      // 2. Aguardamos um pouco para garantir que a sessão foi estabelecida
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 3. Atualizamos o estado do usuário no contexto de autenticação
+      await refreshUser();
+      
+      // 4. Verificamos novamente após um curto período para garantir persistência
+      setTimeout(async () => {
+        await refreshUser();
+        console.log('Verificação de estado do usuário após delay');
+      }, 1000);
+      
+      // Definimos a flag para evitar loops de redirecionamento
+      sessionStorage.setItem('justLoggedIn', 'true');
+      
+      // Informamos o usuário do sucesso
+      toast.success('Login realizado com sucesso!');
+      
+      // 5. Redirecionamos o usuário após um pequeno atraso
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 800);
+    } catch (error: any) {
+      // Tratamento de erros
+      toast.error(error.message || 'Falha ao fazer login. Por favor, tente novamente.');
+      console.error('Erro de login:', error);
+      sessionStorage.removeItem('justLoggedIn');
     } finally {
       setIsLoading(false);
     }
@@ -44,17 +88,17 @@ export function LoginForm() {
         <Input
           id="email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="seu@email.com"
           {...register('email')}
           className={errors.email ? 'border-destructive' : ''}
         />
         {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
+          <p className="text-sm text-destructive">{String(errors.email.message)}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">Senha</Label>
         <Input
           id="password"
           type="password"
@@ -62,17 +106,22 @@ export function LoginForm() {
           className={errors.password ? 'border-destructive' : ''}
         />
         {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
+          <p className="text-sm text-destructive">{String(errors.password.message)}</p>
         )}
       </div>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Checkbox id="rememberMe" {...register('rememberMe')} />
-          <Label htmlFor="rememberMe" className="text-sm">Remember me</Label>
+          <Label htmlFor="rememberMe" className="text-sm">Lembrar-me</Label>
         </div>
-        <Button variant="link" className="px-0" type="button">
-          Forgot password?
+        <Button 
+          variant="link" 
+          className="px-0" 
+          type="button" 
+          onClick={() => router.push('/reset-password')}
+        >
+          Esqueceu a senha?
         </Button>
       </div>
 
@@ -80,10 +129,10 @@ export function LoginForm() {
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Logging in...
+            Entrando...
           </>
         ) : (
-          'Login'
+          'Entrar'
         )}
       </Button>
 
@@ -93,7 +142,7 @@ export function LoginForm() {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-card px-2 text-muted-foreground">
-            Or continue with
+            Ou continue com
           </span>
         </div>
       </div>

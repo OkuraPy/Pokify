@@ -9,32 +9,63 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { signUp } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 const signupSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('Por favor, insira um email válido'),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "As senhas não coincidem",
   path: ["confirmPassword"],
 });
 
+type SignupFormValues = z.infer<typeof signupSchema>;
+
 export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const [success, setSuccess] = useState(false);
+  const router = useRouter();
+  
+  const { register, handleSubmit, formState: { errors } } = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: ''
+    }
   });
 
-  const onSubmit = async (data: z.infer<typeof signupSchema>) => {
+  const onSubmit = async (formData: SignupFormValues) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      console.log('Signup data:', data);
-      toast.success('Account created successfully!');
-    } catch (error) {
-      toast.error('Failed to create account. Please try again.');
+      const { data, error } = await signUp(
+        formData.email, 
+        formData.password, 
+        formData.name
+      );
+      
+      if (error) {
+        throw new Error((error as any).message || 'Erro ao criar conta');
+      }
+      
+      setSuccess(true);
+      toast.success('Conta criada com sucesso! Faça login para continuar.');
+      
+      // Mudar para a aba de login após um breve delay
+      setTimeout(() => {
+        const loginTab = document.querySelector('[value="login"]') as HTMLElement;
+        if (loginTab) {
+          loginTab.click();
+        }
+      }, 2000);
+      
+    } catch (error: any) {
+      toast.error(error.message || 'Falha ao criar conta. Por favor, tente novamente.');
+      console.error('Erro de cadastro:', error);
     } finally {
       setIsLoading(false);
     }
@@ -43,15 +74,16 @@ export function SignupForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="name">Full Name</Label>
+        <Label htmlFor="name">Nome Completo</Label>
         <Input
           id="name"
-          placeholder="John Doe"
+          placeholder="João Silva"
           {...register('name')}
           className={errors.name ? 'border-destructive' : ''}
+          disabled={isLoading || success}
         />
         {errors.name && (
-          <p className="text-sm text-destructive">{errors.name.message}</p>
+          <p className="text-sm text-destructive">{String(errors.name.message)}</p>
         )}
       </div>
 
@@ -60,49 +92,54 @@ export function SignupForm() {
         <Input
           id="email"
           type="email"
-          placeholder="you@example.com"
+          placeholder="seu@email.com"
           {...register('email')}
           className={errors.email ? 'border-destructive' : ''}
+          disabled={isLoading || success}
         />
         {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
+          <p className="text-sm text-destructive">{String(errors.email.message)}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password">Senha</Label>
         <Input
           id="password"
           type="password"
           {...register('password')}
           className={errors.password ? 'border-destructive' : ''}
+          disabled={isLoading || success}
         />
         {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
+          <p className="text-sm text-destructive">{String(errors.password.message)}</p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <Label htmlFor="confirmPassword">Confirmar Senha</Label>
         <Input
           id="confirmPassword"
           type="password"
           {...register('confirmPassword')}
           className={errors.confirmPassword ? 'border-destructive' : ''}
+          disabled={isLoading || success}
         />
         {errors.confirmPassword && (
-          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+          <p className="text-sm text-destructive">{String(errors.confirmPassword.message)}</p>
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full" disabled={isLoading || success}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Creating account...
+            Criando conta...
           </>
+        ) : success ? (
+          'Conta criada com sucesso!'
         ) : (
-          'Create Account'
+          'Criar Conta'
         )}
       </Button>
 
@@ -112,16 +149,16 @@ export function SignupForm() {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-card px-2 text-muted-foreground">
-            Or continue with
+            Ou continue com
           </span>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" type="button">
+        <Button variant="outline" type="button" disabled={isLoading || success}>
           Google
         </Button>
-        <Button variant="outline" type="button">
+        <Button variant="outline" type="button" disabled={isLoading || success}>
           GitHub
         </Button>
       </div>

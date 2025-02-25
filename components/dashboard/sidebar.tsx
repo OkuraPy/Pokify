@@ -16,11 +16,13 @@ import {
   LifeBuoy,
   Loader2,
   PlusCircle,
-  AlertCircle
+  AlertCircle,
+  LogOut
 } from 'lucide-react';
 import { StoreCounter } from '@/components/stores/store-counter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Store {
   id: string;
@@ -48,6 +50,9 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
   const [activeRoute, setActiveRoute] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [stores, setStores] = useState<Store[]>(initialStores);
+  
+  // Importar hook de autenticação
+  const { logout } = useAuth();
   
   // Manter o contador de lojas atual
   const storesCount = stores.length;
@@ -293,6 +298,24 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
               {!isCollapsed && <span>Suporte</span>}
             </Button>
           </Link>
+          
+          {/* Botão de Logout */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'w-full justify-start rounded-md transition-all duration-150 text-red-600 hover:bg-red-50 hover:text-red-700 mt-1',
+              isCollapsed && 'justify-center px-0'
+            )}
+            onClick={() => logout()}
+          >
+            <LogOut className={cn(
+              'h-4 w-4', 
+              isCollapsed ? 'mx-0' : 'mr-2',
+              'text-red-600'
+            )} />
+            {!isCollapsed && <span>Sair do Sistema</span>}
+          </Button>
         </div>
       </div>
       

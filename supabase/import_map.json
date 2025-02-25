@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "openai": "https://esm.sh/openai@4.20.1",
+    "deno-dom": "https://deno.land/x/deno_dom@v0.1.36/deno-dom-wasm.ts",
+    "http/": "https://deno.land/std@0.168.0/http/",
+    "cors": "https://deno.land/x/cors@v1.2.2/mod.ts"
+  }
+} 

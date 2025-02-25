@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 interface DashboardShellProps {
-  children: React.ReactNode;
+  children: [React.ReactNode, React.ReactNode];
   sidebarOpen: boolean;
   onSidebarOpenChange: (open: boolean) => void;
 }
