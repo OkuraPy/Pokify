@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useRouter, usePathname } from 'next/navigation';
 import {
-  Store,
+  Store as StoreIcon,
   ShoppingBag,
   LayoutDashboard,
   Users,
@@ -23,6 +23,9 @@ import { StoreCounter } from '@/components/stores/store-counter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { getUserStores } from '@/lib/store-service';
+import { toast } from 'sonner';
+import { Progress } from '@/components/ui/progress';
 
 interface Store {
   id: string;
@@ -31,13 +34,6 @@ interface Store {
   status: 'active' | 'syncing' | 'error';
   href: string;
 }
-
-const initialStores: Store[] = [
-  { id: '1', name: 'Fashion Store', products: 156, status: 'active', href: '/dashboard/stores/1' },
-  { id: '2', name: 'Electronics Hub', products: 89, status: 'syncing', href: '/dashboard/stores/2' },
-  { id: '3', name: 'Home Decor', products: 234, status: 'active', href: '/dashboard/stores/3' },
-  { id: '4', name: 'Sports Gear', products: 45, status: 'error', href: '/dashboard/stores/4' },
-];
 
 interface SidebarProps {
   currentStoreId?: string;
@@ -48,21 +44,60 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [activeRoute, setActiveRoute] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [stores, setStores] = useState<Store[]>(initialStores);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stores, setStores] = useState<Store[]>([]);
   
   // Importar hook de autenticação
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   
   // Manter o contador de lojas atual
   const storesCount = stores.length;
-  const maxStores = 5;
+  const maxStores = 5; // Definir como 5 conforme solicitado
   const canAddStore = storesCount < maxStores;
+  
+  // Calcular o percentual de progresso
+  const storePercentage = Math.round((storesCount / maxStores) * 100);
+  const remaining = maxStores - storesCount;
 
   // Carregar o estado inicial com base na rota atual
   useEffect(() => {
     setActiveRoute(pathname);
   }, [pathname]);
+
+  // Carregar as lojas do usuário
+  useEffect(() => {
+    const fetchStores = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        const { success, stores: userStores, error } = await getUserStores(user.id);
+        
+        if (success && userStores) {
+          // Transformar os dados da API no formato necessário para o componente
+          const formattedStores = userStores.map(store => ({
+            id: store.id,
+            name: store.name,
+            products: store.products_count || 0,
+            status: 'active' as const, // Poderia ser determinado por alguma lógica
+            href: `/dashboard/stores/${store.id}`
+          }));
+          
+          setStores(formattedStores);
+        } else if (error) {
+          console.error("Erro ao carregar lojas:", error);
+          toast.error("Não foi possível carregar suas lojas");
+        }
+      } catch (error) {
+        console.error("Erro ao buscar lojas:", error);
+        toast.error("Erro ao carregar lojas");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStores();
+  }, [user]);
 
   const navigateToStore = (storeId: string) => {
     router.push(`/dashboard/stores/${storeId}`);
@@ -72,33 +107,21 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
     router.push('/dashboard/stores');
   };
   
-  // Simular um atraso ao adicionar uma nova loja
-  const handleAddStore = () => {
-    if (storesCount >= maxStores) return;
-    
-    setIsLoading(true);
-    setTimeout(() => {
-      const newStore = {
-        id: `${stores.length + 1}`,
-        name: `Nova Loja ${stores.length + 1}`,
-        href: `/dashboard/stores/${stores.length + 1}`,
-        products: 0,
-        status: 'active' as const
-      };
-      setStores([...stores, newStore]);
-      setIsLoading(false);
-    }, 1000);
-  };
-  
-  // Navegar para a página da loja quando clicar
   const handleStoreClick = (href: string) => {
     setActiveRoute(href);
   };
-
+  
   // Estilo padrão para botões ativos
   const activeButtonStyles = 'text-blue-600 font-medium bg-blue-50 hover:bg-blue-100';
   // Estilo padrão para botões inativos
   const inactiveButtonStyles = 'text-gray-600 hover:text-blue-600 hover:bg-gray-50';
+  
+  // Obter a cor da barra de progresso baseada na porcentagem
+  const getProgressColor = () => {
+    if (storePercentage >= 100) return "bg-red-500";
+    if (storePercentage >= 75) return "bg-amber-500";
+    return "bg-emerald-500";
+  }
   
   return (
     <aside
@@ -166,35 +189,45 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
             {/* Lista de Lojas */}
             <ScrollArea className={cn('h-[220px]', isCollapsed && 'h-auto')}>
               <div className="space-y-1 pr-2">
-                {stores.map((store) => (
-                  <Link href={store.href} key={store.id}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                        'w-full justify-start rounded-md transition-all duration-150',
-                        isCollapsed && 'justify-center px-0',
-                        activeRoute === store.href 
-                          ? activeButtonStyles
-                          : inactiveButtonStyles
-                      )}
-                      onClick={() => handleStoreClick(store.href)}
-                    >
-                      <div className={cn(
-                        "h-2 w-2 rounded-full mr-2.5",
-                        activeRoute === store.href ? "bg-blue-500" : "bg-gray-300"
-                      )} />
-                      {!isCollapsed ? (
-                        <span className="truncate">{store.name}</span>
-                      ) : (
+                {isLoading ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                  </div>
+                ) : stores.length > 0 ? (
+                  stores.map((store) => (
+                    <Link href={store.href} key={store.id}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          'w-full justify-start rounded-md transition-all duration-150',
+                          isCollapsed && 'justify-center px-0',
+                          activeRoute === store.href 
+                            ? activeButtonStyles
+                            : inactiveButtonStyles
+                        )}
+                        onClick={() => handleStoreClick(store.href)}
+                      >
                         <div className={cn(
-                          "h-2 w-2 rounded-full",
+                          "h-2 w-2 rounded-full mr-2.5",
                           activeRoute === store.href ? "bg-blue-500" : "bg-gray-300"
                         )} />
-                      )}
-                    </Button>
-                  </Link>
-                ))}
+                        {!isCollapsed ? (
+                          <span className="truncate">{store.name}</span>
+                        ) : (
+                          <div className={cn(
+                            "h-2 w-2 rounded-full",
+                            activeRoute === store.href ? "bg-blue-500" : "bg-gray-300"
+                          )} />
+                        )}
+                      </Button>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-sm text-gray-500">
+                    {!isCollapsed && "Nenhuma loja encontrada"}
+                  </div>
+                )}
                 
                 {/* Botão de Nova Loja */}
                 {storesCount < maxStores ? (
@@ -319,29 +352,82 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
         </div>
       </div>
       
-      {/* Contador de Lojas no Rodapé */}
+      {/* Contador de Lojas no Rodapé - VERSÃO MELHORADA */}
       <div className={cn(
-        "py-3 px-3 border-t bg-blue-50/50",
-        isCollapsed ? "px-1" : "px-3"
+        "py-3 px-4 border-t bg-gradient-to-br from-blue-50 to-blue-100",
+        isCollapsed ? "px-2" : "px-4"
       )}>
         {isCollapsed ? (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex justify-center">
-                  <Badge variant={storesCount >= maxStores ? "destructive" : "outline"} 
-                    className="w-8 h-8 rounded-full flex items-center justify-center p-0 bg-white text-blue-600 border-blue-300 shadow-sm hover:bg-blue-50 transition-colors">
+                  <Badge 
+                    variant={storesCount >= maxStores ? "destructive" : "outline"} 
+                    className={cn(
+                      "w-10 h-10 rounded-full flex items-center justify-center p-0 bg-white shadow-sm hover:bg-blue-50 transition-colors",
+                      storesCount >= maxStores ? "border-red-300 text-red-600" : "border-blue-300 text-blue-600"
+                    )}
+                  >
                     {storesCount}/{maxStores}
                   </Badge>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="right" className="w-64">
-                <StoreCounter storesCount={storesCount} maxStores={maxStores} variant="visual" />
+                <div className="space-y-2 p-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Limite de Lojas</span>
+                    <span className="text-sm">{storesCount}/{maxStores}</span>
+                  </div>
+                  
+                  <Progress 
+                    value={storePercentage} 
+                    className="h-2"
+                    indicatorClassName={getProgressColor()}
+                  />
+                  
+                  <div className="text-xs text-muted-foreground">
+                    {storesCount >= maxStores ? (
+                      <p className="text-red-500 font-medium">Você atingiu o limite de lojas</p>
+                    ) : (
+                      <p>Você ainda pode criar mais {remaining} {remaining === 1 ? 'loja' : 'lojas'}</p>
+                    )}
+                  </div>
+                </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         ) : (
-          <StoreCounter storesCount={storesCount} maxStores={maxStores} variant="visual" />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <StoreIcon className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-700">Suas Lojas</span>
+              </div>
+              <span className="text-sm font-medium">{storesCount}/{maxStores}</span>
+            </div>
+            
+            <Progress 
+              value={storePercentage} 
+              className="h-1.5"
+              indicatorClassName={getProgressColor()}
+            />
+            
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {storesCount === 0 ? 'Nenhuma loja' : (
+                  storesCount === 1 ? '1 loja criada' : `${storesCount} lojas criadas`
+                )}
+              </span>
+              <span>
+                {remaining > 0 ? (
+                  remaining === 1 ? '1 disponível' : `${remaining} disponíveis`
+                ) : (
+                  <span className="text-red-500 font-medium">Limite atingido</span>
+                )}
+              </span>
+            </div>
+          </div>
         )}
       </div>
     </aside>
