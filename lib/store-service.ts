@@ -98,26 +98,69 @@ export async function getStoreById(
   storeId: string
 ): Promise<{ success: boolean; store?: Store; error?: string }> {
   try {
-    // Contornar os problemas de tipagem com o Supabase
-    const { data, error } = await (supabase
+    console.log('[getStoreById] Iniciando busca da loja. ID:', storeId);
+    
+    // Validar o ID
+    if (!storeId || typeof storeId !== 'string' || storeId.trim() === '') {
+      console.error('[getStoreById] ID de loja inválido:', storeId);
+      return {
+        success: false,
+        error: 'ID de loja inválido'
+      };
+    }
+    
+    console.log('[getStoreById] Consultando banco de dados...');
+    
+    // Buscar a loja no banco de dados
+    const { data, error } = await supabase
       .from('stores')
       .select('*')
-      .eq('id', storeId)
-      .single() as any);
+      .eq('id', storeId.trim())
+      .single();
     
     if (error) {
-      throw new Error(`Erro ao buscar loja: ${(error as any).message}`);
+      console.error('[getStoreById] Erro na consulta:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
+    
+    // Verificar se encontrou a loja
+    if (!data) {
+      console.log('[getStoreById] Nenhuma loja encontrada com o ID:', storeId);
+      return {
+        success: false,
+        error: 'Loja não encontrada'
+      };
+    }
+    
+    console.log('[getStoreById] Dados brutos da loja:', data);
+    
+    // Garantir que os campos obrigatórios existam
+    const store: Store = {
+      id: data.id,
+      name: data.name || 'Nome não disponível',
+      user_id: data.user_id,
+      platform: data.platform || 'other',
+      url: data.url || '',
+      products_count: data.products_count || 0,
+      orders_count: data.orders_count || 0,
+      last_sync: data.last_sync ? new Date(data.last_sync) : undefined,
+      created_at: new Date(data.created_at)
+    };
+    
+    console.log('[getStoreById] Loja formatada:', store);
     
     return {
       success: true,
-      store: data
+      store: store
     };
   } catch (error) {
-    console.error('Erro ao buscar loja por ID:', error);
+    console.error('[getStoreById] Erro inesperado:', error);
     return { 
-      success: false, 
-      error: (error as any).message || 'Erro ao buscar loja'
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
     };
   }
 }

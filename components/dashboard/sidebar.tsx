@@ -17,15 +17,24 @@ import {
   Loader2,
   PlusCircle,
   AlertCircle,
-  LogOut
+  LogOut,
+  Store,
+  Home,
+  Package,
+  Settings,
+  ShoppingCart,
+  CreditCard,
+  Layers,
+  UserRound
 } from 'lucide-react';
 import { StoreCounter } from '@/components/stores/store-counter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import { getUserStores } from '@/lib/store-service';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
+import { IconShopify, IconAliExpress } from '@/components/icons';
 
 interface Store {
   id: string;
@@ -46,13 +55,13 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
   const [activeRoute, setActiveRoute] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
+  const [storesCount, setStoresCount] = useState(0);
+  const [maxStores, setMaxStores] = useState(3);
   
   // Importar hook de autenticação
   const { user, logout } = useAuth();
   
   // Manter o contador de lojas atual
-  const storesCount = stores.length;
-  const maxStores = 5; // Definir como 5 conforme solicitado
   const canAddStore = storesCount < maxStores;
   
   // Calcular o percentual de progresso
@@ -67,36 +76,42 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
   // Carregar as lojas do usuário
   useEffect(() => {
     const fetchStores = async () => {
-      if (!user) return;
+      if (!user?.id) return;
       
       try {
         setIsLoading(true);
-        const { success, stores: userStores, error } = await getUserStores(user.id);
+        const { data: stores, error } = await supabase
+          .from('stores')
+          .select('id, name, products_count, last_sync')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
         
-        if (success && userStores) {
-          // Transformar os dados da API no formato necessário para o componente
-          const formattedStores = userStores.map(store => ({
-            id: store.id,
-            name: store.name,
-            products: store.products_count || 0,
-            status: 'active' as const, // Poderia ser determinado por alguma lógica
-            href: `/dashboard/stores/${store.id}`
-          }));
-          
-          setStores(formattedStores);
-        } else if (error) {
-          console.error("Erro ao carregar lojas:", error);
-          toast.error("Não foi possível carregar suas lojas");
+        if (error) {
+          console.error('Erro ao buscar lojas:', error);
+          toast.error('Não foi possível carregar as lojas');
+          return;
         }
+        
+        const formattedStores = stores?.map((store) => ({
+          id: store.id,
+          name: store.name,
+          products: store.products_count || 0,
+          status: store.last_sync ? 'active' : 'syncing' as 'active' | 'syncing' | 'error',
+          href: `/dashboard/stores/${store.id}`
+        })) || [];
+        
+        setStores(formattedStores);
+        setStoresCount(formattedStores.length);
       } catch (error) {
-        console.error("Erro ao buscar lojas:", error);
-        toast.error("Erro ao carregar lojas");
+        console.error('Erro ao buscar lojas:', error);
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchStores();
+    if (user?.id) {
+      fetchStores();
+    }
   }, [user]);
 
   const navigateToStore = (storeId: string) => {
@@ -108,7 +123,8 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
   };
   
   const handleStoreClick = (href: string) => {
-    setActiveRoute(href);
+    console.log('Clique na loja com href:', href);
+    router.push(href);
   };
   
   // Estilo padrão para botões ativos
@@ -118,11 +134,21 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
   
   // Obter a cor da barra de progresso baseada na porcentagem
   const getProgressColor = () => {
-    if (storePercentage >= 100) return "bg-red-500";
-    if (storePercentage >= 75) return "bg-amber-500";
-    return "bg-emerald-500";
+    const ratio = storesCount / maxStores;
+    if (ratio < 0.5) return 'bg-emerald-500';
+    if (ratio < 0.8) return 'bg-amber-500';
+    return 'bg-red-500';
   }
   
+  // Links da barra lateral
+  const sidebarLinks = [
+    { icon: <Home size={18} />, label: 'Dashboard', href: '/dashboard' },
+    { icon: <Package size={18} />, label: 'Produtos', href: '/dashboard/products' },
+    { icon: <ShoppingCart size={18} />, label: 'Pedidos', href: '/dashboard/orders' },
+    { icon: <CreditCard size={18} />, label: 'Financeiro', href: '/dashboard/billing' },
+    { icon: <Settings size={18} />, label: 'Configurações', href: '/dashboard/settings' },
+  ];
+
   return (
     <aside
       className={cn(
@@ -195,7 +221,11 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   </div>
                 ) : stores.length > 0 ? (
                   stores.map((store) => (
-                    <Link href={store.href} key={store.id}>
+                    <Link 
+                      href={store.href} 
+                      key={store.id} 
+                      prefetch={true}
+                    >
                       <Button
                         variant="ghost"
                         size="sm"
@@ -206,7 +236,10 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                             ? activeButtonStyles
                             : inactiveButtonStyles
                         )}
-                        onClick={() => handleStoreClick(store.href)}
+                        onClick={() => {
+                          console.log('Navegando para loja demo:', store.id);
+                          handleStoreClick(store.href);
+                        }}
                       >
                         <div className={cn(
                           "h-2 w-2 rounded-full mr-2.5",
@@ -302,11 +335,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
               )}
               onClick={() => setActiveRoute('/dashboard/profile')}
             >
-              <Users className={cn(
-                'h-4 w-4', 
-                isCollapsed ? 'mx-0' : 'mr-2',
-                activeRoute.includes('/dashboard/profile') ? 'text-blue-600' : 'text-gray-500'
-              )} />
+              <UserRound size={isCollapsed ? 20 : 16} className={isCollapsed ? "mx-auto" : ""} />
               {!isCollapsed && <span>Meu Perfil</span>}
             </Button>
           </Link>

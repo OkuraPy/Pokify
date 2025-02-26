@@ -81,6 +81,7 @@
   },
   "devDependencies": {
     "dotenv": "^16.4.7",
+    "sucrase": "^3.35.0",
     "supabase": "^2.15.8"
   }
 }
