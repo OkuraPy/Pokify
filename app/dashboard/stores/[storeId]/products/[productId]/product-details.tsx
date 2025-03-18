@@ -1,35 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import {
-  Edit,
-  Share2,
-  Trash2,
-  QrCode,
-  Eye,
-  History,
-  ArrowLeft,
-  ChevronRight,
-} from 'lucide-react';
-import Link from 'next/link';
+import { toast } from 'sonner';
+import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2 } from 'lucide-react';
 import { ImageGallery } from './components/image-gallery';
 import { ProductInfo } from './components/product-info';
-import { ProductStats } from './components/product-stats';
-import { ProductHistory } from './components/product-history';
-import { ProductMetadata } from './components/product-metadata';
+import { ReviewsList } from './components/reviews-list';
+import { ProductAnalytics } from './components/product-analytics';
+import { getProduct } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 interface ProductDetailsProps {
   storeId: string;
@@ -41,100 +25,163 @@ interface Product {
   title: string;
   description: string;
   price: number;
+  compare_at_price?: number;
   stock: number;
-  active: boolean;
+  status: string;
   images: string[];
-  createdAt: string;
-  updatedAt: string;
-  views: number;
-  sales: number;
-  averageTicket: number;
+  tags?: string[];
+  reviews_count: number;
+  average_rating?: number;
+  original_url?: string;
+  original_platform?: string;
+  shopify_product_id?: string;
+  shopify_product_url?: string;
+  variants?: any;
+  created_at: string;
+  updated_at: string;
 }
 
 export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
+  const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Buscar dados do produto da API
-    setTimeout(() => {
-      setProduct({
-        id: productId,
-        title: 'Camiseta Pokémon',
-        description: 'Camiseta com estampa do Pikachu',
-        price: 89.90,
-        stock: 50,
-        active: true,
-        images: [
-          'https://via.placeholder.com/800x800',
-          'https://via.placeholder.com/800x800',
-          'https://via.placeholder.com/800x800',
-        ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        views: 150,
-        sales: 25,
-        averageTicket: 89.90,
-      });
-      setIsLoading(false);
-    }, 1000);
+    async function loadProductDetails() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const { data, error } = await getProduct(productId);
+        
+        if (error) {
+          console.error('Erro ao carregar detalhes do produto:', error);
+          setError('Não foi possível carregar os detalhes do produto. Tente novamente mais tarde.');
+          toast.error('Erro ao carregar detalhes do produto');
+          return;
+        }
+        
+        if (!data) {
+          setError('Produto não encontrado');
+          return;
+        }
+        
+        setProduct(data);
+      } catch (err) {
+        console.error('Erro inesperado:', err);
+        setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
+        toast.error('Erro ao carregar detalhes do produto');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadProductDetails();
   }, [productId]);
 
   if (isLoading) {
-    return <div>Carregando...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Carregando detalhes do produto...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="p-4 bg-destructive/10 rounded-full">
+          <ShoppingCart className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-medium">Erro ao carregar produto</h3>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => router.back()}
+            className="mt-2"
+          >
+            Voltar
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (!product) {
-    return <div>Produto não encontrado</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="p-4 bg-secondary/50 rounded-full">
+          <ShoppingCart className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-medium">Produto não encontrado</h3>
+          <p className="text-sm text-muted-foreground">
+            Este produto pode ter sido removido ou não existe.
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push(`/dashboard/stores/${storeId}`)}
+            className="mt-2"
+          >
+            Voltar para loja
+          </Button>
+        </div>
+      </div>
+    );
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link
-          href={`/dashboard/stores/${storeId}`}
-          className="flex items-center gap-1 hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Voltar para Produtos
-        </Link>
-        <ChevronRight className="h-4 w-4" />
-        <span className="text-foreground">{product.title}</span>
-      </div>
+  const statusVariant = 
+    product.status === 'ready' || product.status === 'published' 
+      ? 'default' 
+      : 'secondary';
+  
+  const statusLabel = 
+    product.status === 'ready' ? 'Ativo' : 
+    product.status === 'published' ? 'Publicado' :
+    product.status === 'imported' ? 'Importado' :
+    product.status === 'editing' ? 'Em edição' : 'Arquivado';
 
-      {/* Header */}
-      <div className="flex items-start justify-between">
+  return (
+    <div className="space-y-6">
+      {/* Cabeçalho */}
+      <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{product.title}</h1>
-          <p className="text-sm text-muted-foreground">
-            Última atualização em{' '}
-            {format(new Date(product.updatedAt), "d 'de' MMMM 'de' yyyy 'às' HH:mm", {
-              locale: ptBR,
-            })}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mb-2"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <h2 className="text-2xl font-bold tracking-tight">{product.title}</h2>
+          <p className="text-muted-foreground">
+            Gerencie os detalhes e configurações deste produto
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline">
-            <Share2 className="h-4 w-4 mr-2" />
-            Compartilhar
-          </Button>
-          <Button size="sm" variant="outline">
-            <QrCode className="h-4 w-4 mr-2" />
-            QR Code
-          </Button>
-          <Button size="sm" variant="outline">
-            <Eye className="h-4 w-4 mr-2" />
-            Visualizar
-          </Button>
-          <Button size="sm">
-            <Edit className="h-4 w-4 mr-2" />
+          <Badge variant={statusVariant} className="capitalize py-1 px-2">
+            {statusLabel}
+          </Badge>
+          <Button variant="outline" size="sm">
+            <Pencil className="h-4 w-4 mr-2" />
             Editar
           </Button>
+          {product.shopify_product_url && (
+            <Button size="sm" asChild>
+              <a href={product.shopify_product_url} target="_blank" rel="noopener noreferrer">
+                <Eye className="h-4 w-4 mr-2" />
+                Ver na loja
+              </a>
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Content */}
       <div className="grid grid-cols-5 gap-6">
         {/* Coluna Esquerda */}
         <Card className="col-span-3">
@@ -159,8 +206,8 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                   Detalhes e estatísticas do produto
                 </CardDescription>
               </div>
-              <Badge variant={product.active ? 'default' : 'secondary'}>
-                {product.active ? 'Ativo' : 'Inativo'}
+              <Badge variant={statusVariant}>
+                {statusLabel}
               </Badge>
             </div>
           </CardHeader>
@@ -171,42 +218,94 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
       </div>
 
       {/* Tabs */}
-      <Card>
-        <CardContent className="pt-6">
-          <Tabs defaultValue="stats">
-            <TabsList>
-              <TabsTrigger value="stats">Estatísticas</TabsTrigger>
-              <TabsTrigger value="history">Histórico</TabsTrigger>
-              <TabsTrigger value="metadata">SEO e Metadados</TabsTrigger>
-            </TabsList>
-            <TabsContent value="stats" className="mt-6">
-              <ProductStats product={product} />
-            </TabsContent>
-            <TabsContent value="history" className="mt-6">
-              <ProductHistory product={product} />
-            </TabsContent>
-            <TabsContent value="metadata" className="mt-6">
-              <ProductMetadata product={product} />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Danger Zone */}
-      <Card className="border-destructive/50">
-        <CardHeader>
-          <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-          <CardDescription>
-            Ações irreversíveis que afetam o produto
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button variant="destructive" size="sm">
-            <Trash2 className="h-4 w-4 mr-2" />
-            Excluir Produto
-          </Button>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="description" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="description">Descrição</TabsTrigger>
+          <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+          <TabsTrigger value="analytics">Estatísticas</TabsTrigger>
+          {product.variants && Object.keys(product.variants).length > 0 && (
+            <TabsTrigger value="variants">Variações</TabsTrigger>
+          )}
+        </TabsList>
+        
+        <TabsContent value="description" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Descrição do Produto</CardTitle>
+              <CardDescription>
+                Informações detalhadas sobre o produto
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                {product.description ? (
+                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    Este produto não possui uma descrição detalhada.
+                  </p>
+                )}
+              </div>
+              
+              {product.tags && product.tags.length > 0 && (
+                <div className="mt-6 space-y-2">
+                  <h4 className="text-sm font-medium">Tags</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {product.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {product.original_url && (
+                <div className="mt-6 space-y-2">
+                  <h4 className="text-sm font-medium">Produto Importado</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Origem: {product.original_platform || 'Desconhecida'}</span>
+                    <Separator orientation="vertical" className="h-4" />
+                    <a 
+                      href={product.original_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Ver produto original
+                    </a>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="reviews">
+          <ReviewsList productId={product.id} reviewsCount={product.reviews_count} />
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <ProductAnalytics productId={product.id} />
+        </TabsContent>
+        
+        {product.variants && Object.keys(product.variants).length > 0 && (
+          <TabsContent value="variants">
+            <Card>
+              <CardHeader>
+                <CardTitle>Variações do Produto</CardTitle>
+                <CardDescription>
+                  Visualize e gerencie as variações disponíveis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Renderização das variações do produto */}
+                <pre className="bg-secondary p-4 rounded-md overflow-auto max-h-96 text-xs">
+                  {JSON.stringify(product.variants, null, 2)}
+                </pre>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 }

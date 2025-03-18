@@ -1,7 +1,7 @@
 import { ProductDetails } from "./product-details";
 import { Metadata } from "next";
 
-interface ProductPageProps {
+export interface ProductPageProps {
   params: {
     storeId: string;
     productId: string;
@@ -28,5 +28,9 @@ export async function generateMetadata(
 }
 
 export default function ProductPage({ params }: ProductPageProps) {
-  return <ProductDetails storeId={params.storeId} productId={params.productId} />;
+  return (
+    <div className="container py-6">
+      <ProductDetails storeId={params.storeId} productId={params.productId} />
+    </div>
+  );
 }
