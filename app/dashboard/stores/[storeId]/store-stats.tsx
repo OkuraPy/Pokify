@@ -1,94 +1,78 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Package, Star, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ShoppingCart, DollarSign, TrendingUp, Package } from 'lucide-react';
 
 interface StoreStatsProps {
   stats: {
-    totalProducts: number;
-    totalReviews: number;
-    conversionRate: number;
-    lastSync: string;
+    totalSales: number;
+    totalRevenue: number;
+    averageOrderValue: number;
+    productsSold: number;
   };
 }
 
 export function StoreStats({ stats }: StoreStatsProps) {
-  const items = [
-    {
-      title: 'Total de Produtos',
-      value: stats.totalProducts,
-      description: 'produtos cadastrados',
-      icon: Package,
-      color: 'text-blue-500',
-      bg: 'bg-blue-50',
-    },
-    {
-      title: 'Total de Reviews',
-      value: stats.totalReviews,
-      description: 'avaliações recebidas',
-      icon: Star,
-      color: 'text-yellow-500',
-      bg: 'bg-yellow-50',
-    },
-    {
-      title: 'Taxa de Conversão',
-      value: stats.conversionRate,
-      description: 'das visitas convertidas',
-      suffix: '%',
-      icon: TrendingUp,
-      color: 'text-green-500',
-      bg: 'bg-green-50',
-    },
-    {
-      title: 'Vendas Diárias',
-      value: Math.round(stats.totalProducts * (stats.conversionRate / 100)),
-      description: 'vendas hoje',
-      icon: ShoppingCart,
-      color: 'text-purple-500',
-      bg: 'bg-purple-50',
-    },
-  ];
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      {items.map((item) => (
-        <Card 
-          key={item.title} 
-          className="overflow-hidden border-border/40 hover:border-border/60 transition-colors"
-        >
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">
-                  {item.title}
-                </p>
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold tracking-tight">
-                    {item.value}
-                    {item.suffix}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-              <div className={`p-3 rounded-lg ${item.bg}`}>
-                <item.icon className={`h-6 w-6 ${item.color}`} />
-              </div>
-            </div>
-            <div className="mt-6 h-1.5 bg-secondary/30 rounded-full overflow-hidden">
-              <div 
-                className={`h-full ${item.bg} ${item.color}`}
-                style={{ 
-                  width: item.suffix === '%' 
-                    ? `${item.value}%` 
-                    : `${(item.value / Math.max(stats.totalProducts, stats.totalReviews)) * 100}%` 
-                }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total de Vendas</CardTitle>
+          <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalSales}</div>
+          <p className="text-xs text-muted-foreground">
+            Número total de pedidos
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+          <p className="text-xs text-muted-foreground">
+            Faturamento total da loja
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
+          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(stats.averageOrderValue)}</div>
+          <p className="text-xs text-muted-foreground">
+            Valor médio por pedido
+          </p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Produtos Vendidos</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.productsSold}</div>
+          <p className="text-xs text-muted-foreground">
+            Quantidade de itens vendidos
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

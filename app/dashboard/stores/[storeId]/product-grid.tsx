@@ -1,23 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart, Eye, Pencil, MoreVertical, Trash2, Loader2 } from 'lucide-react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { getProducts } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { ShoppingCart, Eye, Pencil, Star, Loader2 } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -35,71 +23,11 @@ interface Product {
 
 interface ProductGridProps {
   storeId: string;
+  products: Product[];
 }
 
-export function ProductGrid({ storeId }: ProductGridProps) {
+export function ProductGrid({ storeId, products }: ProductGridProps) {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadProducts() {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const { data, error } = await getProducts(storeId);
-        
-        if (error) {
-          console.error('Erro ao carregar produtos:', error);
-          setError('Não foi possível carregar os produtos. Tente novamente mais tarde.');
-          toast.error('Erro ao carregar produtos');
-          return;
-        }
-        
-        setProducts(data || []);
-      } catch (err) {
-        console.error('Erro inesperado:', err);
-        setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
-        toast.error('Erro ao carregar produtos');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    
-    loadProducts();
-  }, [storeId]);
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Carregando produtos...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 space-y-4">
-        <div className="p-4 bg-destructive/10 rounded-full">
-          <ShoppingCart className="h-8 w-8 text-destructive" />
-        </div>
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-medium">Erro ao carregar produtos</h3>
-          <p className="text-sm text-muted-foreground">{error}</p>
-          <Button 
-            variant="outline" 
-            onClick={() => router.refresh()}
-            className="mt-2"
-          >
-            Tentar novamente
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   if (products.length === 0) {
     return (
@@ -145,7 +73,7 @@ export function ProductGrid({ storeId }: ProductGridProps) {
                   size="icon" 
                   variant="secondary" 
                   className="h-9 w-9 bg-white hover:bg-white/90 shadow-sm"
-                  onClick={() => router.push(`/dashboard/stores/${storeId}/import?productId=${product.id}`)}
+                  onClick={() => router.push(`/dashboard/stores/${storeId}/products/${product.id}/edit`)}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -187,7 +115,7 @@ export function ProductGrid({ storeId }: ProductGridProps) {
                   <p className="text-muted-foreground text-xs">Avaliação</p>
                   <p className="font-medium text-base flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    {product.average_rating || 0}
+                    {product.average_rating?.toFixed(1) || '0.0'}
                   </p>
                 </div>
               </div>

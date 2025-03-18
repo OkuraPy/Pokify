@@ -8,9 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Plus, RefreshCw, Globe, ShoppingBag } from 'lucide-react';
+import { Plus, RefreshCw, Globe, ShoppingBag, Package, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Separator } from '@/components/ui/separator';
 
 interface Store {
   id: string;
@@ -23,14 +24,17 @@ interface Store {
     conversionRate: number;
     lastSync: string;
   };
+  last_sync?: string;
+  products_count: number;
 }
 
 interface StoreHeaderProps {
   store: Store;
   onAddProduct: () => void;
+  totalReviews?: number;
 }
 
-export function StoreHeader({ store, onAddProduct }: StoreHeaderProps) {
+export function StoreHeader({ store, onAddProduct, totalReviews = 0 }: StoreHeaderProps) {
   return (
     <Card>
       <CardHeader className="px-6 pt-6 pb-4">
@@ -77,9 +81,32 @@ export function StoreHeader({ store, onAddProduct }: StoreHeaderProps) {
         </div>
       </CardHeader>
       <CardContent className="px-6 pb-4">
-        <p className="text-sm text-muted-foreground">
-          Última sincronização: {format(new Date(store.stats.lastSync), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-        </p>
+        <div className="flex flex-col space-y-3">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">
+                <span className="font-medium">{store.products_count || store.stats?.totalProducts || 0}</span> produtos
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">
+                <span className="font-medium">{totalReviews || store.stats?.totalReviews || 0}</span> avaliações
+              </span>
+            </div>
+          </div>
+          
+          <Separator className="my-1" />
+          
+          <p className="text-sm text-muted-foreground">
+            {store.last_sync ? (
+              `Última sincronização: ${format(new Date(store.last_sync), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}`
+            ) : (
+              'Nenhuma sincronização realizada'
+            )}
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

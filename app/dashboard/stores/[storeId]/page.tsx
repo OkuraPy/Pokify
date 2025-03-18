@@ -61,83 +61,17 @@ async function redirectToFirstStore(currentStoreId?: string) {
   }
 }
 
+interface StorePageProps {
+  params: {
+    storeId: string;
+  };
+}
+
 /**
  * Componente da página de loja
  */
-export default async function StorePage({ params }: { params: { storeId: string } }) {
-  console.log('[StorePage] Iniciando carregamento da loja. ID:', params.storeId);
-  
-  const storeId = params.storeId;
-  
-  // Validar formato do ID
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  
-  let storeData;
-  
-  // Tentar buscar a loja no banco de dados
-  if (uuidRegex.test(storeId)) {
-    try {
-      console.log('[StorePage] Buscando dados da loja no banco...');
-      const storeResult = await getStoreById(storeId);
-      
-      console.log('[StorePage] Resultado da busca:', storeResult);
-      
-      // Se encontrou a loja, usar os dados reais
-      if (storeResult.success && storeResult.store) {
-        const store = storeResult.store;
-        console.log('[StorePage] Loja encontrada:', {
-          id: store.id,
-          name: store.name,
-          platform: store.platform,
-          url: store.url
-        });
-        
-        // Construir dados para o cliente
-        storeData = {
-          id: store.id,
-          name: store.name || 'Nome não disponível', // Fallback para nome
-          platform: store.platform,
-          url: store.url || '', 
-          stats: {
-            totalProducts: store.products_count || 0,
-            totalReviews: 0,
-            conversionRate: 0,
-            lastSync: store.last_sync 
-              ? typeof store.last_sync === 'string' 
-                ? store.last_sync 
-                : store.last_sync.toISOString() 
-              : new Date().toISOString()
-          }
-        };
-      } else {
-        console.error('[StorePage] Erro ao buscar loja:', storeResult.error);
-      }
-    } catch (error) {
-      console.error('[StorePage] Erro ao buscar loja:', error);
-    }
-  } else {
-    console.warn('[StorePage] ID inválido:', storeId);
-  }
-  
-  // Se não encontrou a loja ou o ID é inválido, criar dados mockados
-  if (!storeData) {
-    console.log('[StorePage] Usando dados mockados para a loja');
-    
-    // Dados mockados para a loja
-    storeData = {
-      id: storeId,
-      name: `Loja de Teste ${storeId.substring(0, 6)}`,
-      platform: 'shopify',
-      url: 'https://exemplo-loja.myshopify.com',
-      stats: {
-        totalProducts: Math.floor(Math.random() * 100) + 1,
-        totalReviews: Math.floor(Math.random() * 500),
-        conversionRate: 0,
-        lastSync: new Date().toISOString()
-      }
-    };
-  }
-  
-  console.log('[StorePage] Dados finais da loja:', storeData);
-  return <StoreClient store={storeData} />;
+export default function StorePage({ params }: StorePageProps) {
+  return (
+    <StoreClient storeId={params.storeId} />
+  );
 }
