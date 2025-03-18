@@ -531,18 +531,26 @@ export async function getReviews(productId: string) {
   }
 }
 
-export async function updateReview(id: string, review: Partial<Review>) {
-  const reviewResult = await supabase
-    .from('reviews')
-    .update(review)
-    .eq('id', id)
-    .select()
-    .single();
+/**
+ * Atualiza uma avaliação específica
+ */
+export async function updateReview(reviewId: string, updates: Partial<any>) {
+  try {
+    const { data, error } = await supabase
+      .from('reviews')
+      .update(updates)
+      .eq('id', reviewId)
+      .select()
+      .single();
     
-  return { 
-    data: reviewResult.data, 
-    error: reviewResult.error 
-  };
+    return { data, error };
+  } catch (error) {
+    console.error('Erro ao atualizar avaliação:', error);
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Erro desconhecido')
+    };
+  }
 }
 
 export async function deleteReview(id: string) {
@@ -863,6 +871,99 @@ export async function publishProductToShopify(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido na publicação do produto.'
+    };
+  }
+}
+
+/**
+ * Importa avaliações de um produto de uma URL externa
+ */
+export async function importReviewsFromUrl(
+  productId: string,
+  url: string,
+  platform: string
+): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    // Chamar uma função Supabase Edge Function para fazer o scraping
+    const { data, error } = await supabase.functions.invoke('extract-reviews', {
+      body: {
+        product_id: productId,
+        url,
+        platform
+      }
+    });
+    
+    if (error) {
+      console.error('Erro ao importar avaliações:', error);
+      return { success: false, count: 0, error: error.message };
+    }
+    
+    return { 
+      success: true, 
+      count: data?.reviewsCount || 0 
+    };
+  } catch (error) {
+    console.error('Erro ao importar avaliações:', error);
+    return {
+      success: false,
+      count: 0,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
+    };
+  }
+}
+
+/**
+ * Gera avaliações usando IA para um produto
+ */
+export async function generateAIReviews(
+  productId: string,
+  count: number,
+  averageRating: number
+): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    // Primeiro, obtemos os dados do produto
+    const { data: product, error: productError } = await getProduct(productId);
+    
+    if (productError || !product) {
+      return {
+        success: false,
+        count: 0,
+        error: productError?.message || 'Produto não encontrado.'
+      };
+    }
+    
+    // Chamar a função Edge do Supabase para gerar avaliações
+    const { data, error } = await supabase.functions.invoke('generate-reviews', {
+      body: {
+        product_id: productId,
+        product_title: product.title,
+        product_description: product.description,
+        count,
+        average_rating: averageRating
+      }
+    });
+    
+    if (error) {
+      console.error('Erro ao gerar avaliações:', error);
+      return { success: false, count: 0, error: error.message };
+    }
+    
+    // Atualizar o contador de avaliações do produto
+    await updateProduct(productId, {
+      reviews_count: (product.reviews_count || 0) + (data?.reviewsCount || 0),
+      average_rating: data?.newAverageRating || product.average_rating
+    });
+    
+    return { 
+      success: true, 
+      count: data?.reviewsCount || 0 
+    };
+  } catch (error) {
+    console.error('Erro ao gerar avaliações:', error);
+    return {
+      success: false,
+      count: 0,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
     };
   }
 } 
