@@ -167,9 +167,17 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           <Badge variant={statusVariant} className="capitalize py-1 px-2">
             {statusLabel}
           </Badge>
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const url = `/dashboard/stores/${storeId}/products/${product.id}/edit`;
+              console.log('Navegando para:', url);
+              window.location.href = url; // Forçar navegação direta
+            }}
+          >
             <Pencil className="h-4 w-4 mr-2" />
-            Editar
+            Editar (Teste)
           </Button>
           {product.shopify_product_url && (
             <Button size="sm" asChild>

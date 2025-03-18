@@ -367,19 +367,30 @@ export async function getProducts(storeId?: string, status?: string) {
 }
 
 export async function getProduct(id: string) {
-  const productResult = await supabase
-    .from('products')
-    .select(`
-      *,
-      reviews(*)
-    `)
-    .eq('id', id)
-    .single();
+  try {
+    console.log('Buscando produto ID:', id);
+    const productResult = await supabase
+      .from('products')
+      .select(`
+        *,
+        reviews(*)
+      `)
+      .eq('id', id)
+      .single();
     
-  return { 
-    data: productResult.data, 
-    error: productResult.error 
-  };
+    console.log('Resultado da busca:', productResult);
+    
+    return { 
+      data: productResult.data, 
+      error: productResult.error 
+    };
+  } catch (error) {
+    console.error('Erro na função getProduct:', error);
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Erro desconhecido')
+    };
+  }
 }
 
 export async function createProduct(product: Partial<Product>) {
@@ -444,18 +455,40 @@ export async function createProduct(product: Partial<Product>) {
   }
 }
 
-export async function updateProduct(id: string, product: Partial<Product>) {
-  const productResult = await supabase
-    .from('products')
-    .update(product)
-    .eq('id', id)
-    .select()
-    .single();
+/**
+ * Atualiza um produto existente
+ */
+export async function updateProduct(productId: string, product: Partial<Product>) {
+  try {
+    // Certifique-se de que o status é um dos valores permitidos pelo enum product_status
+    if (product.status && !['imported', 'editing', 'ready', 'published', 'archived'].includes(product.status)) {
+      return {
+        data: null,
+        error: new Error('Status do produto inválido')
+      };
+    }
     
-  return { 
-    data: productResult.data, 
-    error: productResult.error 
-  };
+    // Atualizar o produto no banco de dados
+    const { data, error } = await supabase
+      .from('products')
+      .update(product)
+      .eq('id', productId)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Erro ao atualizar produto:', error);
+      return { data: null, error };
+    }
+    
+    return { data, error: null };
+  } catch (error) {
+    console.error('Erro ao atualizar produto:', error);
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Erro desconhecido ao atualizar produto')
+    };
+  }
 }
 
 export async function deleteProduct(id: string) {
