@@ -1,386 +1,260 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { 
-  User, 
-  Mail, 
-  Store, 
-  Clock, 
-  CreditCard, 
-  BadgeCheck, 
-  Edit, 
-  Gem,
-  ChevronRight
-} from 'lucide-react';
-import Link from 'next/link';
-import { toast } from 'sonner';
-
-interface UserData {
-  name: string;
-  email: string;
-  avatar?: string;
-  memberSince: string;
-  plan: 'annual' | 'lifetime';
-  planExpiresAt?: string;
-  stores: {
-    id: string;
-    name: string;
-    url: string;
-    productsCount: number;
-  }[];
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getUserProfile, getUserStores, getProducts } from '@/lib/supabase';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
+import { ExternalLink, Edit, Store, Clock, CheckCircle, ShoppingBag, ChevronRight, Loader2 } from 'lucide-react';
 
 export default function ProfilePage() {
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editedName, setEditedName] = useState('');
+  const [user, setUser] = useState<any>(null);
+  const [stores, setStores] = useState<any[]>([]);
+  const [storeProducts, setStoreProducts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    // Simular carregamento de dados do usuário
-    const loadUserData = () => {
-      setIsLoading(true);
-      
-      // Simulação de dados
-      setTimeout(() => {
-        setUserData({
-          name: 'João Silva',
-          email: 'joao.silva@example.com',
-          avatar: '', // URL vazia para testar o fallback
-          memberSince: '15/03/2023',
-          plan: 'annual',
-          planExpiresAt: '15/03/2024',
-          stores: [
-            {
-              id: 'store-1',
-              name: 'Minha Loja de Pokémon',
-              url: 'pokemon-store.com',
-              productsCount: 45
-            },
-            {
-              id: 'store-2',
-              name: 'Anime Shop',
-              url: 'animeshop.com.br',
-              productsCount: 128
-            }
-          ]
-        });
+    async function loadProfileData() {
+      try {
+        setIsLoading(true);
+        
+        // Carregar dados do perfil do usuário
+        const { data: userData, error: userError } = await getUserProfile();
+        
+        if (userError || !userData) {
+          console.error('Erro ao carregar perfil:', userError);
+          return;
+        }
+        
+        setUser(userData);
+        
+        // Carregar lojas do usuário
+        const { data: storesData, error: storesError } = await getUserStores();
+        
+        if (storesError) {
+          console.error('Erro ao carregar lojas:', storesError);
+          return;
+        }
+        
+        setStores(storesData || []);
+        
+        // Carregar contagem de produtos para cada loja
+        const productsCount: Record<string, number> = {};
+        
+        await Promise.all((storesData || []).map(async (store) => {
+          const { data: products } = await getProducts(store.id);
+          productsCount[store.id] = products?.length || 0;
+        }));
+        
+        setStoreProducts(productsCount);
+      } catch (error) {
+        console.error('Erro ao carregar dados do perfil:', error);
+      } finally {
         setIsLoading(false);
-      }, 1000);
-    };
-
-    loadUserData();
+      }
+    }
+    
+    loadProfileData();
   }, []);
-
-  const handleEditProfile = () => {
-    if (isEditingProfile) {
-      // Salvar as alterações
-      if (userData) {
-        setUserData({
-          ...userData,
-          name: editedName
-        });
-        toast.success('Perfil atualizado com sucesso!');
-      }
-    } else {
-      // Iniciar edição
-      if (userData) {
-        setEditedName(userData.name);
-      }
-    }
-    
-    setIsEditingProfile(!isEditingProfile);
-  };
-
-  const getPlanDetails = () => {
-    if (!userData) return null;
-    
-    if (userData.plan === 'annual') {
-      return {
-        name: 'Plano Anual',
-        description: 'Acesso a todos os recursos por 12 meses',
-        badge: <Badge className="bg-blue-500">Anual</Badge>,
-        expires: userData.planExpiresAt,
-        icon: <Clock className="h-5 w-5 text-blue-500" />
-      };
-    } else {
-      return {
-        name: 'Plano Vitalício',
-        description: 'Acesso a todos os recursos para sempre',
-        badge: <Badge className="bg-violet-500">Vitalício</Badge>,
-        expires: null,
-        icon: <Gem className="h-5 w-5 text-violet-500" />
-      };
-    }
-  };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <p className="ml-4 text-muted-foreground">Carregando seu perfil...</p>
+      <div className="flex justify-center items-center h-[70vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (!userData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Não foi possível carregar os dados do perfil.</p>
-        <Button asChild className="mt-4">
-          <Link href="/dashboard">Voltar para o Dashboard</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const planDetails = getPlanDetails();
+  // Determinar plano e limites
+  const planType = user?.billing_status || 'free';
+  const planName = planType === 'free' ? 'Gratuito' : 'Anual';
+  const storesLimit = user?.stores_limit || 5;
+  const storesCount = stores.length;
+  
+  // Calcular data de renovação (1 ano a partir da data de criação)
+  const createdAt = new Date(user?.created_at);
+  const renewalDate = new Date(createdAt);
+  renewalDate.setFullYear(renewalDate.getFullYear() + 1);
+  
+  // Formatar data para exibição
+  const memberSince = format(createdAt, 'dd/MM/yyyy', { locale: ptBR });
+  const renewalDateFormatted = format(renewalDate, 'dd/MM/yyyy', { locale: ptBR });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Meu Perfil</h1>
-        <Button 
-          onClick={handleEditProfile}
-          variant={isEditingProfile ? "default" : "outline"}
-        >
-          {isEditingProfile ? 'Salvar Alterações' : 'Editar Perfil'}
-          {isEditingProfile ? <BadgeCheck className="ml-2 h-4 w-4" /> : <Edit className="ml-2 h-4 w-4" />}
+    <div className="container py-10">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Meu Perfil</h1>
+        <Button variant="outline" onClick={() => router.push('/dashboard/profile/edit')}>
+          <Edit className="h-4 w-4 mr-2" />
+          Editar Perfil
         </Button>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Dados do usuário */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Informações Pessoais</CardTitle>
-            <CardDescription>
-              Gerencie suas informações pessoais
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="flex justify-center">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage src={userData.avatar} />
-                  <AvatarFallback className="text-lg bg-primary/10">
-                    {userData.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
+        {/* Coluna da esquerda - Informações Pessoais */}
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <h2 className="text-xl font-semibold">Informações Pessoais</h2>
+              <p className="text-sm text-muted-foreground">
+                Gerencie suas informações pessoais
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-6">
+                <div className="h-20 w-20 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-2xl font-semibold">
+                  {user?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </div>
+                
+                <div className="space-y-1">
+                  <h3 className="text-lg font-medium">Nome</h3>
+                  <p className="text-base">{user?.full_name || 'Nome não definido'}</p>
+                </div>
               </div>
               
-              <div className="flex-1 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  {isEditingProfile ? (
-                    <Input 
-                      id="name" 
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                    />
-                  ) : (
-                    <div className="flex items-center h-10 px-3 text-sm border rounded-md bg-muted/50">
-                      <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {userData.name}
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <div className="flex items-center h-10 px-3 text-sm border rounded-md bg-muted/50">
-                    <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                    {userData.email}
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium">E-mail</h3>
+                <p className="text-base">{user?.email}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium">Membro desde</h3>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-base">{memberSince}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Membro desde</Label>
-                    <div className="flex items-center h-10 px-3 text-sm border rounded-md bg-muted/50">
-                      <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {userData.memberSince}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Total de Lojas</Label>
-                    <div className="flex items-center h-10 px-3 text-sm border rounded-md bg-muted/50">
-                      <Store className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {userData.stores.length} de 5 lojas
-                    </div>
+                
+                <div className="space-y-1">
+                  <h3 className="text-sm font-medium">Total de Lojas</h3>
+                  <div className="flex items-center gap-2">
+                    <Store className="h-4 w-4 text-muted-foreground" />
+                    <p className="text-base">{storesCount} de {storesLimit} lojas</p>
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
         
-        {/* Informações do Plano */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Seu Plano</CardTitle>
-              {planDetails?.badge}
-            </div>
-            <CardDescription>
-              Informações sobre sua assinatura
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30">
-              {planDetails?.icon}
-              <div>
-                <p className="font-medium">{planDetails?.name}</p>
-                <p className="text-sm text-muted-foreground">{planDetails?.description}</p>
-              </div>
-            </div>
-            
-            {userData.plan === 'annual' && userData.planExpiresAt && (
-              <div className="space-y-2">
-                <Label>Data de Renovação</Label>
-                <div className="flex items-center h-10 px-3 text-sm border rounded-md bg-muted/50">
-                  <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                  {userData.planExpiresAt}
+        {/* Coluna da direita - Plano */}
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Seu Plano</h2>
+                <div className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                  {planName}
                 </div>
               </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label>Recursos incluídos</Label>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-green-500" />
-                  <span>Até 5 lojas</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-green-500" />
-                  <span>Produtos ilimitados</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-green-500" />
-                  <span>Ferramentas de IA</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-green-500" />
-                  <span>Suporte prioritário</span>
-                </li>
-              </ul>
-            </div>
-          </CardContent>
-          <CardFooter>
-            {userData.plan === 'annual' ? (
-              <Button className="w-full" variant="outline">
+              <p className="text-sm text-muted-foreground">
+                Informações sobre sua assinatura
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                <div>
+                  <h3 className="text-sm font-medium">Plano Anual</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Acesso a todos os recursos por 12 meses
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="text-sm font-medium">Data de Renovação</h3>
+                <p className="text-base">{renewalDateFormatted}</p>
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium">Recursos incluídos</h3>
+                
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <p className="text-sm">Até {storesLimit} lojas</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <p className="text-sm">Produtos ilimitados</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <p className="text-sm">Ferramentas de IA</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <p className="text-sm">Suporte prioritário</p>
+                </div>
+              </div>
+              
+              <Button variant="outline" className="w-full">
                 Fazer Upgrade para Vitalício
               </Button>
-            ) : (
-              <Button className="w-full" variant="outline" disabled>
-                Você possui o melhor plano
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
       
-      {/* Lojas do usuário */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Minhas Lojas</CardTitle>
-            {userData.stores.length < 5 && (
-              <Button size="sm">
-                Adicionar Nova Loja
-              </Button>
-            )}
+      {/* Seção de Lojas */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-semibold">Minhas Lojas</h2>
+            <p className="text-sm text-muted-foreground">
+              Gerencie suas lojas e produtos ({storesCount}/{storesLimit})
+            </p>
           </div>
-          <CardDescription>
-            Gerencie suas lojas e produtos ({userData.stores.length}/5)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {userData.stores.map((store) => (
-              <Link 
-                key={store.id}
-                href={`/dashboard/stores/${store.id}`}
-                className="block"
-              >
-                <div className="flex items-center justify-between p-4 rounded-md border hover:border-primary hover:bg-muted/5 transition-colors cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <Store className="h-6 w-6 text-primary" />
-                    <div>
-                      <p className="font-medium">{store.name}</p>
-                      <p className="text-sm text-muted-foreground">{store.url}</p>
+          <Button onClick={() => router.push('/dashboard/stores/new')}>
+            Adicionar Nova Loja
+          </Button>
+        </div>
+        
+        <Card>
+          <CardContent className="p-0">
+            {stores.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-muted-foreground">Você ainda não tem lojas cadastradas</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {stores.map((store) => (
+                  <div 
+                    key={store.id}
+                    className="flex items-center justify-between p-4 hover:bg-secondary/30 cursor-pointer transition-colors"
+                    onClick={() => router.push(`/dashboard/stores/${store.id}`)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Store className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{store.name}</h3>
+                        <p className="text-sm text-muted-foreground">{store.url}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-bold">{storeProducts[store.id] || 0}</p>
+                        <p className="text-sm text-muted-foreground">Produtos</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold">{store.productsCount}</p>
-                      <p className="text-xs text-muted-foreground">Produtos</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </div>
-              </Link>
-            ))}
-            
-            {userData.stores.length === 0 && (
-              <div className="flex flex-col items-center justify-center p-6 bg-muted/10 rounded-md text-center">
-                <Store className="h-12 w-12 text-muted-foreground mb-2" />
-                <p className="font-medium">Você ainda não tem lojas</p>
-                <p className="text-sm text-muted-foreground mb-4">Crie sua primeira loja para começar</p>
-                <Button>Criar Loja</Button>
+                ))}
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Seção de Faturamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Faturamento e Assinatura</CardTitle>
-          <CardDescription>
-            Gerencie seus métodos de pagamento e histórico de faturas
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 rounded-md border">
-            <div className="flex items-center gap-3">
-              <CreditCard className="h-6 w-6 text-muted-foreground" />
-              <div>
-                <p className="font-medium">•••• •••• •••• 4242</p>
-                <p className="text-sm text-muted-foreground">Visa - Expira em 12/2025</p>
-              </div>
-            </div>
-            <Button variant="ghost" size="sm">
-              Atualizar
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Histórico de Faturas</p>
-            <div className="rounded-md border divide-y">
-              <div className="flex items-center justify-between p-3">
-                <div>
-                  <p className="font-medium">Assinatura Anual</p>
-                  <p className="text-sm text-muted-foreground">15/03/2023</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">R$ 297,00</span>
-                  <Button variant="ghost" size="sm" className="h-7 text-xs">
-                    Visualizar
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 } 

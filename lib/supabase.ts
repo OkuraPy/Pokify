@@ -1040,4 +1040,99 @@ export async function getStoreStats(storeId: string) {
     console.error('Erro ao obter estatísticas da loja:', error);
     throw error;
   }
+}
+
+/**
+ * Obtém o perfil do usuário atual
+ */
+export async function getUserProfile() {
+  try {
+    // Obter o usuário autenticado atual
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !authData?.user) {
+      return { data: null, error: authError || new Error('Usuário não autenticado') };
+    }
+    
+    // Buscar dados do perfil na tabela users
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
+    
+    if (error) {
+      console.error('Erro ao buscar perfil:', error);
+      return { data: null, error };
+    }
+    
+    // Combinar dados do auth e do perfil
+    return { 
+      data: {
+        ...data,
+        email: authData.user.email
+      }, 
+      error: null 
+    };
+  } catch (error) {
+    console.error('Erro ao obter perfil do usuário:', error);
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Erro desconhecido') 
+    };
+  }
+}
+
+/**
+ * Atualiza o perfil do usuário atual
+ */
+export async function updateUserProfile(updates: Partial<{
+  full_name: string;
+  avatar_url: string;
+  company: string;
+  billing_status?: string;
+  stores_limit?: number;
+  products_limit?: number;
+}>) {
+  try {
+    // Obter o usuário autenticado atual
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !authData?.user) {
+      return { data: null, error: authError || new Error('Usuário não autenticado') };
+    }
+    
+    // Atualizar dados no auth se estiver atualizando nome ou avatar
+    if (updates.full_name || updates.avatar_url) {
+      const { error: updateAuthError } = await supabase.auth.updateUser({
+        data: {
+          full_name: updates.full_name,
+          avatar_url: updates.avatar_url
+        }
+      });
+      
+      if (updateAuthError) {
+        console.error('Erro ao atualizar dados de autenticação:', updateAuthError);
+      }
+    }
+    
+    // Atualizar dados na tabela users
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', authData.user.id)
+      .select()
+      .single();
+    
+    return { data, error };
+  } catch (error) {
+    console.error('Erro ao atualizar perfil do usuário:', error);
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Erro desconhecido') 
+    };
+  }
 } 
