@@ -21,7 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getUserStores, getStoreStats } from '@/lib/supabase';
+import { getUserStores, getStoreStats, getProducts, getReviews } from '@/lib/supabase';
 import { StoreCard } from '@/components/stores/store-card';
 
 export default function DashboardPage() {
@@ -64,6 +64,147 @@ export default function DashboardPage() {
     { name: '25', value: 20 }, { name: '26', value: 15 }, { name: '27', value: 10 },
     { name: '28', value: 25 }, { name: '29', value: 32 }, { name: '30', value: 20 },
   ];
+
+  // Função para buscar e formatar dados de produtos para o gráfico
+  async function fetchProductsChartData(period: string) {
+    try {
+      // Obter todos os produtos de todas as lojas do usuário
+      const { data: storesData } = await getUserStores();
+      if (!storesData || storesData.length === 0) return [];
+      
+      // Criar um array de promessas para buscar produtos de cada loja
+      const productsPromises = storesData.map(store => getProducts(store.id));
+      const productsResults = await Promise.all(productsPromises);
+      
+      // Juntar todos os produtos em um único array
+      const allProducts = productsResults.flatMap(result => result.data || []);
+      
+      // Definir o intervalo de datas com base no período selecionado
+      const endDate = new Date();
+      let startDate = new Date();
+      
+      switch (period) {
+        case 'week':
+          startDate.setDate(endDate.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setDate(endDate.getDate() - 30);
+          break;
+        case 'quarter':
+          startDate.setMonth(endDate.getMonth() - 3);
+          break;
+        case 'year':
+          startDate.setFullYear(endDate.getFullYear() - 1);
+          break;
+        default:
+          startDate.setDate(endDate.getDate() - 30); // Padrão: último mês
+      }
+      
+      // Filtrar produtos pelo período selecionado
+      const filteredProducts = allProducts.filter(product => {
+        const createdAt = new Date(product.created_at);
+        return createdAt >= startDate && createdAt <= endDate;
+      });
+      
+      // Agrupar produtos por dia
+      const productsByDay = {};
+      
+      // Inicializar todos os dias no período com zero produtos
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dayKey = currentDate.getDate().toString();
+        productsByDay[dayKey] = 0;
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      // Contar produtos por dia
+      filteredProducts.forEach(product => {
+        const createdAt = new Date(product.created_at);
+        const dayKey = createdAt.getDate().toString();
+        productsByDay[dayKey] = (productsByDay[dayKey] || 0) + 1;
+      });
+      
+      // Converter para o formato esperado pelo gráfico
+      return Object.entries(productsByDay).map(([name, value]) => ({ name, value }));
+    } catch (error) {
+      console.error('Erro ao buscar dados de produtos para o gráfico:', error);
+      return [];
+    }
+  }
+
+  // Função para buscar e formatar dados de reviews para o gráfico
+  async function fetchReviewsChartData(period: string) {
+    try {
+      // Obter todos os produtos de todas as lojas do usuário
+      const { data: storesData } = await getUserStores();
+      if (!storesData || storesData.length === 0) return [];
+      
+      // Criar um array de promessas para buscar produtos de cada loja
+      const productsPromises = storesData.map(store => getProducts(store.id));
+      const productsResults = await Promise.all(productsPromises);
+      
+      // Juntar todos os produtos em um único array
+      const allProducts = productsResults.flatMap(result => result.data || []);
+      
+      // Criar um array de promessas para buscar reviews de cada produto
+      const reviewsPromises = allProducts.map(product => getReviews(product.id));
+      const reviewsResults = await Promise.all(reviewsPromises);
+      
+      // Juntar todas as reviews em um único array
+      const allReviews = reviewsResults.flatMap(result => result.data || []);
+      
+      // Definir o intervalo de datas com base no período selecionado
+      const endDate = new Date();
+      let startDate = new Date();
+      
+      switch (period) {
+        case 'week':
+          startDate.setDate(endDate.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setDate(endDate.getDate() - 30);
+          break;
+        case 'quarter':
+          startDate.setMonth(endDate.getMonth() - 3);
+          break;
+        case 'year':
+          startDate.setFullYear(endDate.getFullYear() - 1);
+          break;
+        default:
+          startDate.setDate(endDate.getDate() - 30); // Padrão: último mês
+      }
+      
+      // Filtrar reviews pelo período selecionado
+      const filteredReviews = allReviews.filter(review => {
+        const createdAt = new Date(review.created_at);
+        return createdAt >= startDate && createdAt <= endDate;
+      });
+      
+      // Agrupar reviews por dia
+      const reviewsByDay = {};
+      
+      // Inicializar todos os dias no período com zero reviews
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        const dayKey = currentDate.getDate().toString();
+        reviewsByDay[dayKey] = 0;
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      // Contar reviews por dia
+      filteredReviews.forEach(review => {
+        const createdAt = new Date(review.created_at);
+        const dayKey = createdAt.getDate().toString();
+        reviewsByDay[dayKey] = (reviewsByDay[dayKey] || 0) + 1;
+      });
+      
+      // Converter para o formato esperado pelo gráfico
+      return Object.entries(reviewsByDay).map(([name, value]) => ({ name, value }));
+    } catch (error) {
+      console.error('Erro ao buscar dados de reviews para o gráfico:', error);
+      return [];
+    }
+  }
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -109,13 +250,17 @@ export default function DashboardPage() {
           // Calcular taxa de conversão
           const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
           
+          // Buscar dados reais para os gráficos
+          const productChartData = await fetchProductsChartData(period);
+          const reviewChartData = await fetchReviewsChartData(period);
+          
           setAggregatedStats({
             totalStores: storesData.length,
             totalProducts,
             totalReviews,
             conversionRate,
-            trendsProducts: productChartData,
-            trendsReviews: reviewChartData
+            trendsProducts: productChartData.length > 0 ? productChartData : [],
+            trendsReviews: reviewChartData.length > 0 ? reviewChartData : []
           });
         }
       } catch (err) {
@@ -127,7 +272,7 @@ export default function DashboardPage() {
     }
     
     loadDashboardData();
-  }, []);
+  }, [period]);
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -239,7 +384,10 @@ export default function DashboardPage() {
             </span>
             
             <div className="flex items-center gap-4">
-              <Select defaultValue="month" onValueChange={setPeriod}>
+              <Select defaultValue="month" onValueChange={(value) => {
+                setPeriod(value);
+                setIsLoading(true); // Mostrar loading enquanto atualiza
+              }}>
                 <SelectTrigger className="w-[180px]">
                   <Calendar className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Selecione o período" />
