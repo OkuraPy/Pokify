@@ -966,4 +966,78 @@ export async function generateAIReviews(
       error: error instanceof Error ? error.message : 'Erro desconhecido'
     };
   }
+}
+
+/**
+ * Obtém todas as lojas do usuário atual
+ */
+export async function getUserStores() {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    
+    if (!user?.user) {
+      return { data: [], error: new Error('Usuário não autenticado') };
+    }
+    
+    const { data, error } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('user_id', user.user.id)
+      .order('created_at', { ascending: false });
+    
+    return { data, error };
+  } catch (error) {
+    console.error('Erro ao obter lojas do usuário:', error);
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Erro desconhecido') 
+    };
+  }
+}
+
+/**
+ * Obtém estatísticas gerais de uma loja
+ */
+export async function getStoreStats(storeId: string) {
+  try {
+    // Obter produtos da loja
+    const { data: products, error: productsError } = await getProducts(storeId);
+    
+    if (productsError) {
+      throw productsError;
+    }
+    
+    // Calcular estatísticas
+    let totalReviews = 0;
+    let totalViews = 0;
+    let totalSales = 0;
+    
+    // Se temos produtos, calcular totais
+    if (products && products.length > 0) {
+      totalReviews = products.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
+      
+      // Aqui você poderia fazer outras chamadas para obter mais estatísticas
+      // como vendas e visualizações, se disponíveis no seu sistema
+    }
+    
+    // Também poderíamos buscar vendas da tabela 'vendas'
+    const { data: vendas } = await supabase
+      .from('vendas')
+      .select('*')
+      .eq('store_id', storeId);
+      
+    if (vendas) {
+      totalSales = vendas.length;
+    }
+    
+    return {
+      totalProducts: products?.length || 0,
+      totalReviews,
+      totalViews,
+      totalSales
+    };
+  } catch (error) {
+    console.error('Erro ao obter estatísticas da loja:', error);
+    throw error;
+  }
 } 

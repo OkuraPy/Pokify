@@ -13,7 +13,10 @@ import {
   Edit,
   Trash,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  ShoppingBag,
+  Globe,
+  Star
 } from 'lucide-react';
 import { cn, formatCurrency, formatNumber, getPlatformColor } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -30,6 +33,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Store {
   id: string;
@@ -39,6 +44,10 @@ interface Store {
   products: number;
   orders: number;
   revenue: number;
+  products_count: number;
+  orders_count?: number;
+  last_sync?: string;
+  created_at: string;
 }
 
 interface StoreCardProps {
@@ -46,9 +55,10 @@ interface StoreCardProps {
   maxProducts?: number;
   maxOrders?: number;
   maxRevenue?: number;
+  onClick?: () => void;
 }
 
-export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxRevenue = 100000 }: StoreCardProps) {
+export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxRevenue = 100000, onClick }: StoreCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [isHovered, setIsHovered] = useState(false);
@@ -164,10 +174,13 @@ export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxReven
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Card className={cn(
-          "h-full cursor-pointer transition-all overflow-hidden border-border/80", 
-          isHovered && "border-primary/50"
-        )}>
+        <Card 
+          className={cn(
+            "h-full cursor-pointer transition-all overflow-hidden border-border/80", 
+            isHovered && "border-primary/50"
+          )}
+          onClick={onClick}
+        >
           {/* Borda superior colorida baseada na plataforma */}
           <div className={`h-1.5 w-full ${colorClasses.bg}`} />
           
