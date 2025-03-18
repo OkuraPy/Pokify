@@ -23,15 +23,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Package, Link, Upload, X } from 'lucide-react';
 import { ProductImagesUpload } from '@/components/products/product-images-upload';
+import { createProduct } from '@/lib/supabase';
 
 const formSchema = z.object({
   images: z.array(z.string()).optional(),
   title: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
   description: z.string().min(10, 'Descrição deve ter no mínimo 10 caracteres'),
   price: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, 'Preço deve ser um número positivo'),
+  compare_at_price: z.string().optional().refine((val) => !val || (!isNaN(Number(val)) && Number(val) >= 0), 'Preço comparativo deve ser um número positivo'),
   stock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Estoque deve ser um número positivo'),
   active: z.boolean().default(true),
-  url: z.string().url('URL inválida').optional(),
+  tags: z.string().optional(),
 });
 
 interface ProductFormProps {
@@ -42,7 +44,7 @@ interface ProductFormProps {
 
 export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [method, setMethod] = useState<'manual' | 'import'>('import');
+  const [method, setMethod] = useState<'manual' | 'import'>('manual');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,9 +52,11 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
       title: '',
       description: '',
       price: '',
-      stock: '',
+      compare_at_price: '',
+      stock: '1',
       active: true,
-      url: '',
+      tags: '',
+      images: [],
     },
   });
 
@@ -60,20 +64,43 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
     try {
       setIsLoading(true);
 
-      // Se for o método de importação, redireciona para a página de importação
-      if (method === 'import' && values.url) {
-        window.location.href = `/dashboard/stores/${storeId}/import?url=${encodeURIComponent(values.url)}`;
+      // Preparar o produto para salvar no banco de dados
+      const tagsArray = values.tags ? values.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+      
+      const newProduct = {
+        store_id: storeId,
+        title: values.title,
+        description: values.description,
+        price: parseFloat(values.price),
+        compare_at_price: values.compare_at_price ? parseFloat(values.compare_at_price) : null,
+        stock: parseInt(values.stock, 10),
+        status: values.active ? 'ready' : 'archived',
+        images: values.images || [],
+        tags: tagsArray,
+        reviews_count: 0,
+        average_rating: 0,
+      };
+
+      // Salvar o produto usando a função do Supabase
+      const { data, error } = await createProduct(newProduct);
+
+      if (error) {
+        console.error('Erro ao criar produto:', error);
+        toast.error('Erro ao cadastrar produto: ' + error.message);
         return;
       }
 
-      // Caso contrário, continua com o cadastro manual
-      // TODO: Implementar integração com a API
-      console.log({ storeId, ...values });
       toast.success('Produto adicionado com sucesso!');
       form.reset();
       onClose();
+
+      // Recarregar a página para mostrar o novo produto
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
-      toast.error('Erro ao adicionar produto');
+      console.error('Erro ao enviar formulário:', error);
+      toast.error('Erro ao processar formulário');
     } finally {
       setIsLoading(false);
     }
@@ -81,134 +108,174 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogPortal>
-        <DialogContent className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-3xl -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg overflow-y-auto max-h-[90vh]">
-          <div className="flex flex-col gap-1.5">
-            <DialogTitle className="text-lg font-semibold leading-none tracking-tight">
-              Novo Produto
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Adicione um novo produto à sua loja
-            </DialogDescription>
-          </div>
+      <DialogContent className="sm:max-w-[800px]">
+        <DialogTitle>Novo Produto</DialogTitle>
+        <DialogDescription>
+          Adicione um novo produto à sua loja
+        </DialogDescription>
 
-          <Tabs value={method} onValueChange={(value) => setMethod(value as 'manual' | 'import')}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="import" className="flex items-center gap-2">
-                <Link className="h-4 w-4" />
-                Importar URL
-              </TabsTrigger>
-              <TabsTrigger value="manual" className="flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Cadastro Manual
-              </TabsTrigger>
-            </TabsList>
+        <Tabs defaultValue="manual" value={method} onValueChange={(value) => setMethod(value as 'manual' | 'import')}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="manual">Cadastro Manual</TabsTrigger>
+            <TabsTrigger value="import">Importar Produto</TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="manual">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid gap-6">
-                    <div className="grid grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Título</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Ex: Camiseta Básica" 
-                                className="border-border/60" 
-                                {...field} 
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="price"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Preço</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="99.90" 
-                                  className="border-border/60" 
-                                  {...field}
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="stock"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Estoque</FormLabel>
-                              <FormControl>
-                                <Input 
-                                  placeholder="100" 
-                                  className="border-border/60" 
-                                  {...field}
-                                  type="number"
-                                  min="0"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+          <TabsContent value="import">
+            <div className="space-y-4 py-4">
+              <p className="text-sm text-muted-foreground">
+                Cole a URL de um produto para importar automaticamente suas informações.
+              </p>
+              
+              <FormField
+                control={form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL do Produto</FormLabel>
+                    <FormControl>
+                      <div className="flex gap-2">
+                        <Input placeholder="https://exemplo.com/produto" {...field} />
+                        <Button type="button" className="shrink-0">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Importar
+                        </Button>
                       </div>
-                    </div>
+                    </FormControl>
+                    <FormDescription>
+                      Funciona com AliExpress, Shopify e outros
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
 
+          <TabsContent value="manual">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="description"
+                      name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Descrição</FormLabel>
+                          <FormLabel>Título do Produto</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Descreva as características do produto..."
-                              className="resize-none min-h-[120px] border-border/60"
-                              {...field}
-                            />
+                            <Input placeholder="Ex: Camiseta Estampada" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    <div className="flex items-center justify-between rounded-lg border border-border/60 p-4 bg-secondary/5">
-                      <div className="flex flex-col gap-1">
-                        <Label className="font-medium">Status do Produto</Label>
-                        <span className="text-sm text-muted-foreground">
-                          Produto ficará visível na loja quando ativo
-                        </span>
-                      </div>
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
-                        name="active"
+                        name="price"
                         render={({ field }) => (
                           <FormItem>
+                            <FormLabel>Preço (R$)</FormLabel>
                             <FormControl>
-                              <Switch
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
+                              <Input placeholder="99.90" {...field} />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="compare_at_price"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Preço Comparativo (R$)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="129.90" {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              Opcional
+                            </FormDescription>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="stock"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estoque</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="tags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tags</FormLabel>
+                          <FormControl>
+                            <Input placeholder="roupas, camisetas, etc" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            Separe as tags por vírgula
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="active"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Produto Ativo
+                            </FormLabel>
+                            <FormDescription>
+                              Desative para esconder o produto
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição do Produto</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Descreva seu produto..." 
+                              className="min-h-[150px]" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}
@@ -230,87 +297,28 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
                         </FormItem>
                       )}
                     />
-
-                    <div className="flex items-center justify-center border-2 border-dashed border-border/60 rounded-lg p-8 bg-secondary/5 hover:bg-secondary/10 transition-colors cursor-pointer">
-                      <div className="text-center">
-                        <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <div className="mt-4 flex text-sm leading-6 text-muted-foreground">
-                          <label
-                            htmlFor="file-upload"
-                            className="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary"
-                          >
-                            <span>Envie uma imagem</span>
-                            <input id="file-upload" name="file-upload" type="file" className="sr-only" />
-                          </label>
-                          <p className="pl-1">ou arraste e solte</p>
-                        </div>
-                        <p className="text-xs leading-5 text-muted-foreground">PNG, JPG ou WEBP até 10MB</p>
-                      </div>
-                    </div>
                   </div>
+                </div>
 
-                  <div className="flex justify-end gap-3 mt-6">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={onClose}
-                      disabled={isLoading}
-                      className="border-border/60"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? 'Salvando...' : 'Salvar'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </TabsContent>
-
-            <TabsContent value="import">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL do Produto</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://exemplo.com/produto"
-                            className="border-border/60"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Cole a URL do produto que deseja importar
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="flex justify-end gap-3 mt-6">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={onClose}
-                      disabled={isLoading}
-                      className="border-border/60"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isLoading}>
-                      {isLoading ? 'Importando...' : 'Importar'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </DialogPortal>
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={isLoading}
+                    className="border-border/60"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
     </Dialog>
   );
 }

@@ -383,16 +383,65 @@ export async function getProduct(id: string) {
 }
 
 export async function createProduct(product: Partial<Product>) {
-  const productResult = await supabase
-    .from('products')
-    .insert(product)
-    .select()
-    .single();
+  try {
+    // Certifique-se de que o status é um dos valores permitidos pelo enum product_status
+    if (product.status && !['imported', 'editing', 'ready', 'published', 'archived'].includes(product.status)) {
+      return {
+        data: null,
+        error: new Error('Status do produto inválido')
+      };
+    }
     
-  return { 
-    data: productResult.data, 
-    error: productResult.error 
-  };
+    // Certifique-se de que original_platform (se fornecido) é um dos valores permitidos pelo enum platform_type
+    if (product.original_platform && 
+        !['aliexpress', 'shopify', 'other'].includes(product.original_platform as string)) {
+      return {
+        data: null,
+        error: new Error('Plataforma de origem inválida')
+      };
+    }
+    
+    // Defina as datas de criação e atualização
+    const now = new Date().toISOString();
+    const productWithDates = {
+      ...product,
+      created_at: now,
+      updated_at: now
+    };
+    
+    // Inserir o produto no banco de dados
+    const productResult = await supabase
+      .from('products')
+      .insert(productWithDates)
+      .select()
+      .single();
+    
+    // Se a inserção for bem-sucedida, incrementar o contador de produtos da loja
+    if (productResult.data && !productResult.error) {
+      const { error: updateError } = await supabase
+        .from('stores')
+        .update({ 
+          products_count: supabase.rpc('increment', { x: 1 }),
+          updated_at: now
+        })
+        .eq('id', product.store_id);
+      
+      if (updateError) {
+        console.error('Erro ao atualizar contador de produtos da loja:', updateError);
+      }
+    }
+    
+    return { 
+      data: productResult.data, 
+      error: productResult.error 
+    };
+  } catch (error) {
+    console.error('Erro ao criar produto:', error);
+    return {
+      data: null,
+      error: error instanceof Error ? error : new Error('Erro desconhecido ao criar produto')
+    };
+  }
 }
 
 export async function updateProduct(id: string, product: Partial<Product>) {

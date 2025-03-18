@@ -9,6 +9,8 @@ import { ImagePlus, X, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 interface ProductImagesUploadProps {
   productId: string;
@@ -26,33 +28,52 @@ export function ProductImagesUpload({
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
+    if (images.length + acceptedFiles.length > 5) {
+      toast.error('Máximo de 5 imagens permitidas');
+      return;
+    }
 
     setIsUploading(true);
     try {
-      // TODO: Implementar upload real para a API
-      // Simulando upload
-      const newImages = await Promise.all(
-        acceptedFiles.map(file => {
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              resolve(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-          });
+      const uploadedImageUrls = await Promise.all(
+        acceptedFiles.map(async (file) => {
+          // Criar um nome único para o arquivo
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${productId}/${uuidv4()}.${fileExt}`;
+          
+          // Upload do arquivo para o bucket 'images' no Supabase Storage
+          const { data, error } = await supabase.storage
+            .from('images')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (error) {
+            console.error('Erro ao fazer upload:', error);
+            throw new Error(`Erro ao fazer upload: ${error.message}`);
+          }
+
+          // Obter a URL pública do arquivo
+          const { data: publicUrlData } = supabase.storage
+            .from('images')
+            .getPublicUrl(fileName);
+
+          return publicUrlData.publicUrl;
         })
       );
 
-      const updatedImages = [...images, ...newImages];
+      const updatedImages = [...images, ...uploadedImageUrls];
       setImages(updatedImages);
       onImagesChange?.(updatedImages);
       toast.success('Imagens adicionadas com sucesso!');
     } catch (error) {
+      console.error('Erro no upload:', error);
       toast.error('Erro ao fazer upload das imagens');
     } finally {
       setIsUploading(false);
     }
-  }, [images, onImagesChange]);
+  }, [images, onImagesChange, productId]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -60,12 +81,39 @@ export function ProductImagesUpload({
       'image/*': ['.png', '.jpg', '.jpeg', '.webp']
     },
     maxFiles: 5,
+    maxSize: 10 * 1024 * 1024, // 10MB
   });
 
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages);
-    onImagesChange?.(newImages);
+  const removeImage = async (index: number) => {
+    try {
+      const imageUrl = images[index];
+      
+      // Se for uma URL do Supabase Storage, tenta remover o arquivo
+      if (imageUrl.includes('images')) {
+        // Extrair o path do arquivo da URL
+        const urlParts = imageUrl.split('/');
+        const fileName = urlParts.slice(urlParts.indexOf('images') + 1).join('/');
+        
+        if (fileName) {
+          const { error } = await supabase.storage
+            .from('images')
+            .remove([fileName]);
+          
+          if (error) {
+            console.error('Erro ao remover arquivo:', error);
+          }
+        }
+      }
+      
+      // Atualiza o estado local
+      const newImages = images.filter((_, i) => i !== index);
+      setImages(newImages);
+      onImagesChange?.(newImages);
+      toast.success('Imagem removida');
+    } catch (error) {
+      console.error('Erro ao remover imagem:', error);
+      toast.error('Erro ao remover imagem');
+    }
   };
 
   return (
@@ -90,7 +138,7 @@ export function ProductImagesUpload({
                 Arraste e solte imagens aqui, ou clique para selecionar
               </p>
               <p className="text-xs text-muted-foreground">
-                PNG, JPG ou WEBP (max. 5 arquivos)
+                PNG, JPG ou WEBP (max. 5 arquivos, até 10MB cada)
               </p>
             </>
           )}

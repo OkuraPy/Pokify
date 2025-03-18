@@ -133,14 +133,14 @@ export async function saveExtractedProduct(
       const blob = await response.blob();
       
       const { data, error } = await supabase.storage
-        .from('product-images')
+        .from('images')
         .upload(`${storeId}/${filename}`, blob);
       
       if (error) throw new Error(`Falha ao fazer upload da imagem: ${(error as any).message || 'erro desconhecido'}`);
       
       // Retorna a URL pública da imagem
       const { data: publicUrl } = supabase.storage
-        .from('product-images')
+        .from('images')
         .getPublicUrl(`${storeId}/${filename}`);
       
       return publicUrl.publicUrl;
