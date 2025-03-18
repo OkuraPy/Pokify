@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Star, ShoppingCart, Eye, Pencil, MoreVertical, Trash2 } from 'lucide-react';
+import { Star, ShoppingCart, Eye, Pencil, MoreVertical, Trash2, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,17 +16,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { getProducts } from '@/lib/supabase';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
   title: string;
-  image: string;
+  images: string[];
   price: number;
-  rating: number;
-  reviewsCount: number;
-  status: 'active' | 'inactive';
-  sales: number;
+  compare_at_price?: number;
+  average_rating?: number;
+  reviews_count: number;
+  status: string;
   stock: number;
+  // Outros campos opcionais para estatísticas
+  sales?: number;
 }
 
 interface ProductGridProps {
@@ -34,54 +38,68 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ storeId }: ProductGridProps) {
-  // Mock data - Depois será substituído pela API
   const router = useRouter();
-  const [products] = useState<Product[]>([
-    {
-      id: '1',
-      title: 'Camiseta Básica Masculina Algodão Premium',
-      image: 'https://via.placeholder.com/300',
-      price: 49.90,
-      rating: 4.5,
-      reviewsCount: 128,
-      status: 'active',
-      sales: 256,
-      stock: 45,
-    },
-    {
-      id: '2',
-      title: 'Calça Jeans Slim Fit Masculina',
-      image: 'https://via.placeholder.com/300',
-      price: 149.90,
-      rating: 4.2,
-      reviewsCount: 85,
-      status: 'active',
-      sales: 178,
-      stock: 32,
-    },
-    {
-      id: '3',
-      title: 'Tênis Casual Esportivo Confort',
-      image: 'https://via.placeholder.com/300',
-      price: 199.90,
-      rating: 4.8,
-      reviewsCount: 234,
-      status: 'active',
-      sales: 412,
-      stock: 18,
-    },
-    {
-      id: '4',
-      title: 'Moletom Unissex com Capuz',
-      image: 'https://via.placeholder.com/300',
-      price: 129.90,
-      rating: 4.6,
-      reviewsCount: 156,
-      status: 'inactive',
-      sales: 89,
-      stock: 0,
-    },
-  ]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const { data, error } = await getProducts(storeId);
+        
+        if (error) {
+          console.error('Erro ao carregar produtos:', error);
+          setError('Não foi possível carregar os produtos. Tente novamente mais tarde.');
+          toast.error('Erro ao carregar produtos');
+          return;
+        }
+        
+        setProducts(data || []);
+      } catch (err) {
+        console.error('Erro inesperado:', err);
+        setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
+        toast.error('Erro ao carregar produtos');
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    loadProducts();
+  }, [storeId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground">Carregando produtos...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-4">
+        <div className="p-4 bg-destructive/10 rounded-full">
+          <ShoppingCart className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-medium">Erro ao carregar produtos</h3>
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button 
+            variant="outline" 
+            onClick={() => router.refresh()}
+            className="mt-2"
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (products.length === 0) {
     return (
@@ -109,7 +127,7 @@ export function ProductGrid({ storeId }: ProductGridProps) {
           <CardContent className="p-0">
             <div className="relative aspect-square overflow-hidden bg-secondary/10">
               <Image
-                src={product.image}
+                src={product.images?.[0] || 'https://via.placeholder.com/300?text=Sem+Imagem'}
                 alt={product.title}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -141,44 +159,12 @@ export function ProductGrid({ storeId }: ProductGridProps) {
                 </Badge>
               )}
             </div>
-            <div className="p-5 space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <Link 
-                  href={`/dashboard/stores/${storeId}/products/${product.id}`}
-                  className="font-medium leading-tight hover:text-primary cursor-pointer line-clamp-2"
-                >
-                  {product.title}
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 -mr-2 hover:bg-secondary/80"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push(`/dashboard/stores/${storeId}/products/${product.id}`)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      <span>Visualizar</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push(`/dashboard/stores/${storeId}/import?productId=${product.id}`)}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      <span>Editar</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Excluir</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
+            
+            <div className="p-4 space-y-4">
+              <h3 className="font-medium line-clamp-2 h-12" title={product.title}>
+                {product.title}
+              </h3>
+              
               <div className="grid grid-cols-2 gap-4 py-1">
                 <div className="space-y-1.5">
                   <p className="text-muted-foreground text-xs">Preço</p>
@@ -191,7 +177,7 @@ export function ProductGrid({ storeId }: ProductGridProps) {
                 </div>
                 <div className="space-y-1.5">
                   <p className="text-muted-foreground text-xs">Vendas</p>
-                  <p className="font-medium text-base">{product.sales}</p>
+                  <p className="font-medium text-base">{product.sales || 0}</p>
                 </div>
                 <div className="space-y-1.5">
                   <p className="text-muted-foreground text-xs">Estoque</p>
@@ -201,7 +187,7 @@ export function ProductGrid({ storeId }: ProductGridProps) {
                   <p className="text-muted-foreground text-xs">Avaliação</p>
                   <p className="font-medium text-base flex items-center gap-1">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    {product.rating}
+                    {product.average_rating || 0}
                   </p>
                 </div>
               </div>
@@ -209,13 +195,16 @@ export function ProductGrid({ storeId }: ProductGridProps) {
               <div className="pt-4 border-t border-border/60">
                 <div className="flex items-center justify-between">
                   <Badge 
-                    variant={product.status === 'active' ? 'default' : 'secondary'}
+                    variant={product.status === 'ready' || product.status === 'published' ? 'default' : 'secondary'}
                     className="capitalize font-medium"
                   >
-                    {product.status === 'active' ? 'Ativo' : 'Inativo'}
+                    {product.status === 'ready' ? 'Ativo' : 
+                     product.status === 'published' ? 'Publicado' :
+                     product.status === 'imported' ? 'Importado' :
+                     product.status === 'editing' ? 'Em edição' : 'Arquivado'}
                   </Badge>
                   <p className="text-xs text-muted-foreground">
-                    {product.reviewsCount} avaliações
+                    {product.reviews_count} avaliações
                   </p>
                 </div>
               </div>
