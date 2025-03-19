@@ -664,6 +664,14 @@ export async function extractProductReviews(
 }
 
 // Funções para melhoria de texto com IA
+import OpenAI from 'openai';
+
+// Inicializar cliente OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
+  dangerouslyAllowBrowser: true // Necessário para uso no frontend
+});
+
 export async function enhanceWithAI(
   content: string,
   type: 'product_description' | 'review' | 'product_title',
@@ -778,6 +786,223 @@ export async function generateReviewsWithAI(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido na geração de avaliações.'
+    };
+  }
+}
+
+/**
+ * Gera avaliações usando IA para um produto
+ */
+export async function generateAIReviews(
+  productId: string,
+  count: number,
+  averageRating: number
+): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    // Primeiro, obtemos os dados do produto
+    const { data: product, error: productError } = await getProduct(productId);
+    
+    if (productError || !product) {
+      return {
+        success: false,
+        count: 0,
+        error: productError?.message || 'Produto não encontrado.'
+      };
+    }
+
+    // Verificar se a API Key está configurada
+    if (!openai.apiKey || openai.apiKey === 'sua-chave-api-openai') {
+      return {
+        success: false,
+        count: 0,
+        error: 'Chave da API OpenAI não configurada. Verifique o arquivo .env.'
+      };
+    }
+    
+    // Limitar o número de avaliações (segurança)
+    const reviewCount = Math.min(Math.max(count, 1), 100);
+    
+    // Construir o prompt para a geração de avaliações
+    const systemPrompt = `Você é um assistente especializado em gerar reviews de clientes autênticos e persuasivos para produtos de e-commerce. 
+    Você deve gerar cada review como se fosse escrito por um cliente real, com personalidade, histórias e detalhes pessoais.
+    
+    REGRAS IMPORTANTES:
+    - Gere exatamente o número de reviews solicitado
+    - Cada review deve ter um nome de autor, conteúdo detalhado, data (dos últimos 30 dias), e uma classificação em estrelas aleatória que se aproxime da média solicitada
+    - Use linguagem natural, como se fosse realmente escrita por clientes diferentes
+    - Evite frases genéricas como "altamente recomendado" e "excelente produto" em todos os reviews
+    - Inclua detalhes específicos sobre como o produto foi usado ou afetou a vida do cliente
+    - Inclua pelo menos 10% de reviews com pequenas críticas construtivas, mas ainda positivos no geral
+    - Incorpore diferentes personalidades e estilos de escrita
+    - Inclua alguns casos convincentes de desconfiança inicial seguida por satisfação com o produto
+    - Mencione benefícios específicos e experiências reais com o produto
+    - Cada review deve ter no mínimo 240 caracteres para ser rico em detalhes
+    - Evite repetir as mesmas experiências ou razões para gostar do produto
+    - Os nomes de clientes devem ser brasileiros
+    - Os emails podem ser de qualquer provedor comum (gmail, hotmail, outlook, etc)
+    - Mantenha um tom natural, não exagere em adjetivos positivos
+    
+    Por fim, retorne os dados no formato JSON EXATO a seguir:
+    {
+      "reviews": [
+        {
+          "author": "Nome Completo",
+          "content": "Conteúdo do review",
+          "rating": 5,
+          "date": "2023-03-15T14:48:00.000Z"
+        },
+        ... mais reviews
+      ]
+    }
+    
+    Mantenha sua resposta apenas neste formato JSON, sem introdução ou conclusão.`;
+    
+    const userPrompt = `Gere ${reviewCount} reviews persuasivos em português para o seguinte produto:
+    
+    Título: ${product.title}
+    Descrição: ${product.description}
+    
+    A média geral das avaliações deve ser aproximadamente ${averageRating.toFixed(1)}/5.0. Lembre-se de criar reviews com detalhes específicos que mostrem como o produto beneficia os usuários e supera possíveis objeções.
+    
+    ATENÇÃO: Retorne APENAS JSON válido, nenhum texto adicional ou formatação.`;
+    
+    // Fazer a chamada para a OpenAI
+    console.log('Gerando avaliações com OpenAI...');
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo-1106',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.8
+    });
+    
+    // Extrair o JSON gerado
+    const generatedContent = completion.choices[0].message.content || '';
+    
+    if (!generatedContent) {
+      return {
+        success: false,
+        count: 0,
+        error: 'Não foi possível gerar as avaliações'
+      };
+    }
+    
+    // Parsear o JSON retornado
+    try {
+      // Tentar extrair o JSON da resposta, mesmo que esteja dentro de um bloco de código
+      let jsonContent = generatedContent;
+      
+      // Se o conteúdo tiver blocos de código markdown, extrair apenas o JSON
+      if (generatedContent.includes("```json")) {
+        const jsonMatch = generatedContent.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch && jsonMatch[1]) {
+          jsonContent = jsonMatch[1];
+        }
+      } else if (generatedContent.includes("```")) {
+        const codeMatch = generatedContent.match(/```\n([\s\S]*?)\n```/);
+        if (codeMatch && codeMatch[1]) {
+          jsonContent = codeMatch[1];
+        }
+      }
+      
+      // O modelo pode retornar o JSON em diferentes formatos, tentamos normalizar
+      const parsedResponse = JSON.parse(jsonContent);
+      
+      // O modelo pode retornar um array diretamente ou um objeto com uma propriedade contendo o array
+      let reviews: any[] = [];
+      
+      if (Array.isArray(parsedResponse)) {
+        reviews = parsedResponse;
+      } else if (parsedResponse.reviews && Array.isArray(parsedResponse.reviews)) {
+        reviews = parsedResponse.reviews;
+      } else {
+        // Tentar encontrar qualquer array no objeto retornado
+        const possibleArrays = Object.values(parsedResponse).filter(value => Array.isArray(value));
+        if (possibleArrays.length > 0) {
+          // Usar o primeiro array encontrado
+          reviews = possibleArrays[0] as any[];
+        }
+      }
+      
+      if (reviews.length === 0) {
+        return {
+          success: false,
+          count: 0,
+          error: 'Formato de resposta inválido'
+        };
+      }
+      
+      // Processar e normalizar os reviews
+      const processedDate = new Date().toISOString();
+      const processReview = (review: any) => {
+        const processedReview = {
+          productId,
+          author: review.author || 'Cliente Anônimo',
+          rating: parseInt(review.rating) || 5,
+          content: review.content || '',
+          date: new Date(review.date) || new Date(),
+          is_selected: true,
+          is_published: true,
+          created_at: new Date()
+        };
+        
+        return processedReview;
+      };
+      
+      const normalizedReviews = reviews.map(processReview);
+      
+      // Inserir avaliações no banco de dados
+      const reviewsToInsert = normalizedReviews.map(review => ({
+        product_id: productId,
+        author: review.author,
+        rating: review.rating,
+        content: review.content,
+        date: review.date.toISOString(),
+        images: [],
+        is_selected: true,
+        is_published: true,
+        created_at: new Date().toISOString()
+      }));
+      
+      const { error: insertError } = await supabase
+        .from('reviews')
+        .insert(reviewsToInsert);
+        
+      if (insertError) {
+        console.error('Erro ao inserir avaliações:', insertError);
+        return { 
+          success: false, 
+          count: 0,
+          error: insertError.message
+        };
+      }
+      
+      // Atualizar o contador de avaliações do produto
+      await updateProduct(productId, {
+        reviews_count: (product.reviews_count || 0) + reviewsToInsert.length,
+        average_rating: averageRating
+      });
+      
+      return { 
+        success: true, 
+        count: reviewsToInsert.length 
+      };
+      
+    } catch (parseError) {
+      console.error('Erro ao processar avaliações geradas:', parseError);
+      return {
+        success: false,
+        count: 0,
+        error: parseError instanceof Error ? parseError.message : 'Erro ao processar resposta'
+      };
+    }
+  } catch (error) {
+    console.error('Erro ao gerar avaliações:', error);
+    return {
+      success: false,
+      count: 0,
+      error: error instanceof Error ? error.message : 'Erro desconhecido'
     };
   }
 }
@@ -913,62 +1138,6 @@ export async function importReviewsFromUrl(
 }
 
 /**
- * Gera avaliações usando IA para um produto
- */
-export async function generateAIReviews(
-  productId: string,
-  count: number,
-  averageRating: number
-): Promise<{ success: boolean; count: number; error?: string }> {
-  try {
-    // Primeiro, obtemos os dados do produto
-    const { data: product, error: productError } = await getProduct(productId);
-    
-    if (productError || !product) {
-      return {
-        success: false,
-        count: 0,
-        error: productError?.message || 'Produto não encontrado.'
-      };
-    }
-    
-    // Chamar a função Edge do Supabase para gerar avaliações
-    const { data, error } = await supabase.functions.invoke('generate-reviews', {
-      body: {
-        product_id: productId,
-        product_title: product.title,
-        product_description: product.description,
-        count,
-        average_rating: averageRating
-      }
-    });
-    
-    if (error) {
-      console.error('Erro ao gerar avaliações:', error);
-      return { success: false, count: 0, error: error.message };
-    }
-    
-    // Atualizar o contador de avaliações do produto
-    await updateProduct(productId, {
-      reviews_count: (product.reviews_count || 0) + (data?.reviewsCount || 0),
-      average_rating: data?.newAverageRating || product.average_rating
-    });
-    
-    return { 
-      success: true, 
-      count: data?.reviewsCount || 0 
-    };
-  } catch (error) {
-    console.error('Erro ao gerar avaliações:', error);
-    return {
-      success: false,
-      count: 0,
-      error: error instanceof Error ? error.message : 'Erro desconhecido'
-    };
-  }
-}
-
-/**
  * Obtém todas as lojas do usuário atual
  */
 export async function getUserStores() {
@@ -1070,7 +1239,6 @@ export async function getUserProfile() {
     return { 
       data: {
         ...data,
-        email: authData.user.email
       }, 
       error: null 
     };
@@ -1135,4 +1303,4 @@ export async function updateUserProfile(updates: Partial<{
       error: error instanceof Error ? error : new Error('Erro desconhecido') 
     };
   }
-} 
+}

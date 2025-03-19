@@ -79,24 +79,26 @@ serve(async (req) => {
     }
 
     // Limitar o número de avaliações
-    const reviewCount = Math.min(Math.max(count, 1), 20); // Entre 1 e 20
+    const reviewCount = Math.min(Math.max(count, 1), 100); // Entre 1 e 100
 
     // Construir o prompt para a geração de avaliações
-    const systemPrompt = `Você é um especialista em criar avaliações de produtos realistas e autênticas para e-commerce.
-    Seu trabalho é gerar avaliações que pareçam escritas por clientes reais, em ${language}.`;
+    const systemPrompt = `Você é um copywriter especializado em produtos físicos e deve criar reviews persuasivos de clientes satisfeitos para um produto de e-commerce.`;
     
-    const userPrompt = `Gere ${reviewCount} avaliações diferentes para o seguinte produto:
+    const userPrompt = `Gere ${reviewCount} reviews autênticos e persuasivos para o seguinte produto:
     
     Título: ${productTitle}
     Descrição: ${productDescription}
     
     Requisitos:
-    1. Cada avaliação deve ter um rating entre ${rating.min} e ${rating.max} estrelas
-    2. Cada avaliação deve ter um nome de autor realista
-    3. Cada avaliação deve ter uma data nos últimos 6 meses
-    4. Cada avaliação deve ter um texto de 2-5 frases, específico sobre o produto
-    5. 30% das avaliações devem mencionar algum aspecto negativo menor
-    6. Avaliações devem ser variadas em estilo, comprimento e foco
+    1. Cada review deve ter um rating entre ${rating.min} e ${rating.max} estrelas
+    2. Cada review deve ter um nome de autor realista
+    3. Cada review deve ter uma data nos últimos 6 meses
+    4. Use um tom natural, como se fosse um cliente real
+    5. Inclua detalhes pessoais para aumentar a credibilidade (exemplo: idade, experiência anterior, mudança sentida após usar o produto)
+    6. Mostre entusiasmo genuíno e satisfação com a compra
+    7. Utilize gatilhos mentais como prova social e reciprocidade
+    8. Reviews devem ser variados em estilo, comprimento e foco
+    9. Alguns reviews podem abordar e quebrar objeções comuns sobre esse tipo de produto
     
     Formate as avaliações em formato JSON como este array:
     [

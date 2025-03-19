@@ -40,7 +40,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [importMethod, setImportMethod] = useState<'csv' | 'url' | 'ai'>('url');
+  const [importMethod, setImportMethod] = useState<'csv' | 'url' | 'ai'>('ai');
   const [isImporting, setIsImporting] = useState(false);
   
   // Estados para importação via URL
@@ -357,12 +357,12 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Importar Avaliações</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-muted-foreground">
               Escolha uma opção para importar avaliações para este produto.
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs defaultValue="url" value={importMethod} onValueChange={(v) => setImportMethod(v as any)}>
+          <Tabs defaultValue="ai" value={importMethod} onValueChange={(value) => setImportMethod(value as 'url' | 'csv' | 'ai')}>
             <TabsList className="grid grid-cols-3 mb-4">
               <TabsTrigger value="url" className="flex items-center gap-1">
                 <Link className="h-4 w-4" />
@@ -437,48 +437,49 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
             </TabsContent>
             
             <TabsContent value="ai" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Quantidade de Avaliações</Label>
-                <div className="flex flex-col space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-xs text-muted-foreground">1</span>
-                    <span className="text-xs font-medium">{reviewCount}</span>
-                    <span className="text-xs text-muted-foreground">20</span>
-                  </div>
-                  <Slider 
-                    value={[reviewCount]} 
-                    min={1} 
-                    max={20} 
-                    step={1} 
-                    onValueChange={(value) => setReviewCount(value[0])} 
+              <div className="grid gap-2 mb-3">
+                <Label htmlFor="reviewCount">Quantidade de Avaliações</Label>
+                <div className="flex items-center">
+                  <span className="w-10 text-sm">1</span>
+                  <Slider
+                    id="reviewCount"
+                    className="flex-1 mx-3"
+                    value={[reviewCount]}
+                    min={1}
+                    max={100}
+                    step={1}
+                    onValueChange={(value) => setReviewCount(value[0])}
                   />
+                  <span className="w-10 text-sm text-right">{reviewCount}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Selecione quantas avaliações deseja gerar
-                </p>
               </div>
               
-              <div className="space-y-2">
-                <Label>Média de Avaliação</Label>
-                <div className="flex flex-col space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-xs text-muted-foreground">1.0</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-medium">{averageRating.toFixed(1)}</span>
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    </div>
-                    <span className="text-xs text-muted-foreground">5.0</span>
-                  </div>
+              <div className="grid gap-2 mb-3">
+                <Label htmlFor="averageRating">Média de Avaliação</Label>
+                <div className="flex items-center">
+                  <span className="w-10 text-sm">1.0</span>
                   <Slider 
+                    id="averageRating"
+                    className="flex-1 mx-3"
                     value={[averageRating]} 
                     min={1} 
                     max={5} 
                     step={0.1} 
                     onValueChange={(value) => setAverageRating(value[0])} 
                   />
+                  <span className="flex items-center gap-1 text-sm">
+                    {averageRating.toFixed(1)}
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Escolha a média de estrelas das avaliações geradas
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                <p className="font-medium">Avaliações Persuasivas com IA</p>
+                <p className="text-muted-foreground">
+                  Gera reviews realistas e persuasivos, utilizando dados específicos do produto.
+                  As avaliações seguem uma abordagem de copywriting que ressalta as qualidades do produto
+                  e aborda possíveis objeções de compra.
                 </p>
               </div>
             </TabsContent>
