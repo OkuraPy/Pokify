@@ -29,13 +29,16 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [stores, setStores] = useState<any[]>([]);
   const [period, setPeriod] = useState('month');
+  
+  type ChartDataItem = { name: string; value: number };
+  
   const [aggregatedStats, setAggregatedStats] = useState({
     totalStores: 0,
     totalProducts: 0,
     totalReviews: 0,
     conversionRate: 0,
-    trendsProducts: [],
-    trendsReviews: []
+    trendsProducts: [] as ChartDataItem[],
+    trendsReviews: [] as ChartDataItem[]
   });
 
   // Dados de exemplo para gráficos
@@ -107,7 +110,7 @@ export default function DashboardPage() {
       });
       
       // Agrupar produtos por dia
-      const productsByDay = {};
+      const productsByDay: { [key: string]: number } = {};
       
       // Inicializar todos os dias no período com zero produtos
       let currentDate = new Date(startDate);
@@ -181,7 +184,7 @@ export default function DashboardPage() {
       });
       
       // Agrupar reviews por dia
-      const reviewsByDay = {};
+      const reviewsByDay: { [key: string]: number } = {};
       
       // Inicializar todos os dias no período com zero reviews
       let currentDate = new Date(startDate);

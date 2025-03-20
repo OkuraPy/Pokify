@@ -146,8 +146,8 @@ export async function getStoreById(
       url: data.url || '',
       products_count: data.products_count || 0,
       orders_count: data.orders_count || 0,
-      last_sync: data.last_sync ? new Date(data.last_sync) : undefined,
-      created_at: new Date(data.created_at)
+      last_sync: data.last_sync || undefined,
+      created_at: data.created_at
     };
     
     console.log('[getStoreById] Loja formatada:', store);
@@ -197,7 +197,19 @@ export async function updateStore(
     }
     
     // Remover campos que não existem na tabela
-    const { access_token, ...updateData } = storeData;
+    const { access_token, ...storeDataWithoutToken } = storeData;
+    
+    // Criar um novo objeto garantindo que todos os campos Date sejam convertidos para string
+    const updateData: Record<string, any> = {};
+    
+    // Processar todos os campos, convertendo Date para string ISO
+    Object.entries(storeDataWithoutToken).forEach(([key, value]) => {
+      if (typeof value === 'object' && value !== null && 'toISOString' in value) {
+        updateData[key] = (value as Date).toISOString();
+      } else {
+        updateData[key] = value;
+      }
+    });
     
     // Contornar os problemas de tipagem com o Supabase
     const { error } = await (supabase

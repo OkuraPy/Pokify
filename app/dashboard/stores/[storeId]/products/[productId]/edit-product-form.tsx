@@ -117,9 +117,11 @@ export function EditProductForm({ storeId, productId }: EditProductFormProps) {
         title: values.title,
         description: values.description,
         price: parseFloat(values.price),
-        compare_at_price: values.compare_at_price ? parseFloat(values.compare_at_price) : null,
+        compare_at_price: values.compare_at_price ? parseFloat(values.compare_at_price) : undefined,
         stock: parseInt(values.stock, 10),
-        status: values.active ? (initialData.status === 'published' ? 'published' : 'ready') : 'archived',
+        status: values.active 
+          ? (initialData.status === 'published' ? 'published' : 'ready') 
+          : 'archived' as 'published' | 'ready' | 'archived',
         images: values.images || [],
         tags: tagsArray,
         updated_at: new Date().toISOString(),

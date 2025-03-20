@@ -11,7 +11,7 @@ interface ProductInfoProps {
     id: string;
     title: string;
     price: number;
-    compare_at_price?: number;
+    compare_at_price?: number | null;
     stock: number;
     status: string;
     reviews_count: number;

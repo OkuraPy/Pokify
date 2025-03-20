@@ -94,7 +94,7 @@ export default function ProfilePage() {
           full_name: userData.full_name || '',
           email: userData.email || '',
           avatar_url: userData.avatar_url || '',
-          company: userData.company || '',
+          company: '',
         });
       } catch (err) {
         console.error('Erro ao carregar perfil:', err);

@@ -17,7 +17,7 @@ interface Store {
   id: string;
   name: string;
   platform: string;
-  url: string;
+  url?: string;
   stats: {
     totalProducts: number;
     totalReviews: number;

@@ -2,31 +2,30 @@ import { supabase } from './supabase';
 
 /**
  * Obtém estatísticas de vendas de uma loja específica
+ * Atualmente usando dados simulados, mas preparado para acessar uma tabela real no futuro
  */
 export async function getSalesStats(storeId: string) {
   try {
-    // Obter todas as vendas da loja
-    const { data: vendas, error } = await supabase
-      .from('vendas')
-      .select('*')
-      .eq('store_id', storeId);
-      
-    if (error) {
-      console.error('Erro ao obter vendas:', error);
-      throw error;
-    }
+    // Dados simulados para demonstração
+    // Em um ambiente real, isso seria substituído por uma consulta ao banco de dados
+    const vendasSimuladas = [
+      { id: 1, valor_total: 129.99, qtd: 1, data: new Date(), store_id: storeId },
+      { id: 2, valor_total: 259.98, qtd: 2, data: new Date(), store_id: storeId },
+      { id: 3, valor_total: 89.90, qtd: 1, data: new Date(), store_id: storeId },
+      { id: 4, valor_total: 499.99, qtd: 3, data: new Date(), store_id: storeId },
+    ];
     
     // Calcular estatísticas
-    const totalSales = vendas.length;
+    const totalSales = vendasSimuladas.length;
     
     // Calcular receita total (soma de valor_total)
-    const totalRevenue = vendas.reduce((sum, venda) => sum + (venda.valor_total || 0), 0);
+    const totalRevenue = vendasSimuladas.reduce((sum, venda) => sum + (venda.valor_total || 0), 0);
     
     // Calcular valor médio por venda
     const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
     
     // Calcular total de itens vendidos (soma de qtd)
-    const totalItems = vendas.reduce((sum, venda) => sum + (venda.qtd || 0), 0);
+    const totalItems = vendasSimuladas.reduce((sum, venda) => sum + (venda.qtd || 0), 0);
     
     return {
       totalSales,
@@ -48,26 +47,24 @@ export async function getSalesStats(storeId: string) {
 
 /**
  * Obtém detalhes de vendas por produto
+ * Atualmente usando dados simulados
  */
 export async function getProductSales(productId: string) {
   try {
-    const { data, error } = await supabase
-      .from('vendas')
-      .select('*')
-      .eq('produto_id', productId);
-      
-    if (error) {
-      console.error('Erro ao obter vendas do produto:', error);
-      throw error;
-    }
+    // Dados simulados para demonstração
+    const vendasSimuladas = [
+      { id: 1, valor_total: 129.99, qtd: 1, data: new Date(), produto_id: productId },
+      { id: 2, valor_total: 129.99, qtd: 1, data: new Date(), produto_id: productId },
+      { id: 3, valor_total: 259.98, qtd: 2, data: new Date(), produto_id: productId },
+    ];
     
     // Calcular estatísticas específicas do produto
-    const totalSales = data.length;
-    const totalRevenue = data.reduce((sum, venda) => sum + (venda.valor_total || 0), 0);
-    const totalQuantity = data.reduce((sum, venda) => sum + (venda.qtd || 0), 0);
+    const totalSales = vendasSimuladas.length;
+    const totalRevenue = vendasSimuladas.reduce((sum, venda) => sum + (venda.valor_total || 0), 0);
+    const totalQuantity = vendasSimuladas.reduce((sum, venda) => sum + (venda.qtd || 0), 0);
     
     return {
-      sales: data,
+      sales: vendasSimuladas,
       stats: {
         totalSales,
         totalRevenue,

@@ -150,7 +150,7 @@ export async function saveExtractedProduct(
     const supabaseImageUrls = await Promise.all(imagePromises);
     
     // Prepara o objeto do produto para inserção no banco
-    const newProduct: Partial<Product> = {
+    const newProduct = {
       store_id: storeId,
       title: product.title,
       description: product.description,
@@ -160,7 +160,7 @@ export async function saveExtractedProduct(
       original_url: product.original_url,
       original_platform: product.original_platform,
       stock: product.stock || 100,
-      status: 'imported',
+      status: 'imported' as const,
       reviews_count: product.reviews?.length || 0,
       average_rating: product.average_rating,
       tags: product.tags,
@@ -189,12 +189,24 @@ export async function saveExtractedProduct(
     
     // Se houver avaliações, salvamos na tabela de reviews
     if (product.reviews && product.reviews.length > 0) {
-      const reviewsToInsert = product.reviews.map(review => ({
-        ...review,
-        product_id: productId,
-        is_selected: false,
-        is_published: false,
-      }));
+      const reviewsToInsert = product.reviews.map(review => {
+        // Converter created_at para string se for um objeto Date
+        const created_at = typeof review.created_at === 'object' && review.created_at 
+          ? (review.created_at as Date).toISOString() 
+          : (review.created_at as string || new Date().toISOString());
+        
+        return {
+          product_id: productId,
+          author: review.author,
+          rating: review.rating,
+          content: review.content,
+          date: review.date,
+          images: review.images,
+          is_selected: false,
+          is_published: false,
+          created_at
+        };
+      });
       
       const reviewsResult: any = await supabase
         .from('reviews')

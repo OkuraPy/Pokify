@@ -314,7 +314,26 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      debug_get_store: {
+        Args: {
+          store_id: string
+        }
+        Returns: {
+          id: string
+          name: string
+          user_id: string
+          platform: "aliexpress" | "shopify" | "other"
+          url: string | null
+          api_key: string | null
+          api_secret: string | null
+          api_version: string | null
+          products_count: number
+          orders_count: number
+          last_sync: string | null
+          created_at: string
+          updated_at: string
+        }
+      }
     }
     Enums: {
       platform_type: "aliexpress" | "shopify" | "other"

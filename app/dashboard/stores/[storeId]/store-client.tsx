@@ -41,7 +41,7 @@ export function StoreClient({ storeId }: StoreClientProps) {
   const router = useRouter();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export function StoreClient({ storeId }: StoreClientProps) {
           return;
         }
         
-        setStore(storeData);
+        setStore(storeData as any);
         
         // Carregar produtos da loja
         const { data: productsData, error: productsError } = await getProducts(storeId);
@@ -77,7 +77,7 @@ export function StoreClient({ storeId }: StoreClientProps) {
         
         // Calcular o total de avaliações somando reviews_count de todos os produtos
         if (productsData) {
-          const reviewsCount = productsData.reduce((total, product) => total + (product.reviews_count || 0), 0);
+          const reviewsCount = productsData.reduce((total: number, product: any) => total + (product.reviews_count || 0), 0);
           setTotalReviews(reviewsCount);
         }
         
@@ -150,7 +150,15 @@ export function StoreClient({ storeId }: StoreClientProps) {
   return (
     <div className="flex-1 space-y-6 p-6 bg-background">
       <StoreHeader 
-        store={store}
+        store={{
+          ...store!,
+          stats: {
+            totalProducts: store?.products_count || 0,
+            totalReviews: totalReviews,
+            conversionRate: stats?.averageOrderValue || 0,
+            lastSync: store?.last_sync || new Date().toISOString()
+          }
+        }}
         onAddProduct={() => setIsFormOpen(true)}
         totalReviews={totalReviews}
       />

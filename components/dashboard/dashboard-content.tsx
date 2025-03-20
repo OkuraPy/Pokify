@@ -56,9 +56,9 @@ export function DashboardContent() {
             url: store.url || undefined,
             stats: {
               totalProducts: store.products_count || 0,
-              totalReviews: 0, // Estes dados podem ser obtidos de outra consulta ou calculados
-              conversionRate: 0, // Idem
-              lastSync: store.last_sync || new Date().toISOString(),
+              totalReviews: 0, // Substituir por valor real quando disponível
+              conversionRate: 0, // Substituir por valor real quando disponível
+              lastSync: typeof store.last_sync === 'string' ? store.last_sync : new Date().toISOString()
             },
           }));
           
