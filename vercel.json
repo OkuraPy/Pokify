@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build-vercel",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["gru1"],
@@ -21,6 +21,16 @@
           "value": "1; mode=block"
         }
       ]
+    }
+  ],
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "installCommand": "npm install --legacy-peer-deps",
+        "buildCommand": "npm run build-vercel"
+      }
     }
   ]
 } 

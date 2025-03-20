@@ -10,6 +10,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  swcMinify: false,
+  output: 'standalone',
+  experimental: {
+    forceSwcTransforms: true,
+  }
 };
 
 module.exports = nextConfig;
