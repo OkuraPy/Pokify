@@ -286,7 +286,7 @@ export default function DashboardPage() {
             Gerencie suas lojas e acompanhe o desempenho
           </p>
         </div>
-        <Button onClick={() => router.push('/dashboard/stores/new')}>
+        <Button onClick={() => router.push('/dashboard/stores')}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Loja
         </Button>
@@ -486,7 +486,7 @@ export default function DashboardPage() {
                   />
                 ))}
                 
-                <Card className="flex flex-col items-center justify-center p-6 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => router.push('/dashboard/stores/new')}>
+                <Card className="flex flex-col items-center justify-center p-6 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => router.push('/dashboard/stores')}>
                   <div className="rounded-full bg-primary/10 p-3 mb-4">
                     <Plus className="h-6 w-6 text-primary" />
                   </div>

@@ -212,7 +212,7 @@ export default function ProfilePage() {
               Gerencie suas lojas e produtos ({storesCount}/{storesLimit})
             </p>
           </div>
-          <Button onClick={() => router.push('/dashboard/stores/new')}>
+          <Button onClick={() => router.push('/dashboard/stores')}>
             Adicionar Nova Loja
           </Button>
         </div>
