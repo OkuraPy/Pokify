@@ -10,7 +10,6 @@ import { StoreHeader } from './store-header';
 import { StoreStats } from './store-stats';
 import { ProductForm } from './product-form';
 import { getStore, getProducts, getReviews } from '@/lib/supabase';
-import { getSalesStats } from '@/lib/sales-service';
 import { toast } from 'sonner';
 
 interface Store {
@@ -76,30 +75,42 @@ export function StoreClient({ storeId }: StoreClientProps) {
         }
         
         // Calcular o total de avaliações somando reviews_count de todos os produtos
+        let totalReviews = 0;
+        let totalRating = 0;
+        let readyProducts = 0;
+        let pendingProducts = 0;
+        
         if (productsData) {
-          const reviewsCount = productsData.reduce((total: number, product: any) => total + (product.reviews_count || 0), 0);
-          setTotalReviews(reviewsCount);
+          // Calcular avaliações totais
+          totalReviews = productsData.reduce((total, product) => total + (product.reviews_count || 0), 0);
+          setTotalReviews(totalReviews);
+          
+          // Calcular média das avaliações
+          const productsWithRating = productsData.filter(product => product.average_rating && product.average_rating > 0);
+          if (productsWithRating.length > 0) {
+            totalRating = productsWithRating.reduce((sum, product) => sum + (product.average_rating || 0), 0);
+            totalRating = totalRating / productsWithRating.length;
+          }
+          
+          // Contar produtos por status
+          readyProducts = productsData.filter(product => 
+            product.status === 'ready' || product.status === 'published'
+          ).length;
+          
+          pendingProducts = productsData.filter(product => 
+            product.status === 'imported' || product.status === 'editing'
+          ).length;
         }
         
-        // Carregar estatísticas de vendas
-        try {
-          const salesStats = await getSalesStats(storeId);
-          setStats({
-            totalSales: salesStats.totalSales,
-            totalRevenue: salesStats.totalRevenue,
-            averageOrderValue: salesStats.averageOrderValue,
-            productsSold: salesStats.totalItems
-          });
-        } catch (statsError) {
-          console.error('Erro ao carregar estatísticas:', statsError);
-          // Criar estatísticas vazias se houver erro
-          setStats({
-            totalSales: 0,
-            totalRevenue: 0,
-            averageOrderValue: 0,
-            productsSold: 0
-          });
-        }
+        // Configurar as estatísticas
+        setStats({
+          totalProducts: productsData?.length || 0,
+          totalReviews,
+          averageRating: totalRating,
+          readyProducts,
+          pendingProducts,
+          lastSync: store?.last_sync
+        });
       } catch (err) {
         console.error('Erro ao carregar dados da loja:', err);
         setError('Ocorreu um erro ao carregar os dados da loja');
@@ -164,10 +175,11 @@ export function StoreClient({ storeId }: StoreClientProps) {
       />
 
       <StoreStats stats={stats || {
-        totalSales: 0,
-        totalRevenue: 0,
-        averageOrderValue: 0,
-        productsSold: 0
+        totalProducts: 0,
+        totalReviews: 0,
+        averageRating: 0,
+        readyProducts: 0,
+        pendingProducts: 0
       }} />
 
       <Card>
