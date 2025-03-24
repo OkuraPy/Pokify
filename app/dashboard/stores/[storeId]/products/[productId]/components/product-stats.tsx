@@ -1,5 +1,8 @@
 'use client';
 
+// Cliente-side apenas
+export const dynamic = 'force-dynamic';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatPrice } from '@/lib/utils';
 import { Chart } from '@/components/charts/apex-chart';

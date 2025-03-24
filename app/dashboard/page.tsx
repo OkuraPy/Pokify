@@ -1,5 +1,9 @@
 'use client';
 
+// Este comentário força o Next.js a tratar esta página como client-side only
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge'; // optional
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
