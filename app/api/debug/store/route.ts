@@ -4,6 +4,13 @@ import { supabase } from '@/lib/supabase';
 // Endpoint para buscar uma loja específica pelo ID
 export async function GET(request: Request) {
   try {
+    // Esta função foi temporariamente desativada para o deploy
+    return NextResponse.json({
+      success: false,
+      error: 'Endpoint de debug desativado temporariamente'
+    }, { status: 503 });
+
+    /*
     // Extrair o ID da loja da URL
     const { searchParams } = new URL(request.url);
     const storeId = searchParams.get('id');
@@ -19,7 +26,7 @@ export async function GET(request: Request) {
     
     // Buscar os detalhes da loja diretamente do banco, ignorando RLS
     const { data, error } = await supabase
-      .rpc('debug_get_store', { store_id: storeId });
+      .rpc('debug_get_store', { store_id: storeId } as { store_id: string });
     
     if (error) {
       console.error('[DEBUG API] Erro ao buscar loja:', error);
@@ -56,6 +63,7 @@ export async function GET(request: Request) {
       success: true,
       store: store
     });
+    */
     
   } catch (error) {
     console.error('[DEBUG API] Erro ao processar requisição:', error);

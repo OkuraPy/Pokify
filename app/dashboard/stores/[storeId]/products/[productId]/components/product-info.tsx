@@ -11,12 +11,12 @@ interface ProductInfoProps {
     id: string;
     title: string;
     price: number;
-    compare_at_price?: number;
+    compare_at_price?: number | null;
     stock: number;
     status: string;
     reviews_count: number;
-    average_rating?: number;
-    shopify_product_id?: string;
+    average_rating?: number | null;
+    shopify_product_id?: string | null;
     created_at: string;
     updated_at: string;
     sales?: number;

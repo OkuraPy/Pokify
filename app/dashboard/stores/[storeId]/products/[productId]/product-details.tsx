@@ -23,22 +23,24 @@ interface ProductDetailsProps {
 interface Product {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   price: number;
-  compare_at_price?: number;
+  compare_at_price?: number | null;
   stock: number;
   status: string;
   images: string[];
-  tags?: string[];
+  tags?: string[] | null;
   reviews_count: number;
-  average_rating?: number;
-  original_url?: string;
-  original_platform?: string;
-  shopify_product_id?: string;
-  shopify_product_url?: string;
-  variants?: any;
+  average_rating?: number | null;
+  original_url?: string | null;
+  original_platform?: 'aliexpress' | 'shopify' | 'other' | null;
+  shopify_product_id?: string | null;
+  shopify_product_url?: string | null;
+  variants?: any | null;
   created_at: string;
   updated_at: string;
+  store_id: string;
+  reviews?: any[];
 }
 
 export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
@@ -67,7 +69,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           return;
         }
         
-        setProduct(data);
+        setProduct(data as unknown as Product);
       } catch (err) {
         console.error('Erro inesperado:', err);
         setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');

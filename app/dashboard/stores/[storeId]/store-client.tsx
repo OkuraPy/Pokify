@@ -77,7 +77,7 @@ export function StoreClient({ storeId }: StoreClientProps) {
         
         // Calcular o total de avaliações somando reviews_count de todos os produtos
         if (productsData) {
-          const reviewsCount = productsData.reduce((total, product) => total + (product.reviews_count || 0), 0);
+          const reviewsCount = productsData.reduce((total: number, product: any) => total + (product.reviews_count || 0), 0);
           setTotalReviews(reviewsCount);
         }
         

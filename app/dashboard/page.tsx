@@ -34,8 +34,8 @@ export default function DashboardPage() {
     totalProducts: 0,
     totalReviews: 0,
     conversionRate: 0,
-    trendsProducts: [],
-    trendsReviews: []
+    trendsProducts: [] as { name: string; value: number }[],
+    trendsReviews: [] as { name: string; value: number }[]
   });
 
   // Dados de exemplo para gráficos
@@ -107,7 +107,7 @@ export default function DashboardPage() {
       });
       
       // Agrupar produtos por dia
-      const productsByDay = {};
+      const productsByDay: Record<string, number> = {};
       
       // Inicializar todos os dias no período com zero produtos
       let currentDate = new Date(startDate);
@@ -181,7 +181,7 @@ export default function DashboardPage() {
       });
       
       // Agrupar reviews por dia
-      const reviewsByDay = {};
+      const reviewsByDay: Record<string, number> = {};
       
       // Inicializar todos os dias no período com zero reviews
       let currentDate = new Date(startDate);

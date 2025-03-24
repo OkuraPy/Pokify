@@ -34,6 +34,7 @@ const formSchema = z.object({
   stock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Estoque deve ser um número positivo'),
   active: z.boolean().default(true),
   tags: z.string().optional(),
+  url: z.string().optional(),
 });
 
 interface ProductFormProps {
@@ -57,6 +58,7 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
       active: true,
       tags: '',
       images: [],
+      url: '',
     },
   });
 
@@ -72,9 +74,9 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
         title: values.title,
         description: values.description,
         price: parseFloat(values.price),
-        compare_at_price: values.compare_at_price ? parseFloat(values.compare_at_price) : null,
+        compare_at_price: values.compare_at_price ? parseFloat(values.compare_at_price) : undefined,
         stock: parseInt(values.stock, 10),
-        status: values.active ? 'ready' : 'archived',
+        status: values.active ? 'ready' as const : 'archived' as const,
         images: values.images || [],
         tags: tagsArray,
         reviews_count: 0,
