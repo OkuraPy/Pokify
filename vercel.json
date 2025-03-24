@@ -1,13 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "NEXT_DISABLE_SOURCEMAPS=1 NODE_OPTIONS='--max_old_space_size=4096 --no-warnings' next build",
-  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "NODE_OPTIONS='--max_old_space_size=4096 --no-warnings' NEXT_TELEMETRY_DISABLED=1 NEXT_DISABLE_SOURCEMAPS=1 next build",
+  "installCommand": "npm install --omit=dev --no-package-lock",
   "framework": "nextjs",
+  "outputDirectory": ".next",
   "env": {
     "NEXT_PUBLIC_SUPABASE_URL": "${NEXT_PUBLIC_SUPABASE_URL}",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "${NEXT_PUBLIC_SUPABASE_ANON_KEY}",
     "NEXT_PUBLIC_APP_ENV": "production",
     "NODE_ENV": "production",
-    "NEXT_DISABLE_SOURCEMAPS": "1"
+    "NEXT_DISABLE_SOURCEMAPS": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
   }
 } 
