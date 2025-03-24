@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -14,13 +16,11 @@ const nextConfig = {
   reactStrictMode: false,
   output: 'standalone',
   webpack: (config, { isServer }) => {
-    // Impedir que o Recharts seja incluído no bundle
-    if (!isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'recharts': false,
-      };
-    }
+    // Substituir o Recharts pelo nosso arquivo mock
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'recharts': path.resolve(__dirname, 'recharts.js'),
+    };
 
     // Resolver problemas com fs e path
     config.resolve.fallback = { 
@@ -32,13 +32,16 @@ const nextConfig = {
     };
 
     // Ignorar erros de require.extensions
-    config.ignoreWarnings = [/Critical dependency: the request of a dependency is an expression/];
+    config.ignoreWarnings = [
+      /Critical dependency: the request of a dependency is an expression/,
+      /Module not found: Can't resolve 'recharts'/
+    ];
 
     return config;
   },
   experimental: {
     esmExternals: 'loose',
-    serverComponentsExternalPackages: ['recharts'],
+    serverComponentsExternalPackages: [],  // Removemos o Recharts daqui
   }
 };
 
