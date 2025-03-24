@@ -20,7 +20,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+// Importar Chart do ApexCharts em vez do Recharts
+import { Chart } from '@/components/charts/apex-chart';
 import { getUserStores, getStoreStats, getProducts, getReviews } from '@/lib/supabase';
 import { StoreCard } from '@/components/stores/store-card';
 
@@ -419,22 +420,60 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="h-80 w-full p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={aggregatedStats.trendsProducts}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#3b82f6" 
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <Chart 
+                    type="line"
+                    height={300}
+                    series={[
+                      {
+                        name: "Produtos",
+                        data: aggregatedStats.trendsProducts.map(item => item.value)
+                      }
+                    ]}
+                    options={{
+                      chart: {
+                        toolbar: {
+                          show: false,
+                        },
+                        zoom: {
+                          enabled: false,
+                        }
+                      },
+                      xaxis: {
+                        categories: aggregatedStats.trendsProducts.map(item => item.name),
+                        labels: {
+                          style: {
+                            colors: "#777"
+                          }
+                        }
+                      },
+                      yaxis: {
+                        labels: {
+                          style: {
+                            colors: "#777"
+                          }
+                        }
+                      },
+                      tooltip: {
+                        y: {
+                          formatter: function(value) {
+                            return value + " produto(s)";
+                          }
+                        }
+                      },
+                      colors: ['#3b82f6'],
+                      stroke: {
+                        curve: 'smooth',
+                        width: 3
+                      },
+                      grid: {
+                        borderColor: '#f3f4f6',
+                        row: {
+                          colors: ['transparent', 'transparent'],
+                          opacity: 0.1
+                        }
+                      }
+                    }}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -445,22 +484,60 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="h-80 w-full p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={aggregatedStats.trendsReviews}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#10b981" 
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <Chart 
+                    type="line"
+                    height={300}
+                    series={[
+                      {
+                        name: "Reviews",
+                        data: aggregatedStats.trendsReviews.map(item => item.value)
+                      }
+                    ]}
+                    options={{
+                      chart: {
+                        toolbar: {
+                          show: false,
+                        },
+                        zoom: {
+                          enabled: false,
+                        }
+                      },
+                      xaxis: {
+                        categories: aggregatedStats.trendsReviews.map(item => item.name),
+                        labels: {
+                          style: {
+                            colors: "#777"
+                          }
+                        }
+                      },
+                      yaxis: {
+                        labels: {
+                          style: {
+                            colors: "#777"
+                          }
+                        }
+                      },
+                      tooltip: {
+                        y: {
+                          formatter: function(value) {
+                            return value + " review(s)";
+                          }
+                        }
+                      },
+                      colors: ['#10b981'],
+                      stroke: {
+                        curve: 'smooth',
+                        width: 3
+                      },
+                      grid: {
+                        borderColor: '#f3f4f6',
+                        row: {
+                          colors: ['transparent', 'transparent'],
+                          opacity: 0.1
+                        }
+                      }
+                    }}
+                  />
                 </div>
               </CardContent>
             </Card>

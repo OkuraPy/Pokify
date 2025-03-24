@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Chart } from '@/components/charts/apex-chart';
 
 interface ProductAnalyticsProps {
   productId: string;
@@ -26,18 +26,49 @@ export function ProductAnalytics({ productId }: ProductAnalyticsProps) {
       </CardHeader>
       <CardContent>
         <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="views" fill="#8884d8" name="Visualizações" />
-              <Bar dataKey="sales" fill="#82ca9d" name="Vendas" />
-            </BarChart>
-          </ResponsiveContainer>
+          <Chart
+            type="bar"
+            height={300}
+            series={[
+              {
+                name: 'Visualizações',
+                data: data.map(item => item.views)
+              },
+              {
+                name: 'Vendas',
+                data: data.map(item => item.sales)
+              }
+            ]}
+            options={{
+              chart: {
+                stacked: false,
+                toolbar: {
+                  show: false
+                }
+              },
+              xaxis: {
+                categories: data.map(item => item.name),
+                labels: {
+                  style: {
+                    colors: "#777"
+                  }
+                }
+              },
+              colors: ['#8884d8', '#82ca9d'],
+              plotOptions: {
+                bar: {
+                  borderRadius: 5,
+                  columnWidth: '60%',
+                }
+              },
+              dataLabels: {
+                enabled: false
+              },
+              grid: {
+                borderColor: '#f3f4f6',
+              }
+            }}
+          />
         </div>
         
         <div className="grid grid-cols-2 gap-4 mt-6">
