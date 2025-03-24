@@ -12,6 +12,7 @@ const nextConfig = {
   },
   swcMinify: false,
   reactStrictMode: false,
+  output: 'standalone',
   webpack: (config, { isServer }) => {
     // Impedir que o Recharts seja incluído no bundle
     if (!isServer) {
@@ -37,6 +38,7 @@ const nextConfig = {
   },
   experimental: {
     esmExternals: 'loose',
+    serverComponentsExternalPackages: ['recharts'],
   }
 };
 
