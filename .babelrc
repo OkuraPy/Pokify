@@ -1,0 +1,7 @@
+{
+  "presets": ["next/babel"],
+  "plugins": [
+    ["transform-remove-console"],
+    ["@babel/plugin-transform-private-methods", { "loose": true }]
+  ]
+} 
