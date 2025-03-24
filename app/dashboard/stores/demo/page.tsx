@@ -101,7 +101,7 @@ export default function DemoStorePage() {
       </Card>
       
       {/* Renderiza o componente StoreClient com os dados mockados */}
-      <StoreClient storeId={mockStore.id} />
+      <StoreClient store={mockStore} />
       
       {/* Adiciona grid de produtos de exemplo */}
       <div className="mt-6">

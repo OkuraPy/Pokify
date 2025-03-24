@@ -10,6 +10,7 @@ import { StoreHeader } from './store-header';
 import { StoreStats } from './store-stats';
 import { ProductForm } from './product-form';
 import { getStore, getProducts, getReviews } from '@/lib/supabase';
+import { getSalesStats } from '@/lib/sales-service';
 import { toast } from 'sonner';
 
 interface Store {
@@ -40,7 +41,7 @@ export function StoreClient({ storeId }: StoreClientProps) {
   const router = useRouter();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [store, setStore] = useState<Store | null>(null);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState([]);
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export function StoreClient({ storeId }: StoreClientProps) {
           return;
         }
         
-        setStore(storeData as any);
+        setStore(storeData);
         
         // Carregar produtos da loja
         const { data: productsData, error: productsError } = await getProducts(storeId);
@@ -75,42 +76,30 @@ export function StoreClient({ storeId }: StoreClientProps) {
         }
         
         // Calcular o total de avaliações somando reviews_count de todos os produtos
-        let totalReviews = 0;
-        let totalRating = 0;
-        let readyProducts = 0;
-        let pendingProducts = 0;
-        
         if (productsData) {
-          // Calcular avaliações totais
-          totalReviews = productsData.reduce((total, product) => total + (product.reviews_count || 0), 0);
-          setTotalReviews(totalReviews);
-          
-          // Calcular média das avaliações
-          const productsWithRating = productsData.filter(product => product.average_rating && product.average_rating > 0);
-          if (productsWithRating.length > 0) {
-            totalRating = productsWithRating.reduce((sum, product) => sum + (product.average_rating || 0), 0);
-            totalRating = totalRating / productsWithRating.length;
-          }
-          
-          // Contar produtos por status
-          readyProducts = productsData.filter(product => 
-            product.status === 'ready' || product.status === 'published'
-          ).length;
-          
-          pendingProducts = productsData.filter(product => 
-            product.status === 'imported' || product.status === 'editing'
-          ).length;
+          const reviewsCount = productsData.reduce((total, product) => total + (product.reviews_count || 0), 0);
+          setTotalReviews(reviewsCount);
         }
         
-        // Configurar as estatísticas
-        setStats({
-          totalProducts: productsData?.length || 0,
-          totalReviews,
-          averageRating: totalRating,
-          readyProducts,
-          pendingProducts,
-          lastSync: store?.last_sync
-        });
+        // Carregar estatísticas de vendas
+        try {
+          const salesStats = await getSalesStats(storeId);
+          setStats({
+            totalSales: salesStats.totalSales,
+            totalRevenue: salesStats.totalRevenue,
+            averageOrderValue: salesStats.averageOrderValue,
+            productsSold: salesStats.totalItems
+          });
+        } catch (statsError) {
+          console.error('Erro ao carregar estatísticas:', statsError);
+          // Criar estatísticas vazias se houver erro
+          setStats({
+            totalSales: 0,
+            totalRevenue: 0,
+            averageOrderValue: 0,
+            productsSold: 0
+          });
+        }
       } catch (err) {
         console.error('Erro ao carregar dados da loja:', err);
         setError('Ocorreu um erro ao carregar os dados da loja');
@@ -161,25 +150,16 @@ export function StoreClient({ storeId }: StoreClientProps) {
   return (
     <div className="flex-1 space-y-6 p-6 bg-background">
       <StoreHeader 
-        store={{
-          ...store!,
-          stats: {
-            totalProducts: store?.products_count || 0,
-            totalReviews: totalReviews,
-            conversionRate: stats?.averageOrderValue || 0,
-            lastSync: store?.last_sync || new Date().toISOString()
-          }
-        }}
+        store={store}
         onAddProduct={() => setIsFormOpen(true)}
         totalReviews={totalReviews}
       />
 
       <StoreStats stats={stats || {
-        totalProducts: 0,
-        totalReviews: 0,
-        averageRating: 0,
-        readyProducts: 0,
-        pendingProducts: 0
+        totalSales: 0,
+        totalRevenue: 0,
+        averageOrderValue: 0,
+        productsSold: 0
       }} />
 
       <Card>

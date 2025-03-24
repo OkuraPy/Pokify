@@ -23,9 +23,9 @@ interface ProductDetailsProps {
 interface Product {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   price: number;
-  compare_at_price?: number | null;
+  compare_at_price?: number;
   stock: number;
   status: string;
   images: string[];
@@ -67,8 +67,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           return;
         }
         
-        // Usar casting para evitar problemas de tipo
-        setProduct(data as unknown as Product);
+        setProduct(data);
       } catch (err) {
         console.error('Erro inesperado:', err);
         setError('Ocorreu um erro inesperado. Tente novamente mais tarde.');
