@@ -6,7 +6,7 @@
       "use": "@vercel/next",
       "config": {
         "skipBuildSteps": ["next_build"],
-        "buildCommand": "NODE_OPTIONS=--max_old_space_size=4096 next build",
+        "buildCommand": "NEXT_DISABLE_SOURCEMAPS=1 NODE_OPTIONS='--max_old_space_size=4096 --no-warnings' next build",
         "installCommand": "npm install --legacy-peer-deps"
       }
     }
@@ -15,6 +15,7 @@
     "NEXT_PUBLIC_SUPABASE_URL": "${NEXT_PUBLIC_SUPABASE_URL}",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "${NEXT_PUBLIC_SUPABASE_ANON_KEY}",
     "NEXT_PUBLIC_APP_ENV": "production",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NEXT_DISABLE_SOURCEMAPS": "1"
   }
 } 
