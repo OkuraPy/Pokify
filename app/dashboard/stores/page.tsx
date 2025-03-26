@@ -119,31 +119,38 @@ export default function StoresPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Suas Lojas</h1>
-        <p className="text-muted-foreground">
+    <div className="space-y-8">
+      <div className="flex flex-col space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent">Suas Lojas</h1>
+        <p className="text-muted-foreground text-base">
           Gerencie suas lojas conectadas à plataforma Pokify
         </p>
       </div>
       
       {/* Contador de lojas e botão de criação */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-blue-50 p-4 rounded-lg border border-blue-100">
-        <div className="space-y-1">
-          <h3 className="font-medium">Limite de Lojas</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-100 shadow-sm">
+        <div className="space-y-2">
+          <h3 className="font-semibold text-gray-800">Limite de Lojas</h3>
           <div className="flex items-center gap-2">
-            <Store className="h-4 w-4 text-blue-600" />
+            <div className="bg-blue-100 p-1.5 rounded-full">
+              <Store className="h-5 w-5 text-blue-600" />
+            </div>
             <span className="text-sm text-blue-800 font-medium">{storesCount} de {maxStores} lojas utilizadas</span>
           </div>
           {!canAddStore ? (
-            <p className="text-xs text-rose-600">Você atingiu o limite de lojas disponíveis</p>
+            <p className="text-sm text-rose-600 font-medium flex items-center gap-1.5">
+              <AlertCircle className="h-4 w-4" />
+              Você atingiu o limite de lojas disponíveis
+            </p>
           ) : (
-            <p className="text-xs text-blue-600">Você ainda pode adicionar {maxStores - storesCount} {maxStores - storesCount === 1 ? 'loja' : 'lojas'}</p>
+            <p className="text-sm text-blue-600 font-medium">Você ainda pode adicionar {maxStores - storesCount} {maxStores - storesCount === 1 ? 'loja' : 'lojas'}</p>
           )}
         </div>
         <Button 
           onClick={() => setIsCreateStoreOpen(true)}
           disabled={!canAddStore}
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md transition-all duration-300 hover:shadow-lg"
+          size="lg"
         >
           <Plus className="h-4 w-4 mr-2" />
           Nova Loja
@@ -152,10 +159,10 @@ export default function StoresPage() {
       
       {/* Alerta de limite de lojas */}
       {!canAddStore && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Limite de lojas atingido</AlertTitle>
-          <AlertDescription>
+        <Alert variant="destructive" className="bg-rose-50 border-rose-200 text-rose-800 animate-appear">
+          <AlertCircle className="h-5 w-5 text-rose-500" />
+          <AlertTitle className="text-rose-700 font-semibold text-base">Limite de lojas atingido</AlertTitle>
+          <AlertDescription className="text-rose-600">
             Você atingiu o limite de {maxStores} lojas do seu plano atual. 
             Para adicionar mais lojas, considere fazer upgrade do seu plano.
           </AlertDescription>
@@ -163,26 +170,39 @@ export default function StoresPage() {
       )}
       
       {/* Lista de lojas */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Gerenciar Lojas</CardTitle>
-          <CardDescription>
+      <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 border-b">
+          <CardTitle className="text-xl text-gray-800">Gerenciar Lojas</CardTitle>
+          <CardDescription className="text-gray-500">
             Visualize e gerencie todas as suas lojas conectadas
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {isLoading ? (
-            <div className="py-8 flex justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="py-16 flex flex-col items-center justify-center gap-3">
+              <div className="relative w-12 h-12">
+                <div className="absolute inset-0 rounded-full border-t-2 border-blue-500 animate-spin"></div>
+                <div className="absolute inset-3 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-muted-foreground">Carregando suas lojas...</p>
             </div>
           ) : stores.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-muted-foreground">Você ainda não possui lojas cadastradas</p>
+            <div className="py-16 text-center">
+              <div className="mx-auto w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+                <Store className="h-8 w-8 text-blue-500" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Nenhuma loja encontrada</h3>
+              <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                Você ainda não possui lojas cadastradas na plataforma
+              </p>
               <Button 
                 variant="outline" 
-                className="mt-4"
+                className="mx-auto border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-all"
                 onClick={() => setIsCreateStoreOpen(true)}
                 disabled={!canAddStore}
+                size="lg"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Primeira Loja

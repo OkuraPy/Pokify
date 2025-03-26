@@ -329,270 +329,329 @@ export default function DashboardPage() {
   }, [period]);
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Gerencie suas lojas e acompanhe o desempenho
-          </p>
-        </div>
-        <Button onClick={() => router.push('/dashboard/stores')}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Loja
-        </Button>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent">Dashboard</h1>
+        <p className="text-muted-foreground text-base">
+          Acompanhe as estatísticas de suas lojas conectadas
+        </p>
       </div>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center h-80">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-muted-foreground">Carregando estatísticas...</span>
+      
+      {/* Seletor de período */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-5 w-5 text-blue-600" />
+          <h2 className="font-semibold text-gray-800">
+            {format(new Date(), "PPPP", { locale: ptBR })}
+          </h2>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total de Lojas</CardTitle>
-                <Store className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{aggregatedStats.totalStores}</div>
-                <div className="flex items-center mt-1">
-                  <div className={`text-xs ${aggregatedStats.totalStores > 0 ? 'text-green-500' : 'text-muted-foreground'}`}>
-                    <span className="inline-block mr-1">8%</span>
-                    <span>vs. último mês</span>
-                  </div>
+        
+        <Select defaultValue={period} onValueChange={setPeriod}>
+          <SelectTrigger className="w-[180px] bg-white border-gray-200 shadow-sm">
+            <SelectValue placeholder="Selecione o período" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="week">Últimos 7 dias</SelectItem>
+            <SelectItem value="month">Últimos 30 dias</SelectItem>
+            <SelectItem value="quarter">Último trimestre</SelectItem>
+            <SelectItem value="year">Último ano</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* Status Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Lojas Card */}
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-500">Lojas</CardTitle>
+              <div className="rounded-full bg-blue-100 p-1.5 flex items-center justify-center">
+                <Store className="h-4 w-4 text-blue-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? (
+                <div className="h-8 w-14 bg-gray-200 animate-pulse rounded"></div>
+              ) : (
+                aggregatedStats.totalStores
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Lojas conectadas à plataforma
+            </p>
+          </CardContent>
+        </Card>
+        
+        {/* Produtos Card */}
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-500">Produtos</CardTitle>
+              <div className="rounded-full bg-indigo-100 p-1.5 flex items-center justify-center">
+                <Package className="h-4 w-4 text-indigo-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? (
+                <div className="h-8 w-14 bg-gray-200 animate-pulse rounded"></div>
+              ) : (
+                aggregatedStats.totalProducts
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total de produtos cadastrados
+            </p>
+          </CardContent>
+        </Card>
+        
+        {/* Avaliações Card */}
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-500">Avaliações</CardTitle>
+              <div className="rounded-full bg-amber-100 p-1.5 flex items-center justify-center">
+                <Star className="h-4 w-4 text-amber-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {isLoading ? (
+                <div className="h-8 w-14 bg-gray-200 animate-pulse rounded"></div>
+              ) : (
+                aggregatedStats.totalReviews
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total de avaliações recebidas
+            </p>
+          </CardContent>
+        </Card>
+        
+        {/* Média de Avaliações Card */}
+        <Card className="border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-500">Média de Avaliações</CardTitle>
+              <div className="rounded-full bg-green-100 p-1.5 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold">
+                {isLoading ? (
+                  <div className="h-8 w-14 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  aggregatedStats.averageRating.toFixed(1)
+                )}
+              </div>
+              {!isLoading && (
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <svg 
+                      key={star} 
+                      className={`h-4 w-4 ${star <= Math.round(aggregatedStats.averageRating) ? 'text-yellow-400' : 'text-gray-300'}`} 
+                      viewBox="0 0 24 24" 
+                      fill="currentColor"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  ))}
                 </div>
-                <div className="w-full h-2 bg-secondary rounded-full mt-3">
-                  <div className="h-2 bg-primary rounded-full" style={{ width: '75%' }}></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{aggregatedStats.totalProducts}</div>
-                <div className="flex items-center mt-1">
-                  <div className="text-xs text-green-500">
-                    <span className="inline-block mr-1">12%</span>
-                    <span>vs. último mês</span>
-                  </div>
-                </div>
-                <div className="w-full h-2 bg-secondary rounded-full mt-3">
-                  <div className="h-2 bg-primary rounded-full" style={{ width: '60%' }}></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total de Reviews</CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">
-                  {aggregatedStats.totalReviews > 1000 
-                    ? `${(aggregatedStats.totalReviews / 1000).toFixed(1)}k` 
-                    : aggregatedStats.totalReviews}
-                </div>
-                <div className="flex items-center mt-1">
-                  <div className="text-xs text-green-500">
-                    <span className="inline-block mr-1">5%</span>
-                    <span>vs. último mês</span>
-                  </div>
-                </div>
-                <div className="w-full h-2 bg-secondary rounded-full mt-3">
-                  <div className="h-2 bg-primary rounded-full" style={{ width: '45%' }}></div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Média de Avaliações</CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{aggregatedStats.averageRating.toFixed(2)}</div>
-                <div className="flex items-center mt-1">
-                  <div className="text-xs text-green-500">
-                    <span className="inline-block mr-1">12%</span>
-                    <span>vs. último mês</span>
-                  </div>
-                </div>
-                <div className="w-full h-2 bg-secondary rounded-full mt-3">
-                  <div className="h-2 bg-primary rounded-full" style={{ width: '60%' }}></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="flex justify-between items-center mt-8">
-            <span className="text-sm text-muted-foreground">
-              Dados atualizados em {format(new Date(), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-            </span>
-            
-            <div className="flex items-center gap-4">
-              <Select defaultValue="month" onValueChange={(value) => {
-                setPeriod(value);
-                setIsLoading(true); // Mostrar loading enquanto atualiza
-              }}>
-                <SelectTrigger className="w-[180px]">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Selecione o período" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">Última semana</SelectItem>
-                  <SelectItem value="month">Último mês</SelectItem>
-                  <SelectItem value="quarter">Último trimestre</SelectItem>
-                  <SelectItem value="year">Último ano</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Escolher data
-              </Button>
-              
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Média de todas as avaliações
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Charts */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Chart: Produtos */}
+        <Card className="border border-gray-100 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-md font-semibold text-gray-700">Produtos Adicionados</CardTitle>
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1 border-gray-200">
+                <Download className="h-3.5 w-3.5" />
                 Exportar
               </Button>
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Produtos Adicionados</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="h-80 w-full p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={aggregatedStats.trendsProducts}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#3b82f6" 
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+          </CardHeader>
+          <CardContent className="px-2">
+            {isLoading ? (
+              <div className="h-[250px] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={productChartData}
+                    margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="name"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <YAxis 
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value} produtos`, 'Quantidade']}
+                      labelFormatter={(label) => `Dia ${label}`}
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #f0f0f0',
+                        borderRadius: '6px',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#4f46e5" 
+                      strokeWidth={2} 
+                      dot={false}
+                      activeDot={{ r: 5, fill: '#4f46e5', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Chart: Avaliações */}
+        <Card className="border border-gray-100 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-md font-semibold text-gray-700">Avaliações Recebidas</CardTitle>
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1 border-gray-200">
+                <Download className="h-3.5 w-3.5" />
+                Exportar
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="px-2">
+            {isLoading ? (
+              <div className="h-[250px] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={reviewChartData}
+                    margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="name"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <YAxis 
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10 }}
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value} avaliações`, 'Quantidade']}
+                      labelFormatter={(label) => `Dia ${label}`}
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #f0f0f0',
+                        borderRadius: '6px',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.05)'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#eab308" 
+                      strokeWidth={2} 
+                      dot={false}
+                      activeDot={{ r: 5, fill: '#eab308', stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Recent Stores */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-800">Suas Lojas</h2>
+          <Button 
+            onClick={() => router.push('/dashboard/stores')} 
+            size="sm"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Ver Todas Lojas
+          </Button>
+        </div>
+        
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((index) => (
+              <div key={index} className="border rounded-lg p-6 h-[170px] flex flex-col justify-between animate-pulse">
+                <div className="space-y-3">
+                  <div className="h-4 w-3/4 bg-gray-200 rounded"></div>
+                  <div className="h-3 w-1/2 bg-gray-200 rounded"></div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Reviews Coletados</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="h-80 w-full p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={aggregatedStats.trendsReviews}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#10b981" 
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div className="space-y-2">
+                  <div className="h-3 w-full bg-gray-200 rounded"></div>
+                  <div className="h-3 w-5/6 bg-gray-200 rounded"></div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            ))}
           </div>
-
-          <Tabs defaultValue="all" className="mt-8">
-            <TabsList>
-              <TabsTrigger value="all">Todas as Lojas</TabsTrigger>
-              <TabsTrigger value="shopify">Shopify</TabsTrigger>
-              <TabsTrigger value="aliexpress">AliExpress</TabsTrigger>
-              <TabsTrigger value="other">Outras</TabsTrigger>
-            </TabsList>
-            <TabsContent value="all" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stores.map((store) => (
-                  <StoreCard 
-                    key={store.id} 
-                    store={store} 
-                    onClick={() => router.push(`/dashboard/stores/${store.id}`)} 
-                  />
-                ))}
-                
-                <Card className="flex flex-col items-center justify-center p-6 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => router.push('/dashboard/stores')}>
-                  <div className="rounded-full bg-primary/10 p-3 mb-4">
-                    <Plus className="h-6 w-6 text-primary" />
-                  </div>
-                  <h3 className="font-medium">Adicionar Loja</h3>
-                  <p className="text-sm text-muted-foreground text-center mt-2">
-                    Conecte uma nova loja para expandir seu negócio
-                  </p>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="shopify">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stores
-                  .filter(store => store.platform === 'shopify')
-                  .map((store) => (
-                    <StoreCard 
-                      key={store.id} 
-                      store={store} 
-                      onClick={() => router.push(`/dashboard/stores/${store.id}`)} 
-                    />
-                  ))}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="aliexpress">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stores
-                  .filter(store => store.platform === 'aliexpress')
-                  .map((store) => (
-                    <StoreCard 
-                      key={store.id} 
-                      store={store} 
-                      onClick={() => router.push(`/dashboard/stores/${store.id}`)} 
-                    />
-                  ))}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="other">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stores
-                  .filter(store => store.platform !== 'shopify' && store.platform !== 'aliexpress')
-                  .map((store) => (
-                    <StoreCard 
-                      key={store.id} 
-                      store={store} 
-                      onClick={() => router.push(`/dashboard/stores/${store.id}`)} 
-                    />
-                  ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        </>
-      )}
+        ) : stores.length === 0 ? (
+          <div className="border border-dashed rounded-lg p-8 text-center bg-gray-50">
+            <div className="mx-auto w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+              <Store className="h-6 w-6 text-blue-500" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Nenhuma loja encontrada</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
+              Você ainda não possui lojas conectadas à plataforma Pokify.
+            </p>
+            <Button 
+              onClick={() => router.push('/dashboard/stores')} 
+              variant="outline"
+              className="mx-auto border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Primeira Loja
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {stores.slice(0, 3).map(store => (
+              <StoreCard key={store.id} store={store} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
