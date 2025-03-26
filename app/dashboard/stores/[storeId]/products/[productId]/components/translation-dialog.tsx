@@ -6,24 +6,21 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogFooter,
-  DialogDescription
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, ArrowRight, Languages, Check, RefreshCw } from 'lucide-react';
+import { Loader2, Languages, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 
 // Idiomas suportados
 const languages = [
-  { code: 'pt', name: 'Português', flag: '🇧🇷' },
-  { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italiano', flag: '🇮🇹' }
+  { code: 'pt', name: 'Português' },
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'it', name: 'Italiano' }
 ];
 
 interface TranslationDialogProps {
@@ -49,8 +46,7 @@ export function TranslationDialog({
     title: string;
     description: string;
   }>({ title: '', description: '' });
-  const [activeTab, setActiveTab] = useState<'config' | 'preview'>('config');
-  const [translationStatus, setTranslationStatus] = useState<'idle' | 'translating' | 'success' | 'error'>('idle');
+  const [showPreview, setShowPreview] = useState(false);
 
   const handleTranslate = async () => {
     if (!targetLanguage) {
@@ -59,7 +55,6 @@ export function TranslationDialog({
     }
 
     setIsTranslating(true);
-    setTranslationStatus('translating');
 
     try {
       const response = await fetch('/api/translate/batch', {
@@ -77,12 +72,10 @@ export function TranslationDialog({
       const data = await response.json();
 
       if (!response.ok) {
-        setTranslationStatus('error');
         throw new Error(data.error || 'Falha na tradução');
       }
 
       if (!data.success || !data.translations) {
-        setTranslationStatus('error');
         throw new Error('Resposta inválida do servidor');
       }
 
@@ -94,20 +87,18 @@ export function TranslationDialog({
         description: translatedDesc
       });
       
-      setTranslationStatus('success');
-      setActiveTab('preview');
-
+      setShowPreview(true);
+      
       // Salvar automaticamente
       await handleSave({
         title: translatedTitle,
         description: translatedDesc
       });
       
-      toast.success('Tradução concluída com sucesso!');
+      toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
     } catch (error) {
       console.error('Erro na tradução:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao traduzir o conteúdo');
-      setTranslationStatus('error');
     } finally {
       setIsTranslating(false);
     }
@@ -125,177 +116,100 @@ export function TranslationDialog({
     }
   };
 
-  const getTargetLanguageName = () => {
-    return languages.find(lang => lang.code === targetLanguage)?.name || 'Desconhecido';
+  const getLanguageName = (code: string) => {
+    return languages.find(lang => lang.code === code)?.name || 'Desconhecido';
   };
-
-  const getTargetLanguageFlag = () => {
-    return languages.find(lang => lang.code === targetLanguage)?.flag || '🌐';
-  };
-
-  const getTargetLanguageFullDisplay = () => {
-    const lang = languages.find(lang => lang.code === targetLanguage);
-    return lang ? `${lang.flag} ${lang.name}` : '🌐 Desconhecido';
-  };
-
+  
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden">
-        {/* Header gradiente */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
-          <div className="flex items-center space-x-2 mb-2">
-            <Languages className="h-6 w-6" />
-            <DialogTitle className="text-xl font-semibold">Tradução Automática</DialogTitle>
-          </div>
-          <DialogDescription className="text-blue-100 opacity-90">
-            Traduza instantaneamente o título e descrição do seu produto utilizando IA
-          </DialogDescription>
-        </div>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Languages className="h-5 w-5 text-blue-500" />
+            Traduzir Produto
+          </DialogTitle>
+        </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'config' | 'preview')} className="w-full">
-          <div className="px-6 pt-4">
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="config" className="rounded-md">Configurar</TabsTrigger>
-              <TabsTrigger 
-                value="preview" 
-                className="rounded-md"
-                disabled={translationStatus !== 'success'}
-              >
-                Prévia
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="config" className="p-6 pt-4 space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700 mb-1.5">Idioma original</p>
-                  <div className="flex items-center gap-2 text-gray-800 font-medium">
-                    <span className="text-lg">🇧🇷</span> Português
-                  </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-gray-400 mb-1" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-700 mb-1.5">Traduzir para</p>
-                  <Select 
-                    value={targetLanguage} 
-                    onValueChange={setTargetLanguage}
-                  >
-                    <SelectTrigger className="bg-white border-gray-200">
-                      <SelectValue placeholder="Selecione o idioma" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {languages.map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          <div className="flex items-center gap-2">
-                            <span>{lang.flag}</span> {lang.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+        {!showPreview ? (
+          <div className="py-4 space-y-4">
+            <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
+              <p>Traduza automaticamente o título e descrição do produto para o idioma desejado.</p>
             </div>
-
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-gray-700">Conteúdo a ser traduzido</h3>
-              <div className="border rounded-lg divide-y">
-                <div className="p-3 flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Título do produto</p>
-                    <p className="text-sm text-gray-500 truncate">{product.title}</p>
-                  </div>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">
-                    Incluído
-                  </Badge>
-                </div>
-                <div className="p-3 flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Descrição</p>
-                    <p className="text-sm text-gray-500 truncate">{product.description || "Sem descrição"}</p>
-                  </div>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100">
-                    Incluído
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <Button
-                onClick={handleTranslate}
-                disabled={isTranslating}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              >
-                {isTranslating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Traduzindo para {getTargetLanguageName()}...
-                  </>
-                ) : translationStatus === 'success' ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Tradução concluída
-                  </>
-                ) : translationStatus === 'error' ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Tentar novamente
-                  </>
-                ) : (
-                  <>
-                    <Languages className="mr-2 h-4 w-4" />
-                    Traduzir para {getTargetLanguageName()}
-                  </>
-                )}
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="preview" className="p-6 pt-4 space-y-4">
-            <div className="bg-blue-50 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Languages className="h-5 w-5 text-blue-600" />
-                <h3 className="font-medium text-blue-800">Prévia da tradução para {getTargetLanguageFullDisplay()}</h3>
-              </div>
-              <p className="text-sm text-blue-600">Veja abaixo como ficará seu produto após a tradução.</p>
-            </div>
-
-            <div className="space-y-4">
+            
+            <div className="space-y-3">
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-1">Título</h4>
-                <p className="text-base font-medium border-l-2 border-blue-500 pl-3 py-1">{translatedData.title}</p>
+                <label className="text-sm font-medium mb-1.5 block">Selecione o idioma de destino</label>
+                <Select 
+                  value={targetLanguage} 
+                  onValueChange={setTargetLanguage}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione o idioma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="py-4 space-y-4">
+            <div className="border-l-4 border-green-500 pl-3 py-1 bg-green-50 text-green-800 rounded-r-md">
+              <p className="font-medium">Tradução concluída com sucesso</p>
+              <p className="text-sm text-green-600">O produto foi atualizado para {getLanguageName(targetLanguage)}</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-500">Título Traduzido</h3>
+                <p className="p-3 bg-gray-50 rounded-md">{translatedData.title}</p>
               </div>
               
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-1">Descrição</h4>
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-gray-500">Descrição Traduzida</h3>
                 <div 
-                  className="prose prose-sm max-w-none border-l-2 border-blue-500 pl-3 py-1" 
+                  className="p-3 bg-gray-50 rounded-md prose prose-sm max-w-none" 
                   dangerouslySetInnerHTML={{ __html: translatedData.description }}
                 />
               </div>
             </div>
+          </div>
+        )}
 
-            <div className="pt-4 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setActiveTab('config')}
-                className="border-gray-200"
-              >
-                Voltar para configuração
-              </Button>
-              <Button
-                onClick={onClose}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-              >
-                <Check className="mr-2 h-4 w-4" />
-                Concluir
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+        <DialogFooter>
+          {!showPreview ? (
+            <Button
+              onClick={handleTranslate}
+              disabled={isTranslating}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+            >
+              {isTranslating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Traduzindo...
+                </>
+              ) : (
+                <>
+                  <Languages className="mr-2 h-4 w-4" />
+                  Traduzir para {getLanguageName(targetLanguage)}
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={onClose}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Check className="mr-2 h-4 w-4" />
+              Concluído
+            </Button>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
