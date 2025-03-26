@@ -50,6 +50,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
   // Estados para geração com IA
   const [reviewCount, setReviewCount] = useState(5);
   const [averageRating, setAverageRating] = useState(4.5);
+  const [reviewLanguage, setReviewLanguage] = useState<string>('portuguese');
   
   // Referência para input de arquivo CSV
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,7 +185,8 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
       const { success, count, error } = await generateAIReviews(
         productId,
         reviewCount,
-        averageRating
+        averageRating,
+        reviewLanguage
       );
       
       if (!success || error) {
@@ -375,6 +377,29 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       </span>
                     </div>
+                  </div>
+                  
+                  <div className="grid gap-2 mb-3">
+                    <Label htmlFor="reviewLanguage">Idioma das Avaliações</Label>
+                    <Select 
+                      value={reviewLanguage} 
+                      onValueChange={setReviewLanguage}
+                    >
+                      <SelectTrigger id="reviewLanguage">
+                        <SelectValue placeholder="Selecione o idioma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="portuguese">Português</SelectItem>
+                        <SelectItem value="english">Inglês</SelectItem>
+                        <SelectItem value="spanish">Espanhol</SelectItem>
+                        <SelectItem value="french">Francês</SelectItem>
+                        <SelectItem value="german">Alemão</SelectItem>
+                        <SelectItem value="italian">Italiano</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione o idioma em que as avaliações serão geradas
+                    </p>
                   </div>
                   
                   <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
@@ -634,6 +659,29 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   </span>
                 </div>
+              </div>
+              
+              <div className="grid gap-2 mb-3">
+                <Label htmlFor="reviewLanguage">Idioma das Avaliações</Label>
+                <Select 
+                  value={reviewLanguage} 
+                  onValueChange={setReviewLanguage}
+                >
+                  <SelectTrigger id="reviewLanguage">
+                    <SelectValue placeholder="Selecione o idioma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="portuguese">Português</SelectItem>
+                    <SelectItem value="english">Inglês</SelectItem>
+                    <SelectItem value="spanish">Espanhol</SelectItem>
+                    <SelectItem value="french">Francês</SelectItem>
+                    <SelectItem value="german">Alemão</SelectItem>
+                    <SelectItem value="italian">Italiano</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Selecione o idioma em que as avaliações serão geradas
+                </p>
               </div>
               
               <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
