@@ -7,12 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2 } from 'lucide-react';
+import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages } from 'lucide-react';
 import { ImageGallery } from './components/image-gallery';
 import { ProductInfo } from './components/product-info';
 import { ReviewsList } from './components/reviews-list';
 import { ProductAnalytics } from './components/product-analytics';
-import { getProduct } from '@/lib/supabase';
+import { TranslationDialog } from './components/translation-dialog';
+import { getProduct, updateProduct } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 interface ProductDetailsProps {
@@ -46,6 +47,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isTranslationDialogOpen, setIsTranslationDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadProductDetails() {
@@ -145,6 +147,32 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
     product.status === 'imported' ? 'Importado' :
     product.status === 'editing' ? 'Em edição' : 'Arquivado';
 
+  const handleSaveTranslation = async (data: { title?: string; description?: string }) => {
+    if (!product) return;
+    
+    try {
+      const { error } = await updateProduct(product.id, data);
+      
+      if (error) {
+        throw new Error('Falha ao atualizar o produto');
+      }
+      
+      // Update local product state with the new translated data
+      setProduct(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          ...data
+        };
+      });
+      
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Erro ao salvar tradução:', error);
+      return Promise.reject(error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -171,6 +199,14 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           <Button 
             variant="outline" 
             size="sm"
+            onClick={() => setIsTranslationDialogOpen(true)}
+          >
+            <Languages className="h-4 w-4 mr-2" />
+            Traduzir
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
             onClick={() => {
               const url = `/dashboard/stores/${storeId}/products/${product.id}/edit`;
               console.log('Navegando para:', url);
@@ -178,7 +214,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
             }}
           >
             <Pencil className="h-4 w-4 mr-2" />
-            Editar (Teste)
+            Editar
           </Button>
           {product.shopify_product_url && (
             <Button size="sm" asChild>
@@ -315,6 +351,16 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           </TabsContent>
         )}
       </Tabs>
+
+      {/* Translation Dialog */}
+      {product && (
+        <TranslationDialog
+          isOpen={isTranslationDialogOpen}
+          onClose={() => setIsTranslationDialogOpen(false)}
+          product={product}
+          onSaveTranslation={handleSaveTranslation}
+        />
+      )}
     </div>
   );
 }
