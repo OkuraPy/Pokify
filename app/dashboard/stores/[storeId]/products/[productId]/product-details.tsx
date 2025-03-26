@@ -7,13 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical } from 'lucide-react';
+import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical, Sparkles } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { ImageGallery } from './components/image-gallery';
 import { ProductInfo } from './components/product-info';
 import { ReviewsList } from './components/reviews-list';
 import { ProductAnalytics } from './components/product-analytics';
 import { TranslationDialog } from './components/translation-dialog';
+import { ImproveDescriptionDialog } from './components/improve-description-dialog';
 import { getProduct, updateProduct } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -47,9 +48,11 @@ interface Product {
 export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isTranslationDialogOpen, setIsTranslationDialogOpen] = useState(false);
+  const [isImproveDescriptionDialogOpen, setIsImproveDescriptionDialogOpen] = useState(false);
+  const [isImprovingDescription, setIsImprovingDescription] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -326,29 +329,6 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setIsTranslationDialogOpen(true)}
-              className="bg-white text-blue-600 border-blue-200 hover:bg-blue-50"
-            >
-              <Languages className="h-4 w-4 mr-2" />
-              Traduzir
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                const url = `/dashboard/stores/${storeId}/products/${product.id}/edit`;
-                window.location.href = url;
-              }}
-              className="bg-white"
-            >
-              <Pencil className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-            
             {product.shopify_product_url && (
               <Button 
                 size="sm" 
@@ -624,18 +604,43 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
               <CardHeader className="border-b bg-gray-50 px-6">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Descrição do Produto</CardTitle>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      const url = `/dashboard/stores/${storeId}/products/${product.id}/edit`;
-                      window.location.href = url;
-                    }}
-                    className="text-blue-600 hover:bg-blue-50"
-                  >
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Editar Descrição
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setIsTranslationDialogOpen(true)}
+                      className="text-blue-600 hover:bg-blue-50"
+                    >
+                      <Languages className="h-4 w-4 mr-2" />
+                      Traduzir
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setIsImproveDescriptionDialogOpen(true)}
+                      className="text-purple-600 hover:bg-purple-50"
+                      disabled={isImprovingDescription}
+                    >
+                      {isImprovingDescription ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 mr-2" />
+                      )}
+                      Melhorar com IA
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        const url = `/dashboard/stores/${storeId}/products/${product.id}/edit`;
+                        window.location.href = url;
+                      }}
+                      className="text-blue-600 hover:bg-blue-50"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
@@ -792,6 +797,23 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           } catch (error) {
             console.error('Erro ao salvar tradução:', error);
             toast.error('Erro ao salvar tradução');
+          }
+        }}
+      />
+
+      {/* Dialog de Melhoria de Descrição */}
+      <ImproveDescriptionDialog
+        isOpen={isImproveDescriptionDialogOpen}
+        onClose={() => setIsImproveDescriptionDialogOpen(false)}
+        product={product!}
+        onImproveDescription={async (improvedDescription) => {
+          try {
+            await updateProduct(productId, { description: improvedDescription });
+            setProduct(prev => prev ? { ...prev, description: improvedDescription } : null);
+            toast.success('Descrição melhorada com sucesso');
+          } catch (error) {
+            console.error('Erro ao salvar descrição melhorada:', error);
+            toast.error('Erro ao salvar descrição melhorada');
           }
         }}
       />

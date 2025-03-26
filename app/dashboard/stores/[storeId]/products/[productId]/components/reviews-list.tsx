@@ -457,9 +457,9 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                 </div>
               </div>
 
-              {reviews.map((review) => (
+          {reviews.map((review) => (
                 <Card key={review.id} className={`group transition-all duration-200 hover:shadow-md ${review.is_selected ? 'ring-2 ring-primary ring-offset-2' : 'border-border/60'}`}>
-                  <CardContent className="p-4">
+              <CardContent className="p-4">
                     <div className="flex items-start gap-4">
                       <Checkbox
                         checked={review.is_selected}
