@@ -42,7 +42,7 @@ interface Store {
   platform: string;
   url: string;
   products: number;
-  reviews_count?: number;
+  reviews_count: number;
   products_count: number;
   last_sync?: string;
   created_at: string;

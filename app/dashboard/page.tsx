@@ -228,10 +228,19 @@ export default function DashboardPage() {
           try {
             // Buscar produtos reais de cada loja
             const { data: storeProducts } = await getProducts(store.id);
+            
+            // Calcular o total de reviews para esta loja
+            let storeReviewsCount = 0;
+            if (storeProducts && storeProducts.length > 0) {
+              storeReviewsCount = storeProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
+            }
+            
             // Atualizar o valor de products_count com o número real de produtos
+            // e adicionar o reviews_count para cada loja
             return {
               ...store,
-              products_count: storeProducts ? storeProducts.length : 0
+              products_count: storeProducts ? storeProducts.length : 0,
+              reviews_count: storeReviewsCount
             };
           } catch (error) {
             console.error(`Erro ao buscar produtos da loja ${store.id}:`, error);
