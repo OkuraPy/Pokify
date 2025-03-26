@@ -259,22 +259,6 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                 Traduzir
               </Button>
             </div>
-            
-            <div className="flex-1 flex items-center p-2">
-              <div className="mr-4 rounded-full bg-purple-100 p-3">
-                <svg className="h-6 w-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-medium text-gray-900">Análise de Métricas</h3>
-                <p className="text-sm text-gray-600">Visualize estatísticas inteligentes</p>
-              </div>
-              <Button variant="ghost" className="ml-auto bg-white text-purple-600 hover:bg-purple-100" size="sm" onClick={() => router.push(`#analytics`)}>
-                Analisar
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -319,7 +303,6 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         <TabsList>
           <TabsTrigger value="description">Descrição</TabsTrigger>
           <TabsTrigger value="reviews" id="reviews">Avaliações</TabsTrigger>
-          <TabsTrigger value="analytics" id="analytics">Estatísticas</TabsTrigger>
           {product.variants && Object.keys(product.variants).length > 0 && (
             <TabsTrigger value="variants">Variações</TabsTrigger>
           )}
@@ -378,10 +361,6 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         
         <TabsContent value="reviews">
           <ReviewsList productId={product.id} reviewsCount={product.reviews_count} />
-        </TabsContent>
-        
-        <TabsContent value="analytics">
-          <ProductAnalytics productId={product.id} />
         </TabsContent>
         
         {product.variants && Object.keys(product.variants).length > 0 && (
