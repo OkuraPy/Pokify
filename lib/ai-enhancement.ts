@@ -205,8 +205,7 @@ export async function generateReviewsWithAI(
         { role: 'user', content: userPrompt }
       ],
       temperature: 0.8,
-      max_tokens: 2000,
-      response_format: { type: 'json_object' }
+      max_tokens: 2000
     });
     
     // Extrair o texto gerado e converter para objeto
