@@ -19,6 +19,7 @@ import { ptBR } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GenerateReviewsDialog } from './generate-reviews-dialog';
 import { FC } from 'react';
+import { TranslateReviewsDialog } from './translate-reviews-dialog';
 
 interface Review {
   id: string;
@@ -59,6 +60,10 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
   
   // Referência para input de arquivo CSV
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Estados para tradução de reviews
+  const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
+  const [selectedReviewForTranslation, setSelectedReviewForTranslation] = useState<Review | null>(null);
   
   useEffect(() => {
     loadReviews();
@@ -258,6 +263,23 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
     }
   };
   
+  // Funções para tradução de reviews
+  const handleTranslateSelected = () => {
+    const selectedReviews = reviews.filter(review => review.is_selected);
+    if (selectedReviews.length === 0) {
+      toast.error('Selecione pelo menos uma avaliação para traduzir');
+      return;
+    }
+    
+    setSelectedReviewForTranslation(null); // Modo de tradução em lote
+    setIsTranslateDialogOpen(true);
+  };
+  
+  const handleTranslateSingle = (review: Review) => {
+    setSelectedReviewForTranslation(review);
+    setIsTranslateDialogOpen(true);
+  };
+  
   if (isLoading) {
     return (
       <Card>
@@ -394,8 +416,14 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                     <Wand2 className="h-3.5 w-3.5 mr-1.5" />
                     Melhorar Selecionadas
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Languages className="h-3.5 w-3.5 mr-1.5" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTranslateSelected}
+                    disabled={reviews.filter(r => r.is_selected).length === 0}
+                    className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  >
+                    <Languages className="mr-2 h-4 w-4" />
                     Traduzir Selecionadas
                   </Button>
                 </div>
@@ -439,9 +467,13 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                               <Wand2 className="h-3.5 w-3.5 mr-1.5" />
                               Melhorar
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-8">
-                              <Languages className="h-3.5 w-3.5 mr-1.5" />
-                              Traduzir
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleTranslateSingle(review)}
+                              className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                            >
+                              <Languages className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -543,6 +575,14 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
         reviewLanguage={reviewLanguage}
         setReviewLanguage={setReviewLanguage}
         onGenerate={handleGenerateAIReviews}
+      />
+
+      <TranslateReviewsDialog
+        isOpen={isTranslateDialogOpen}
+        onClose={() => setIsTranslateDialogOpen(false)}
+        reviews={selectedReviewForTranslation ? [selectedReviewForTranslation] : reviews.filter(r => r.is_selected)}
+        onReviewsUpdated={loadReviews}
+        isSingleReview={!!selectedReviewForTranslation}
       />
     </div>
   );
