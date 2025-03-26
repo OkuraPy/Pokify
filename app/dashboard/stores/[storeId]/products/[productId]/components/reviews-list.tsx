@@ -26,8 +26,8 @@ interface Review {
   author: string;
   rating: number;
   content: string;
-  date: string;
-  images?: string[];
+  date: string | null;
+  images?: string[] | null;
   is_selected: boolean;
   is_published: boolean;
   created_at: string;
@@ -106,7 +106,12 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
         return;
       }
       
-      setReviews(data || []);
+      setReviews(data?.map(review => ({
+        ...review,
+        content: review.content || '',
+        date: review.date || null,
+        images: review.images || null
+      })) || []);
     } catch (error) {
       console.error('Erro ao carregar avaliações:', error);
       toast.error('Erro ao carregar avaliações');
@@ -218,7 +223,7 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
       setIsImporting(true);
       
       // Chamar a função de geração de avaliações com IA
-      const { success, count, error, data } = await generateAIReviews(
+      const { success, count, error } = await generateAIReviews(
         productId,
         reviewCount,
         aiAverageRating,
@@ -230,15 +235,8 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
         return;
       }
       
-      // Atualiza o estado local com as novas avaliações
-      if (data) {
-        const newReviews = [...reviews, ...data];
-        setReviews(newReviews);
-        
-        // Recalcula a média das avaliações
-        const total = newReviews.reduce((acc, review) => acc + review.rating, 0);
-        setAverageRating(total / newReviews.length);
-      }
+      // Recarrega as avaliações após gerar novas
+      await loadReviews();
       
       toast.success(`${count} avaliações geradas com sucesso!`);
       setImportDialogOpen(false);
