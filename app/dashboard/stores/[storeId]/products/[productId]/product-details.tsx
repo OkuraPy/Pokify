@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages } from 'lucide-react';
+import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { ImageGallery } from './components/image-gallery';
 import { ProductInfo } from './components/product-info';
 import { ReviewsList } from './components/reviews-list';
@@ -15,6 +16,7 @@ import { ProductAnalytics } from './components/product-analytics';
 import { TranslationDialog } from './components/translation-dialog';
 import { getProduct, updateProduct } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 interface ProductDetailsProps {
   storeId: string;
@@ -49,6 +51,8 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const [isTranslationDialogOpen, setIsTranslationDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function loadProductDetails() {
@@ -88,6 +92,122 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
     
     loadProductDetails();
   }, [productId]);
+
+  const handleRemoveImage = async (imageUrl: string, index: number) => {
+    try {
+      // Se a imagem estiver no Supabase Storage, remove ela
+      if (imageUrl.includes('supabase')) {
+        const urlParts = imageUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        
+        const { error } = await supabase.storage
+          .from('images')
+          .remove([`${storeId}/${fileName}`]);
+          
+        if (error) throw error;
+      }
+
+      // Atualiza o produto no banco
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({
+          images: product!.images.filter((_, i) => i !== index)
+        })
+        .eq('id', productId);
+
+      if (updateError) throw updateError;
+
+      // Atualiza o estado local
+      setProduct(prev => prev ? {
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      } : null);
+
+      toast.success('Imagem removida com sucesso');
+    } catch (error) {
+      console.error('Erro ao remover imagem:', error);
+      toast.error('Erro ao remover imagem');
+    }
+  };
+
+  const handleUploadImages = async (files: FileList) => {
+    try {
+      setIsUploading(true);
+      
+      const imagePromises = Array.from(files).map(async (file) => {
+        // Gera um nome único para a imagem
+        const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
+        
+        // Faz upload para o Supabase Storage
+        const { data, error } = await supabase.storage
+          .from('images')
+          .upload(`${storeId}/${filename}`, file);
+        
+        if (error) throw error;
+        
+        // Retorna a URL pública da imagem
+        const { data: publicUrl } = supabase.storage
+          .from('images')
+          .getPublicUrl(`${storeId}/${filename}`);
+        
+        return publicUrl.publicUrl;
+      });
+      
+      // Processa todos os uploads
+      const newImageUrls = await Promise.all(imagePromises);
+      
+      // Atualiza o produto no banco com as novas imagens
+      const updatedImages = [...(product?.images || []), ...newImageUrls];
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ images: updatedImages })
+        .eq('id', productId);
+      
+      if (updateError) throw updateError;
+      
+      // Atualiza o estado local
+      setProduct(prev => prev ? {
+        ...prev,
+        images: updatedImages
+      } : null);
+      
+      toast.success('Imagens adicionadas com sucesso');
+    } catch (error) {
+      console.error('Erro ao fazer upload das imagens:', error);
+      toast.error('Erro ao fazer upload das imagens');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination || !product) return;
+
+    const items = Array.from(product.images);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    try {
+      // Atualiza o produto no banco
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ images: items })
+        .eq('id', productId);
+
+      if (updateError) throw updateError;
+
+      // Atualiza o estado local
+      setProduct(prev => prev ? {
+        ...prev,
+        images: items
+      } : null);
+
+      toast.success('Ordem das imagens atualizada');
+    } catch (error) {
+      console.error('Erro ao reordenar imagens:', error);
+      toast.error('Erro ao atualizar ordem das imagens');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -404,38 +524,83 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           {activeTab === "media" && (
             <Card className="border-0 shadow-sm overflow-hidden">
               <CardHeader className="border-b bg-gray-50 px-6">
-                <CardTitle className="text-lg">Galeria de Mídia</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Galeria de Mídia</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      multiple
+                      accept="image/*"
+                      onChange={(e) => e.target.files && handleUploadImages(e.target.files)}
+                    />
+                    <Button 
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Enviando...
+                        </>
+                      ) : (
+                        <>
+                          <ImagePlus className="h-4 w-4 mr-2" />
+                          Adicionar Imagens
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {product.images.map((image, index) => (
-                      <div key={index} className="aspect-square relative rounded-md overflow-hidden border group">
-                        <img 
-                          src={image} 
-                          alt={`Imagem ${index + 1} do ${product.title}`} 
-                          className="object-cover w-full h-full transition-transform group-hover:scale-105"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="flex justify-center mt-6">
-                    <Button variant="outline" className="mr-2">
-                      <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h10a4 4 0 004-4v-4a4 4 0 00-4-4H7a4 4 0 00-4 4v4z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9V5" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 13L12 9 8 13" />
-                      </svg>
-                      Adicionar Imagem
-                    </Button>
-                    <Button variant="outline">
-                      <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Organizar Ordem
-                    </Button>
-                  </div>
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Droppable droppableId="images" direction="horizontal">
+                      {(provided) => (
+                        <div 
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+                        >
+                          {product?.images.map((image, index) => (
+                            <Draggable key={image} draggableId={image} index={index}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  className={`aspect-square relative rounded-md overflow-hidden border group ${
+                                    snapshot.isDragging ? 'ring-2 ring-primary ring-offset-2' : ''
+                                  }`}
+                                >
+                                  <img 
+                                    src={image} 
+                                    alt={`Imagem ${index + 1} do ${product.title}`} 
+                                    className="object-cover w-full h-full transition-transform group-hover:scale-105"
+                                  />
+                                  <button
+                                    className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-black/70"
+                                    onClick={() => handleRemoveImage(image, index)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="absolute top-2 left-2 h-6 w-6 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-move"
+                                  >
+                                    <GripVertical className="h-4 w-4" />
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 </div>
               </CardContent>
             </Card>
@@ -609,20 +774,10 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="text-xs mt-1">Reviews</span>
+            <span className="text-xs mt-1">Avaliações</span>
           </Button>
         </div>
       </div>
-      
-      {/* Diálogo de tradução */}
-      {product && (
-        <TranslationDialog
-          isOpen={isTranslationDialogOpen}
-          onClose={() => setIsTranslationDialogOpen(false)}
-          product={product}
-          onSaveTranslation={handleSaveTranslation}
-        />
-      )}
     </div>
   );
 }
