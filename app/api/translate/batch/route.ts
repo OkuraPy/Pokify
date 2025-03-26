@@ -30,30 +30,36 @@ export async function POST(request: Request) {
     const title = texts.find((t: any) => t.id === 'title')?.text || '';
     const description = texts.find((t: any) => t.id === 'description')?.text || '';
 
-    const prompt = `Traduza para ${targetLanguage}:
-    
-    TÍTULO: ${title}
-    DESCRIÇÃO: ${description}
-    
-    Retorne apenas o JSON no formato:
-    {
-      "title": "título traduzido",
-      "description": "descrição traduzida"
-    }`;
+    const prompt = `Traduza e adapte para ${targetLanguage}:
+
+TÍTULO: ${title}
+DESCRIÇÃO: ${description}
+
+Diretrizes:
+1. Mantenha o tom comercial e persuasivo
+2. Adapte termos técnicos para equivalentes locais mais conhecidos
+3. Preserve palavras-chave importantes para SEO
+4. Mantenha formatação HTML se presente
+5. Se o produto tiver um nome mais comum no mercado-alvo, inclua-o entre parênteses
+
+Retorne apenas o JSON no formato:
+{
+  "title": "título traduzido",
+  "description": "descrição traduzida"
+}`;
 
     try {
       const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4",
         messages: [
           {
             role: "system",
-            content: "Você é um tradutor. Responda apenas com o JSON solicitado, sem explicações adicionais."
+            content: "Você é um tradutor profissional especializado em e-commerce, com profundo conhecimento em marketing internacional e adaptação cultural. Sua missão é traduzir e adaptar conteúdo mantendo o tom comercial e persuasivo. Responda apenas com o JSON solicitado, sem explicações adicionais."
           },
           { role: "user", content: prompt }
         ],
         temperature: 0.7,
-        max_tokens: 1000,
-        response_format: { type: "json_object" }
+        max_tokens: 1000
       });
 
       const translatedContent = JSON.parse(completion.choices[0]?.message?.content || '{}');

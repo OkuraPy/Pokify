@@ -778,6 +778,23 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           </Button>
         </div>
       </div>
+      
+      {/* Dialog de Tradução */}
+      <TranslationDialog
+        isOpen={isTranslationDialogOpen}
+        onClose={() => setIsTranslationDialogOpen(false)}
+        product={product!}
+        onSaveTranslation={async (data) => {
+          try {
+            await updateProduct(productId, data);
+            setProduct(prev => prev ? { ...prev, ...data } : null);
+            toast.success('Tradução salva com sucesso');
+          } catch (error) {
+            console.error('Erro ao salvar tradução:', error);
+            toast.error('Erro ao salvar tradução');
+          }
+        }}
+      />
     </div>
   );
 }
