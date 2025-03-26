@@ -55,20 +55,29 @@ export function EnhanceReviewsDialog({
     setIsEnhancing(true);
 
     try {
+      console.log('Iniciando melhoria para reviews:', reviews);
+      
+      const reviewsToSubmit = reviews.map(review => ({
+        id: review.id,
+        author: review.author,
+        content: review.content,
+        product_id: review.product_id // Adicionando o product_id para identificação
+      }));
+      
+      console.log('Enviando para API:', reviewsToSubmit);
+
       const response = await fetch('/api/reviews/enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reviews: reviews.map(review => ({
-            id: review.id,
-            author: review.author,
-            content: review.content
-          })),
+          reviews: reviewsToSubmit,
           productName
         })
       });
 
+      console.log('Status da resposta:', response.status);
       const data = await response.json();
+      console.log('Resposta da API:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Falha na melhoria');
@@ -85,12 +94,14 @@ export function EnhanceReviewsDialog({
           return { success: false, id: enhancement.id };
         }
         
+        console.log(`Atualizando review ${enhancement.id} com novo conteúdo`, enhancement.enhancedContent);
         return updateReview(enhancement.id, {
           content: enhancement.enhancedContent
         });
       });
       
-      await Promise.all(updatePromises);
+      const results = await Promise.all(updatePromises);
+      console.log('Resultados da atualização:', results);
       
       // Notificar o componente pai
       onReviewsUpdated();
