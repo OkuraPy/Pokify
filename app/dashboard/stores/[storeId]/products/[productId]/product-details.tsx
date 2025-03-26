@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical, Sparkles } from 'lucide-react';
+import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical, Sparkles, Lock, Store, Search } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { ImageGallery } from './components/image-gallery';
 import { ProductInfo } from './components/product-info';
@@ -18,6 +18,7 @@ import { ImproveDescriptionDialog } from './components/improve-description-dialo
 import { getProduct, updateProduct } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface ProductDetailsProps {
   storeId: string;
@@ -56,6 +57,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
   const [activeTab, setActiveTab] = useState("overview");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSupplierFeatureDialogOpen, setIsSupplierFeatureDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadProductDetails() {
@@ -485,6 +487,21 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                 Variações
               </Button>
             )}
+            
+            {/* Nova opção de menu para Fornecedores */}
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start text-sm relative ${activeTab === "suppliers" ? "bg-blue-50 text-blue-700" : "text-gray-500"}`}
+              onClick={() => setIsSupplierFeatureDialogOpen(true)}
+            >
+              <div className="flex items-center">
+                <Store className="h-5 w-5 mr-3 opacity-70" />
+                <span>Fornecedores</span>
+                <div className="absolute right-2 flex items-center">
+                  <Lock className="h-3.5 w-3.5 text-amber-500" />
+                </div>
+              </div>
+            </Button>
           </nav>
           
           {/* Ferramentas de IA */}
@@ -951,6 +968,52 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           }
         }}
       />
+      
+      {/* Dialog para funcionalidade de fornecedores em breve */}
+      <Dialog open={isSupplierFeatureDialogOpen} onOpenChange={setIsSupplierFeatureDialogOpen}>
+        <DialogContent className="max-w-md">
+          <div className="flex flex-col items-center text-center p-4">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-amber-200 rounded-full blur-md opacity-50"></div>
+              <div className="bg-gradient-to-r from-amber-400 to-amber-500 p-3 rounded-full relative">
+                <Lock className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            
+            <DialogTitle className="text-xl font-bold">Funcionalidade em Breve!</DialogTitle>
+            
+            <div className="mt-3 space-y-3">
+              <p className="text-gray-600">
+                Nossa inteligência artificial está evoluindo para encontrar os melhores fornecedores para o seu produto diretamente no AliExpress.
+              </p>
+              
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <h3 className="font-medium text-gray-800 mb-2 flex items-center">
+                  <Search className="h-4 w-4 mr-1.5 text-amber-500" />
+                  O que esta funcionalidade fará:
+                </h3>
+                <ul className="text-sm text-gray-600 space-y-2 list-disc pl-5">
+                  <li>Identificar automaticamente fornecedores confiáveis</li>
+                  <li>Comparar preços entre diferentes vendedores</li>
+                  <li>Avaliar reputação e classificação dos fornecedores</li>
+                  <li>Sugerir opções de fornecimento alternativas</li>
+                </ul>
+              </div>
+              
+              <p className="text-amber-600 font-medium">
+                Disponível no próximo lançamento!
+              </p>
+            </div>
+            
+            <Button 
+              className="mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
+              onClick={() => setIsSupplierFeatureDialogOpen(false)}
+            >
+              Entendi
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
