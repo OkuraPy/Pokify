@@ -223,10 +223,26 @@ export default function DashboardPage() {
           return;
         }
         
-        setStores(storesData || []);
+        // Atualizar o número real de produtos em cada loja
+        const updatedStores = await Promise.all(storesData.map(async (store) => {
+          try {
+            // Buscar produtos reais de cada loja
+            const { data: storeProducts } = await getProducts(store.id);
+            // Atualizar o valor de products_count com o número real de produtos
+            return {
+              ...store,
+              products_count: storeProducts ? storeProducts.length : 0
+            };
+          } catch (error) {
+            console.error(`Erro ao buscar produtos da loja ${store.id}:`, error);
+            return store; // manter os dados originais em caso de erro
+          }
+        }));
+        
+        setStores(updatedStores || []);
         
         // Calcular estatísticas agregadas
-        if (storesData && storesData.length > 0) {
+        if (updatedStores && updatedStores.length > 0) {
           // Totais iniciais
           let totalProducts = 0;
           let totalReviews = 0;
@@ -234,19 +250,30 @@ export default function DashboardPage() {
           let totalViews = 0;
           
           // Recuperar estatísticas de cada loja
-          for (const store of storesData) {
+          for (const store of updatedStores) {
+            // Adicionar o número de produtos diretamente da loja 
+            // (não buscar produtos individuais para evitar duplicações)
             totalProducts += store.products_count || 0;
             
-            // Opcionalmente, fazer chamada para obter estatísticas detalhadas da loja
             try {
-              const storeStats = await getStoreStats(store.id);
-              if (storeStats) {
-                totalReviews += storeStats.totalReviews || 0;
-                totalSales += storeStats.totalSales || 0;
-                totalViews += storeStats.totalViews || 0;
+              // Buscar produtos apenas para contar reviews se necessário
+              const { data: storeProducts } = await getProducts(store.id);
+              if (storeProducts) {
+                totalReviews += storeProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
               }
-            } catch (storeError) {
-              console.error(`Erro ao obter estatísticas da loja ${store.id}:`, storeError);
+              
+              // Opcionalmente, fazer chamada para obter estatísticas detalhadas da loja
+              try {
+                const storeStats = await getStoreStats(store.id);
+                if (storeStats) {
+                  totalSales += storeStats.totalSales || 0;
+                  totalViews += storeStats.totalViews || 0;
+                }
+              } catch (storeError) {
+                console.error(`Erro ao obter estatísticas da loja ${store.id}:`, storeError);
+              }
+            } catch (productsError) {
+              console.error(`Erro ao buscar produtos da loja ${store.id}:`, productsError);
             }
           }
           
@@ -258,7 +285,7 @@ export default function DashboardPage() {
           const reviewChartData = await fetchReviewsChartData(period);
           
           setAggregatedStats({
-            totalStores: storesData.length,
+            totalStores: updatedStores.length,
             totalProducts,
             totalReviews,
             conversionRate,
@@ -286,7 +313,7 @@ export default function DashboardPage() {
             Gerencie suas lojas e acompanhe o desempenho
           </p>
         </div>
-        <Button onClick={() => router.push('/dashboard/stores/new')}>
+        <Button onClick={() => router.push('/dashboard/stores')}>
           <Plus className="mr-2 h-4 w-4" />
           Nova Loja
         </Button>
@@ -486,7 +513,7 @@ export default function DashboardPage() {
                   />
                 ))}
                 
-                <Card className="flex flex-col items-center justify-center p-6 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => router.push('/dashboard/stores/new')}>
+                <Card className="flex flex-col items-center justify-center p-6 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => router.push('/dashboard/stores')}>
                   <div className="rounded-full bg-primary/10 p-3 mb-4">
                     <Plus className="h-6 w-6 text-primary" />
                   </div>

@@ -42,10 +42,8 @@ interface Store {
   platform: string;
   url: string;
   products: number;
-  orders: number;
-  revenue: number;
+  reviews_count?: number;
   products_count: number;
-  orders_count?: number;
   last_sync?: string;
   created_at: string;
 }
@@ -53,12 +51,11 @@ interface Store {
 interface StoreCardProps {
   store: Store;
   maxProducts?: number;
-  maxOrders?: number;
-  maxRevenue?: number;
+  maxReviews?: number;
   onClick?: () => void;
 }
 
-export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxRevenue = 100000, onClick }: StoreCardProps) {
+export function StoreCard({ store, maxProducts = 500, maxReviews = 1000, onClick }: StoreCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [isHovered, setIsHovered] = useState(false);
@@ -87,9 +84,8 @@ export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxReven
   };
   
   // Calcular percentual de cada métrica para as barras de progresso
-  const productsPercentage = Math.min(Math.round((store.products / maxProducts) * 100), 100);
-  const ordersPercentage = Math.min(Math.round((store.orders / maxOrders) * 100), 100);
-  const revenuePercentage = Math.min(Math.round((store.revenue / maxRevenue) * 100), 100);
+  const productsPercentage = Math.min(Math.round((store.products_count / maxProducts) * 100), 100);
+  const reviewsPercentage = Math.min(Math.round(((store.reviews_count || 0) / maxReviews) * 100), 100);
   
   // Animação para o cartão
   const cardVariants = {
@@ -283,7 +279,7 @@ export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxReven
                     <Package className="h-4 w-4 text-blue-600" />
                     <span className="text-sm font-medium">Produtos</span>
                   </div>
-                  <span className="text-sm font-semibold">{formatNumber(store.products)}</span>
+                  <span className="text-sm font-semibold">{formatNumber(store.products_count)}</span>
                 </div>
                 <Progress value={productsPercentage} className="h-1.5" indicatorClassName="bg-blue-500" />
               </div>
@@ -291,23 +287,12 @@ export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxReven
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5">
-                    <ShoppingCart className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-medium">Pedidos</span>
+                    <Star className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-medium">Reviews</span>
                   </div>
-                  <span className="text-sm font-semibold">{formatNumber(store.orders)}</span>
+                  <span className="text-sm font-semibold">{formatNumber(store.reviews_count || 0)}</span>
                 </div>
-                <Progress value={ordersPercentage} className="h-1.5" indicatorClassName="bg-emerald-500" />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Wallet className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-medium">Faturamento</span>
-                  </div>
-                  <span className="text-sm font-semibold">{formatCurrency(store.revenue)}</span>
-                </div>
-                <Progress value={revenuePercentage} className="h-1.5" indicatorClassName="bg-amber-500" />
+                <Progress value={reviewsPercentage} className="h-1.5" indicatorClassName="bg-amber-500" />
               </div>
             </div>
           </CardContent>
