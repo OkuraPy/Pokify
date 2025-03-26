@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { GenerateReviewsDialog } from './generate-reviews-dialog';
 import { FC } from 'react';
 import { TranslateReviewsDialog } from './translate-reviews-dialog';
+import { EnhanceReviewsDialog } from './enhance-reviews-dialog';
 
 interface Review {
   id: string;
@@ -64,6 +65,10 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
   // Estados para tradução de reviews
   const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
   const [selectedReviewForTranslation, setSelectedReviewForTranslation] = useState<Review | null>(null);
+  
+  // Estados para melhoria de reviews
+  const [isEnhanceDialogOpen, setIsEnhanceDialogOpen] = useState(false);
+  const [selectedReviewForEnhancement, setSelectedReviewForEnhancement] = useState<Review | null>(null);
   
   useEffect(() => {
     loadReviews();
@@ -280,6 +285,23 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
     setIsTranslateDialogOpen(true);
   };
   
+  // Funções para melhoria de reviews
+  const handleEnhanceSelected = async () => {
+    const selectedReviews = reviews.filter(review => review.is_selected);
+    if (selectedReviews.length === 0) {
+      toast.error('Selecione pelo menos uma avaliação para melhorar');
+      return;
+    }
+    
+    setSelectedReviewForEnhancement(null); // Modo de melhoria em lote
+    setIsEnhanceDialogOpen(true);
+  };
+  
+  const handleEnhanceSingle = (review: Review) => {
+    setSelectedReviewForEnhancement(review);
+    setIsEnhanceDialogOpen(true);
+  };
+  
   if (isLoading) {
     return (
       <Card>
@@ -297,28 +319,28 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
   if (reviews.length === 0) {
     return (
       <>
-        <Card>
-          <CardHeader>
-            <CardTitle>Avaliações</CardTitle>
-            <CardDescription>Este produto ainda não possui avaliações</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-            <div className="p-4 bg-secondary/20 rounded-full mb-4">
-              <MessageSquare className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-medium mb-2">Nenhuma avaliação encontrada</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Avaliações</CardTitle>
+          <CardDescription>Este produto ainda não possui avaliações</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+          <div className="p-4 bg-secondary/20 rounded-full mb-4">
+            <MessageSquare className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-medium mb-2">Nenhuma avaliação encontrada</h3>
+          <p className="text-sm text-muted-foreground mb-4">
               Gere avaliações de exemplo para este produto usando IA.
-            </p>
-            <Button 
+          </p>
+          <Button 
               onClick={() => setImportDialogOpen(true)}
               size="lg"
             >
               <Sparkles className="mr-2 h-4 w-4" />
               Gerar Reviews com IA
-            </Button>
-          </CardContent>
-        </Card>
+                </Button>
+        </CardContent>
+      </Card>
 
         <GenerateReviewsDialog 
           open={importDialogOpen}
@@ -412,8 +434,14 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEnhanceSelected}
+                    disabled={reviews.filter(r => r.is_selected).length === 0}
+                    className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                  >
+                    <Wand2 className="mr-2 h-4 w-4" />
                     Melhorar Selecionadas
                   </Button>
                   <Button
@@ -441,31 +469,35 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                       <div className="flex-1 space-y-3">
                         <div className="flex items-start justify-between">
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium">{review.author}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium">{review.author}</h3>
                               <Badge variant="outline" className="text-xs font-normal">
-                                {review.date || format(new Date(review.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                              </Badge>
-                            </div>
+                        {review.date || format(new Date(review.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </Badge>
+                    </div>
                             <div className="flex items-center gap-2 mt-1">
-                              <div className="flex">
-                                {[1, 2, 3, 4, 5].map((star) => (
-                                  <Star 
-                                    key={star} 
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star 
+                            key={star} 
                                     size={14} 
-                                    className={star <= review.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} 
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-sm text-muted-foreground">
-                                {review.rating}/5
-                              </span>
+                            className={star <= review.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} 
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {review.rating}/5
+                      </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button size="sm" variant="ghost" className="h-8">
-                              <Wand2 className="h-3.5 w-3.5 mr-1.5" />
-                              Melhorar
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEnhanceSingle(review)}
+                              className="text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                            >
+                              <Wand2 className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -476,17 +508,17 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                               <Languages className="h-4 w-4" />
                             </Button>
                           </div>
-                        </div>
-                        
+                    </div>
+                    
                         <p className="text-sm leading-relaxed">{review.content}</p>
-                        
-                        {review.images && review.images.length > 0 && (
+                    
+                    {review.images && review.images.length > 0 && (
                           <div className="mt-4">
                             <label className="text-sm font-medium mb-2 block text-muted-foreground">Fotos do Cliente</label>
                             <div className="flex flex-wrap gap-2">
-                              {review.images.map((image, i) => (
+                        {review.images.map((image, i) => (
                                 <div key={i} className="group/image relative h-20 w-20 rounded-md overflow-hidden border border-border/60">
-                                  <img src={image} alt={`Imagem ${i+1}`} className="h-full w-full object-cover" />
+                            <img src={image} alt={`Imagem ${i+1}`} className="h-full w-full object-cover" />
                                   <button
                                     className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity"
                                     onClick={() => {/* Função para remover imagem */}}
@@ -554,11 +586,11 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                             {reviews.filter(r => r.is_selected).length}
                           </Badge>
                         </button>
-                      </div>
-                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                  </div>
+              </CardContent>
+            </Card>
             </div>
           </div>
         </CardContent>
@@ -584,6 +616,15 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
         onReviewsUpdated={loadReviews}
         isSingleReview={!!selectedReviewForTranslation}
       />
-    </div>
+
+      <EnhanceReviewsDialog
+        isOpen={isEnhanceDialogOpen}
+        onClose={() => setIsEnhanceDialogOpen(false)}
+        reviews={selectedReviewForEnhancement ? [selectedReviewForEnhancement] : reviews.filter(r => r.is_selected)}
+        productName=""
+        onReviewsUpdated={loadReviews}
+        isSingleReview={!!selectedReviewForEnhancement}
+      />
+              </div>
   );
 } 
