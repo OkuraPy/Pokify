@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Sparkles, Star } from 'lucide-react';
+import { FC } from 'react';
 
 interface GenerateReviewsDialogProps {
   open: boolean;
@@ -18,7 +19,7 @@ interface GenerateReviewsDialogProps {
   onGenerate: () => Promise<void>;
 }
 
-export function GenerateReviewsDialog({
+export const GenerateReviewsDialog: FC<GenerateReviewsDialogProps> = ({
   open,
   onOpenChange,
   isImporting,
@@ -29,7 +30,7 @@ export function GenerateReviewsDialog({
   reviewLanguage,
   setReviewLanguage,
   onGenerate
-}: GenerateReviewsDialogProps) {
+}) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">

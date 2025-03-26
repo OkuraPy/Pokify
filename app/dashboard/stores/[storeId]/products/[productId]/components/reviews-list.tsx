@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Checkbox } from '@/components/ui/checkbox';
 import { GenerateReviewsDialog } from './generate-reviews-dialog';
+import { FC } from 'react';
 
 interface Review {
   id: string;
@@ -37,7 +38,7 @@ interface ReviewsListProps {
   reviewsCount: number;
 }
 
-export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
+export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -148,7 +149,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
     }
   };
   
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     
@@ -162,7 +163,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
     handleImportCSV(file);
   };
   
-  const handleImportCSV = async (file: File) => {
+  const handleImportCSV = async (file: File): Promise<void> => {
     try {
       setIsImporting(true);
       
@@ -180,7 +181,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
     }
   };
   
-  const handleImportFromUrl = async () => {
+  const handleImportFromUrl = async (): Promise<void> => {
     if (!productUrl) {
       toast.error('Por favor, insira a URL do produto');
       return;
@@ -206,7 +207,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
       loadReviews(); // Recarregar avaliações
     } catch (error) {
       console.error('Erro ao importar da URL:', error);
-      toast.error('Erro ao importar avaliações');
+      toast.error('Erro ao importar avaliações da URL');
     } finally {
       setIsImporting(false);
     }
