@@ -36,6 +36,7 @@ export default function DashboardPage() {
     totalStores: 0,
     totalProducts: 0,
     totalReviews: 0,
+    averageRating: 0,
     conversionRate: 0,
     trendsProducts: [] as ChartDataItem[],
     trendsReviews: [] as ChartDataItem[]
@@ -255,6 +256,8 @@ export default function DashboardPage() {
           // Totais iniciais
           let totalProducts = 0;
           let totalReviews = 0;
+          let totalRatingsSum = 0;
+          let productsWithRatings = 0;
           let totalSales = 0;
           let totalViews = 0;
           
@@ -269,6 +272,14 @@ export default function DashboardPage() {
               const { data: storeProducts } = await getProducts(store.id);
               if (storeProducts) {
                 totalReviews += storeProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
+                
+                // Calcular a soma dos ratings para média geral
+                storeProducts.forEach(product => {
+                  if (product.average_rating && product.average_rating > 0) {
+                    totalRatingsSum += product.average_rating;
+                    productsWithRatings++;
+                  }
+                });
               }
               
               // Opcionalmente, fazer chamada para obter estatísticas detalhadas da loja
@@ -286,6 +297,9 @@ export default function DashboardPage() {
             }
           }
           
+          // Calcular média geral de avaliações
+          const averageRating = productsWithRatings > 0 ? (totalRatingsSum / productsWithRatings) : 0;
+          
           // Calcular taxa de conversão
           const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
           
@@ -297,6 +311,7 @@ export default function DashboardPage() {
             totalStores: updatedStores.length,
             totalProducts,
             totalReviews,
+            averageRating,
             conversionRate,
             trendsProducts: productChartData.length > 0 ? productChartData : [],
             trendsReviews: reviewChartData.length > 0 ? reviewChartData : []
@@ -399,19 +414,19 @@ export default function DashboardPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Média de Avaliações</CardTitle>
+                <Star className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{aggregatedStats.conversionRate.toFixed(1)}%</div>
+                <div className="text-3xl font-bold">{aggregatedStats.averageRating.toFixed(2)}</div>
                 <div className="flex items-center mt-1">
-                  <div className="text-xs text-red-500">
-                    <span className="inline-block mr-1">-1%</span>
+                  <div className="text-xs text-green-500">
+                    <span className="inline-block mr-1">12%</span>
                     <span>vs. último mês</span>
                   </div>
                 </div>
                 <div className="w-full h-2 bg-secondary rounded-full mt-3">
-                  <div className="h-2 bg-primary rounded-full" style={{ width: '32%' }}></div>
+                  <div className="h-2 bg-primary rounded-full" style={{ width: '60%' }}></div>
                 </div>
               </CardContent>
             </Card>
