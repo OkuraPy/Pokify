@@ -10,12 +10,14 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsItem, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, MessageSquare, Star, Check, X, FileUp, Link, Sparkles, Download } from 'lucide-react';
+import { Loader2, MessageSquare, Star, Check, X, FileUp, Link, Sparkles, Download, Wand2, Languages } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { getReviews, updateReview, importReviewsFromUrl, generateAIReviews } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Checkbox } from '@/components/ui/checkbox';
+import { GenerateReviewsDialog } from './generate-reviews-dialog';
 
 interface Review {
   id: string;
@@ -42,6 +44,8 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importMethod, setImportMethod] = useState<'csv' | 'url' | 'ai'>('ai');
   const [isImporting, setIsImporting] = useState(false);
+  const [selectAll, setSelectAll] = useState(false);
+  const [averageRating, setAverageRating] = useState(0);
   
   // Estados para importação via URL
   const [productUrl, setProductUrl] = useState('');
@@ -49,7 +53,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
   
   // Estados para geração com IA
   const [reviewCount, setReviewCount] = useState(5);
-  const [averageRating, setAverageRating] = useState(4.5);
+  const [aiAverageRating, setAiAverageRating] = useState(4.5);
   const [reviewLanguage, setReviewLanguage] = useState<string>('portuguese');
   
   // Referência para input de arquivo CSV
@@ -58,6 +62,37 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
   useEffect(() => {
     loadReviews();
   }, [productId]);
+
+  useEffect(() => {
+    // Calcula a média das avaliações
+    if (reviews.length > 0) {
+      const total = reviews.reduce((acc, review) => acc + review.rating, 0);
+      setAverageRating(total / reviews.length);
+    }
+  }, [reviews]);
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    
+    // Atualiza todas as avaliações
+    const updatedReviews = reviews.map(review => ({
+      ...review,
+      is_selected: checked
+    }));
+    
+    // Atualiza o estado local
+    setReviews(updatedReviews);
+    
+    // Atualiza no banco de dados
+    Promise.all(
+      updatedReviews.map(review =>
+        updateReview(review.id, { is_selected: checked })
+      )
+    ).catch(error => {
+      console.error('Erro ao atualizar seleções:', error);
+      toast.error('Erro ao atualizar seleções');
+    });
+  };
   
   async function loadReviews() {
     try {
@@ -182,10 +217,10 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
       setIsImporting(true);
       
       // Chamar a função de geração de avaliações com IA
-      const { success, count, error } = await generateAIReviews(
+      const { success, count, error, data } = await generateAIReviews(
         productId,
         reviewCount,
-        averageRating,
+        aiAverageRating,
         reviewLanguage
       );
       
@@ -194,9 +229,18 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
         return;
       }
       
+      // Atualiza o estado local com as novas avaliações
+      if (data) {
+        const newReviews = [...reviews, ...data];
+        setReviews(newReviews);
+        
+        // Recalcula a média das avaliações
+        const total = newReviews.reduce((acc, review) => acc + review.rating, 0);
+        setAverageRating(total / newReviews.length);
+      }
+      
       toast.success(`${count} avaliações geradas com sucesso!`);
       setImportDialogOpen(false);
-      loadReviews(); // Recarregar avaliações
     } catch (error) {
       console.error('Erro ao gerar avaliações:', error);
       toast.error('Erro ao gerar avaliações com IA');
@@ -231,490 +275,276 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
   
   if (reviews.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Avaliações</CardTitle>
-          <CardDescription>Este produto ainda não possui avaliações</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-          <div className="p-4 bg-secondary/20 rounded-full mb-4">
-            <MessageSquare className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="font-medium mb-2">Nenhuma avaliação encontrada</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Importe avaliações para este produto ou gere avaliações de exemplo.
-          </p>
-          <Button 
-            onClick={() => {
-              console.log("Opening dialog from empty state", importDialogOpen);
-              setImportDialogOpen(true);
-            }}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Importar Avaliações
-          </Button>
-          
-          {/* Dialog directly in the empty state return */}
-          <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Importar Avaliações</DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Escolha uma opção para importar avaliações para este produto.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <Tabs defaultValue="ai" value={importMethod} onValueChange={(value) => setImportMethod(value as 'url' | 'csv' | 'ai')}>
-                <TabsList className="grid grid-cols-3 mb-4">
-                  <TabsTrigger value="url" className="flex items-center gap-1">
-                    <Link className="h-4 w-4" />
-                    <span>URL</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="csv" className="flex items-center gap-1">
-                    <FileUp className="h-4 w-4" />
-                    <span>CSV</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="ai" className="flex items-center gap-1">
-                    <Sparkles className="h-4 w-4" />
-                    <span>IA</span>
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="url" className="space-y-4">
-                  {/* URL content */}
-                  <div className="space-y-2">
-                    <Label>URL do Produto</Label>
-                    <Input 
-                      placeholder="https://www.aliexpress.com/item/..." 
-                      value={productUrl}
-                      onChange={(e) => setProductUrl(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Insira a URL do produto para importar suas avaliações
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Plataforma</Label>
-                    <Select value={platform} onValueChange={setPlatform}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a plataforma" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="aliexpress">AliExpress</SelectItem>
-                        <SelectItem value="shopify">Shopify</SelectItem>
-                        <SelectItem value="shopee">Shopee</SelectItem>
-                        <SelectItem value="amazon">Amazon</SelectItem>
-                        <SelectItem value="other">Outra</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Selecione a plataforma de onde o produto é originário
-                    </p>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="csv" className="space-y-4">
-                  {/* CSV content */}
-                  <div className="space-y-2">
-                    <Label>Arquivo CSV</Label>
-                    <div 
-                      className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <input 
-                        type="file" 
-                        accept=".csv" 
-                        ref={fileInputRef} 
-                        onChange={handleFileChange} 
-                        className="hidden" 
-                      />
-                      <FileUp className="h-10 w-10 text-muted-foreground mb-2" />
-                      <p className="text-sm text-center text-muted-foreground">
-                        Clique para selecionar um arquivo CSV ou arraste e solte aqui
-                      </p>
-                      <p className="text-xs text-center text-muted-foreground mt-2">
-                        O arquivo deve conter colunas: autor, avaliação, conteúdo, data, imagens (opcional)
-                      </p>
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="ai" className="space-y-4">
-                  {/* AI content */}
-                  <div className="grid gap-2 mb-3">
-                    <Label htmlFor="reviewCount">Quantidade de Avaliações</Label>
-                    <div className="flex items-center">
-                      <span className="w-10 text-sm">1</span>
-                      <Slider
-                        id="reviewCount"
-                        className="flex-1 mx-3"
-                        value={[reviewCount]}
-                        min={1}
-                        max={100}
-                        step={1}
-                        onValueChange={(value) => setReviewCount(value[0])}
-                      />
-                      <span className="w-10 text-sm text-right">{reviewCount}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid gap-2 mb-3">
-                    <Label htmlFor="averageRating">Média de Avaliação</Label>
-                    <div className="flex items-center">
-                      <span className="w-10 text-sm">1.0</span>
-                      <Slider 
-                        id="averageRating"
-                        className="flex-1 mx-3"
-                        value={[averageRating]} 
-                        min={1} 
-                        max={5} 
-                        step={0.1} 
-                        onValueChange={(value) => setAverageRating(value[0])} 
-                      />
-                      <span className="flex items-center gap-1 text-sm">
-                        {averageRating.toFixed(1)}
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid gap-2 mb-3">
-                    <Label htmlFor="reviewLanguage">Idioma das Avaliações</Label>
-                    <Select 
-                      value={reviewLanguage} 
-                      onValueChange={setReviewLanguage}
-                    >
-                      <SelectTrigger id="reviewLanguage">
-                        <SelectValue placeholder="Selecione o idioma" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="portuguese">Português</SelectItem>
-                        <SelectItem value="english">Inglês</SelectItem>
-                        <SelectItem value="spanish">Espanhol</SelectItem>
-                        <SelectItem value="french">Francês</SelectItem>
-                        <SelectItem value="german">Alemão</SelectItem>
-                        <SelectItem value="italian">Italiano</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Selecione o idioma em que as avaliações serão geradas
-                    </p>
-                  </div>
-                  
-                  <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-                    <p className="font-medium">Avaliações Persuasivas com IA</p>
-                    <p className="text-muted-foreground">
-                      Gera reviews realistas e persuasivos, utilizando dados específicos do produto.
-                      As avaliações seguem uma abordagem de copywriting que ressalta as qualidades do produto
-                      e aborda possíveis objeções de compra.
-                    </p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-              
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleImport} disabled={isImporting}>
-                  {isImporting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Importando...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Importar Avaliações
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle>Avaliações</CardTitle>
+            <CardDescription>Este produto ainda não possui avaliações</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="p-4 bg-secondary/20 rounded-full mb-4">
+              <MessageSquare className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-medium mb-2">Nenhuma avaliação encontrada</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Gere avaliações de exemplo para este produto usando IA.
+            </p>
+            <Button 
+              onClick={() => setImportDialogOpen(true)}
+              size="lg"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Gerar Reviews com IA
+            </Button>
+          </CardContent>
+        </Card>
+
+        <GenerateReviewsDialog 
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          isImporting={isImporting}
+          reviewCount={reviewCount}
+          setReviewCount={setReviewCount}
+          aiAverageRating={aiAverageRating}
+          setAiAverageRating={setAiAverageRating}
+          reviewLanguage={reviewLanguage}
+          setReviewLanguage={setReviewLanguage}
+          onGenerate={handleGenerateAIReviews}
+        />
+      </>
     );
   }
   
   return (
-    <>
-      <Card>
-        <CardHeader>
+    <div className="space-y-6">
+      {/* Header com estatísticas */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="border-b bg-gray-50/80">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Avaliações do Produto</CardTitle>
-              <CardDescription>
-                {reviewsCount} avaliações no total
+              <CardTitle className="text-xl font-semibold">Avaliações do Produto</CardTitle>
+              <CardDescription className="mt-1">
+                Gerencie as avaliações e feedback dos clientes
               </CardDescription>
             </div>
-            <div className="space-x-2">
-              <Badge variant="outline">
-                {reviews.filter(r => r.is_selected).length} selecionadas
-              </Badge>
-              <Button variant="outline" size="sm" onClick={() => setImportDialogOpen(true)}>
-                <Download className="mr-2 h-4 w-4" />
-                Importar
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-md border shadow-sm">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star 
+                      key={star} 
+                      size={16} 
+                      className={star <= averageRating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} 
+                    />
+                  ))}
+                </div>
+                <Separator orientation="vertical" className="h-4" />
+                <span className="text-sm font-medium">{reviews.length} avaliações</span>
+              </div>
+              <Button variant="default" onClick={() => setImportDialogOpen(true)}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Gerar Reviews com IA
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {reviews.map((review) => (
-            <Card key={review.id} className={`border ${review.is_selected ? 'border-primary' : 'border-border/60'}`}>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium">{review.author}</h3>
-                      <Badge variant="outline" className="text-xs">
-                        {review.date || format(new Date(review.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <div className="flex">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star 
-                            key={star} 
-                            size={16} 
-                            className={star <= review.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} 
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {review.rating}/5
-                      </span>
-                    </div>
-                    
-                    <p className="text-sm">{review.content}</p>
-                    
-                    {review.images && review.images.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {review.images.map((image, i) => (
-                          <div key={i} className="relative h-16 w-16 rounded-md overflow-hidden border border-border/60">
-                            <img src={image} alt={`Imagem ${i+1}`} className="h-full w-full object-cover" />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Card de Estatísticas */}
+            <Card className="col-span-1 md:col-span-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-none shadow-sm">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-muted-foreground">Total de Avaliações</h3>
+                    <p className="text-2xl font-bold">{reviews.length}</p>
                   </div>
-                  
-                  <Button 
-                    variant={review.is_selected ? "default" : "outline"} 
-                    size="sm"
-                    onClick={() => toggleReviewSelection(review.id, review.is_selected)}
-                    disabled={isUpdating === review.id}
-                  >
-                    {isUpdating === review.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : review.is_selected ? (
-                      <>
-                        <Check className="h-4 w-4 mr-1" />
-                        Selecionada
-                      </>
-                    ) : (
-                      "Selecionar"
-                    )}
-                  </Button>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-muted-foreground">Média Geral</h3>
+                    <div className="flex items-center gap-2">
+                      <p className="text-2xl font-bold">{averageRating.toFixed(1)}</p>
+                      <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-muted-foreground">Avaliações Selecionadas</h3>
+                    <p className="text-2xl font-bold">{reviews.filter(r => r.is_selected).length}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-medium text-muted-foreground">Avaliações com Fotos</h3>
+                    <p className="text-2xl font-bold">{reviews.filter(r => r.images && r.images.length > 0).length}</p>
+                  </div>
                 </div>
-                
-                {review.is_published && (
-                  <div className="mt-4 pt-4 border-t border-border/40">
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      Publicada na loja
-                    </Badge>
-                  </div>
-                )}
               </CardContent>
             </Card>
-          ))}
-          
-          {reviewsCount > reviews.length && (
-            <Button variant="outline" className="w-full">
-              Carregar mais avaliações
-            </Button>
-          )}
+
+            {/* Lista de Avaliações */}
+            <div className="col-span-1 md:col-span-3 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="select-all"
+                    checked={selectAll}
+                    onCheckedChange={handleSelectAll}
+                  />
+                  <label htmlFor="select-all" className="text-sm">
+                    Selecionar todas as avaliações
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm">
+                    <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                    Melhorar Selecionadas
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Languages className="h-3.5 w-3.5 mr-1.5" />
+                    Traduzir Selecionadas
+                  </Button>
+                </div>
+              </div>
+
+              {reviews.map((review) => (
+                <Card key={review.id} className={`group transition-all duration-200 hover:shadow-md ${review.is_selected ? 'ring-2 ring-primary ring-offset-2' : 'border-border/60'}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-4">
+                      <Checkbox
+                        checked={review.is_selected}
+                        onCheckedChange={() => toggleReviewSelection(review.id, review.is_selected)}
+                        disabled={isUpdating === review.id}
+                      />
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium">{review.author}</h3>
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {review.date || format(new Date(review.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star 
+                                    key={star} 
+                                    size={14} 
+                                    className={star <= review.rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} 
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-muted-foreground">
+                                {review.rating}/5
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="sm" variant="ghost" className="h-8">
+                              <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                              Melhorar
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-8">
+                              <Languages className="h-3.5 w-3.5 mr-1.5" />
+                              Traduzir
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm leading-relaxed">{review.content}</p>
+                        
+                        {review.images && review.images.length > 0 && (
+                          <div className="mt-4">
+                            <label className="text-sm font-medium mb-2 block text-muted-foreground">Fotos do Cliente</label>
+                            <div className="flex flex-wrap gap-2">
+                              {review.images.map((image, i) => (
+                                <div key={i} className="group/image relative h-20 w-20 rounded-md overflow-hidden border border-border/60">
+                                  <img src={image} alt={`Imagem ${i+1}`} className="h-full w-full object-cover" />
+                                  <button
+                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity"
+                                    onClick={() => {/* Função para remover imagem */}}
+                                  >
+                                    <X className="h-4 w-4 text-white" />
+                                  </button>
+                                </div>
+                              ))}
+                              <button 
+                                className="h-20 w-20 rounded-md border-2 border-dashed border-border/60 flex items-center justify-center hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                                onClick={() => {/* Função para adicionar imagem */}}
+                              >
+                                <FileUp className="h-5 w-5 text-muted-foreground" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Sidebar com Filtros e Ações */}
+            <div className="col-span-1 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Filtros</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Classificação</label>
+                      <div className="space-y-2">
+                        {[5, 4, 3, 2, 1].map((rating) => (
+                          <button
+                            key={rating}
+                            className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-secondary/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                              <span className="text-sm">{rating}</span>
+                            </div>
+                            <Badge variant="secondary" className="font-normal">
+                              {reviews.filter(r => r.rating === rating).length}
+                            </Badge>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <Separator />
+                    <div>
+                      <label className="text-sm font-medium mb-1.5 block">Status</label>
+                      <div className="space-y-2">
+                        <button className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-secondary/50 transition-colors">
+                          <span className="text-sm">Com fotos</span>
+                          <Badge variant="secondary" className="font-normal">
+                            {reviews.filter(r => r.images && r.images.length > 0).length}
+                          </Badge>
+                        </button>
+                        <button className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-secondary/50 transition-colors">
+                          <span className="text-sm">Selecionadas</span>
+                          <Badge variant="secondary" className="font-normal">
+                            {reviews.filter(r => r.is_selected).length}
+                          </Badge>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Modal de Importação */}
-      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Importar Avaliações</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Escolha uma opção para importar avaliações para este produto.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Tabs defaultValue="ai" value={importMethod} onValueChange={(value) => setImportMethod(value as 'url' | 'csv' | 'ai')}>
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="url" className="flex items-center gap-1">
-                <Link className="h-4 w-4" />
-                <span>URL</span>
-              </TabsTrigger>
-              <TabsTrigger value="csv" className="flex items-center gap-1">
-                <FileUp className="h-4 w-4" />
-                <span>CSV</span>
-              </TabsTrigger>
-              <TabsTrigger value="ai" className="flex items-center gap-1">
-                <Sparkles className="h-4 w-4" />
-                <span>IA</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="url" className="space-y-4">
-              <div className="space-y-2">
-                <Label>URL do Produto</Label>
-                <Input 
-                  placeholder="https://www.aliexpress.com/item/..." 
-                  value={productUrl}
-                  onChange={(e) => setProductUrl(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Insira a URL do produto para importar suas avaliações
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Plataforma</Label>
-                <Select value={platform} onValueChange={setPlatform}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a plataforma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aliexpress">AliExpress</SelectItem>
-                    <SelectItem value="shopify">Shopify</SelectItem>
-                    <SelectItem value="shopee">Shopee</SelectItem>
-                    <SelectItem value="amazon">Amazon</SelectItem>
-                    <SelectItem value="other">Outra</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Selecione a plataforma de onde o produto é originário
-                </p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="csv" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Arquivo CSV</Label>
-                <div 
-                  className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input 
-                    type="file" 
-                    accept=".csv" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange} 
-                    className="hidden" 
-                  />
-                  <FileUp className="h-10 w-10 text-muted-foreground mb-2" />
-                  <p className="text-sm text-center text-muted-foreground">
-                    Clique para selecionar um arquivo CSV ou arraste e solte aqui
-                  </p>
-                  <p className="text-xs text-center text-muted-foreground mt-2">
-                    O arquivo deve conter colunas: autor, avaliação, conteúdo, data, imagens (opcional)
-                  </p>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="ai" className="space-y-4">
-              <div className="grid gap-2 mb-3">
-                <Label htmlFor="reviewCount">Quantidade de Avaliações</Label>
-                <div className="flex items-center">
-                  <span className="w-10 text-sm">1</span>
-                  <Slider
-                    id="reviewCount"
-                    className="flex-1 mx-3"
-                    value={[reviewCount]}
-                    min={1}
-                    max={100}
-                    step={1}
-                    onValueChange={(value) => setReviewCount(value[0])}
-                  />
-                  <span className="w-10 text-sm text-right">{reviewCount}</span>
-                </div>
-              </div>
-              
-              <div className="grid gap-2 mb-3">
-                <Label htmlFor="averageRating">Média de Avaliação</Label>
-                <div className="flex items-center">
-                  <span className="w-10 text-sm">1.0</span>
-                  <Slider 
-                    id="averageRating"
-                    className="flex-1 mx-3"
-                    value={[averageRating]} 
-                    min={1} 
-                    max={5} 
-                    step={0.1} 
-                    onValueChange={(value) => setAverageRating(value[0])} 
-                  />
-                  <span className="flex items-center gap-1 text-sm">
-                    {averageRating.toFixed(1)}
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  </span>
-                </div>
-              </div>
-              
-              <div className="grid gap-2 mb-3">
-                <Label htmlFor="reviewLanguage">Idioma das Avaliações</Label>
-                <Select 
-                  value={reviewLanguage} 
-                  onValueChange={setReviewLanguage}
-                >
-                  <SelectTrigger id="reviewLanguage">
-                    <SelectValue placeholder="Selecione o idioma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="portuguese">Português</SelectItem>
-                    <SelectItem value="english">Inglês</SelectItem>
-                    <SelectItem value="spanish">Espanhol</SelectItem>
-                    <SelectItem value="french">Francês</SelectItem>
-                    <SelectItem value="german">Alemão</SelectItem>
-                    <SelectItem value="italian">Italiano</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Selecione o idioma em que as avaliações serão geradas
-                </p>
-              </div>
-              
-              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
-                <p className="font-medium">Avaliações Persuasivas com IA</p>
-                <p className="text-muted-foreground">
-                  Gera reviews realistas e persuasivos, utilizando dados específicos do produto.
-                  As avaliações seguem uma abordagem de copywriting que ressalta as qualidades do produto
-                  e aborda possíveis objeções de compra.
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleImport} disabled={isImporting}>
-              {isImporting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Importando...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Importar Avaliações
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+      <GenerateReviewsDialog 
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        isImporting={isImporting}
+        reviewCount={reviewCount}
+        setReviewCount={setReviewCount}
+        aiAverageRating={aiAverageRating}
+        setAiAverageRating={setAiAverageRating}
+        reviewLanguage={reviewLanguage}
+        setReviewLanguage={setReviewLanguage}
+        onGenerate={handleGenerateAIReviews}
+      />
+    </div>
   );
 } 
