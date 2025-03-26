@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Languages, Check } from 'lucide-react';
+import { Loader2, Languages } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 
@@ -44,12 +44,6 @@ export function TranslationDialog({
 }: TranslationDialogProps) {
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [isTranslating, setIsTranslating] = useState(false);
-  const [translatedData, setTranslatedData] = useState<{
-    title: string;
-    description: string;
-    marketingNotes?: string;
-  }>({ title: '', description: '' });
-  const [showPreview, setShowPreview] = useState(false);
 
   const handleTranslate = async () => {
     if (!targetLanguage) {
@@ -84,22 +78,17 @@ export function TranslationDialog({
 
       const translatedTitle = data.translations.find((t: any) => t.id === 'title')?.text || '';
       const translatedDesc = data.translations.find((t: any) => t.id === 'description')?.text || '';
-
-      setTranslatedData({
-        title: translatedTitle,
-        description: translatedDesc,
-        marketingNotes: data.marketingNotes
-      });
       
-      setShowPreview(true);
-      
-      // Salvar automaticamente
+      // Salvar automaticamente sem mostrar prévia
       await handleSave({
         title: translatedTitle,
         description: translatedDesc
       });
       
       toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
+      
+      // Fechar o diálogo automaticamente após salvar
+      onClose();
     } catch (error) {
       console.error('Erro na tradução:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao traduzir o conteúdo');
@@ -153,38 +142,11 @@ export function TranslationDialog({
               </SelectContent>
             </Select>
           </div>
-
-          {showPreview && (
-            <div className="space-y-4">
-              <div className="grid gap-2">
-                <Label>Título Traduzido</Label>
-                <div className="p-2 bg-muted rounded-md">
-                  {translatedData.title}
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label>Descrição Traduzida</Label>
-                <div className="p-2 bg-muted rounded-md whitespace-pre-wrap">
-                  {translatedData.description}
-                </div>
-              </div>
-
-              {translatedData.marketingNotes && (
-                <div className="grid gap-2">
-                  <Label>Notas de Adaptação</Label>
-                  <div className="p-2 bg-muted/50 rounded-md text-sm text-muted-foreground">
-                    {translatedData.marketingNotes}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Fechar
+            Cancelar
           </Button>
           <Button 
             onClick={handleTranslate} 
@@ -198,7 +160,7 @@ export function TranslationDialog({
             ) : (
               <>
                 <Languages className="mr-2 h-4 w-4" />
-                Traduzir
+                Traduzir para {getLanguageName(targetLanguage)}
               </>
             )}
           </Button>
