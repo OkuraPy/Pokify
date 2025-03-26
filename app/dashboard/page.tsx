@@ -304,8 +304,8 @@ export default function DashboardPage() {
           const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
           
           // Buscar dados reais para os gráficos
-          const productChartData = await fetchProductsChartData(period);
-          const reviewChartData = await fetchReviewsChartData(period);
+          const productsData = await fetchProductsChartData(period);
+          const reviewsData = await fetchReviewsChartData(period);
           
           setAggregatedStats({
             totalStores: updatedStores.length,
@@ -313,8 +313,8 @@ export default function DashboardPage() {
             totalReviews,
             averageRating,
             conversionRate,
-            trendsProducts: productChartData.length > 0 ? productChartData : [],
-            trendsReviews: reviewChartData.length > 0 ? reviewChartData : []
+            trendsProducts: productsData.length > 0 ? productsData : [],
+            trendsReviews: reviewsData.length > 0 ? reviewsData : []
           });
         }
       } catch (err) {
@@ -496,7 +496,7 @@ export default function DashboardPage() {
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={productChartData}
+                    data={aggregatedStats.trendsProducts.length > 0 ? aggregatedStats.trendsProducts : productChartData}
                     margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -556,7 +556,7 @@ export default function DashboardPage() {
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={reviewChartData}
+                    data={aggregatedStats.trendsReviews.length > 0 ? aggregatedStats.trendsReviews : reviewChartData}
                     margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
