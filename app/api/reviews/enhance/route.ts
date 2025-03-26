@@ -60,8 +60,11 @@ export async function POST(request: Request) {
     console.log('Iniciando melhoria de reviews para produto:', productName);
     
     // Configuração dos prompts
-    const systemPrompt = `Você é um copywriter especializado em produtos físicos e e-commerce, com vasta experiência em criar avaliações persuasivas.
-Seu trabalho é melhorar reviews existentes para torná-los mais persuasivos, autênticos e eficazes em converter visitantes em compradores.`;
+    const systemPrompt = `Você é um copywriter especializado em avaliações curtas e persuasivas para e-commerce.
+
+Seu trabalho é melhorar reviews existentes para serem mais persuasivos, autênticos e concisos (em torno de 50 palavras).
+Mantenha apenas o texto da avaliação, sem incluir metadados como ID ou AUTOR.
+Retorne exclusivamente o texto melhorado, sem introduções ou prefixos.`;
     
     // Processar cada review em lote
     const enhancementPromises = reviews.map(async (review: any) => {
@@ -74,15 +77,15 @@ AUTOR: ${review.author}
 AVALIAÇÃO ORIGINAL: ${review.content}
 
 Diretrizes para melhoria:
-1. Mantenha o tom natural, como se fosse um cliente real
-2. Adicione detalhes pessoais para aumentar a credibilidade (ex: idade, experiência anterior, mudança sentida após usar o produto)
-3. Mostre entusiasmo genuíno e satisfação com a compra
-4. Utilize gatilhos mentais como prova social e reciprocidade
-5. Aborde e quebre possíveis objeções ao produto
-6. Mantenha o mesmo sentimento e opinião geral do review original (positivo/negativo)
-7. Preserve qualquer menção específica a características do produto
+1. IMPORTANTE: Retorne APENAS o texto melhorado, sem incluir ID, autor ou qualquer prefixo
+2. Mantenha o tom natural, como se fosse um cliente real
+3. Use aproximadamente 50 palavras (2-3 frases curtas)
+4. Adicione detalhes pessoais para aumentar a credibilidade
+5. Mantenha o mesmo sentimento e opinião geral do review original
+6. Preserve qualquer menção específica a características do produto
+7. Seja persuasivo, mas conciso
 
-Retorne apenas o texto melhorado da avaliação, sem explicações adicionais.`;
+RETORNE APENAS O TEXTO DA AVALIAÇÃO MELHORADA. NÃO inclua "ID:", "AUTOR:", ou "AVALIAÇÃO MELHORADA:" no início.`;
 
       try {
         console.log('Enviando prompt para OpenAI:', { systemPrompt, userPrompt });
