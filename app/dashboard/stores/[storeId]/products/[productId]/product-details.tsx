@@ -212,6 +212,62 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
     }
   };
 
+  // Função para formatar e limpar a descrição do produto
+  const formatProductDescription = (description: string): string => {
+    let formatted = description;
+    
+    // Remover múltiplas quebras de linha
+    formatted = formatted.replace(/(\r\n|\r|\n){2,}/g, '<br><br>');
+    
+    // Adicionar espaçamento entre parágrafos se não houver
+    if (!formatted.includes('<p>') && !formatted.includes('<div')) {
+      formatted = '<p>' + formatted.replace(/(\r\n|\r|\n)/g, '</p><p>') + '</p>';
+    }
+    
+    // Garantir que listas estejam formatadas corretamente
+    if (formatted.includes('•') || formatted.includes('-') && !formatted.includes('<li>')) {
+      const listItems = formatted.split(/(?:\r\n|\r|\n)/g);
+      let inList = false;
+      let newContent = '';
+      
+      for (const item of listItems) {
+        const trimmed = item.trim();
+        if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+          if (!inList) {
+            newContent += '<ul>';
+            inList = true;
+          }
+          newContent += `<li>${trimmed.substring(1).trim()}</li>`;
+        } else {
+          if (inList) {
+            newContent += '</ul>';
+            inList = false;
+          }
+          if (trimmed.length > 0) {
+            newContent += `<p>${trimmed}</p>`;
+          }
+        }
+      }
+      
+      if (inList) {
+        newContent += '</ul>';
+      }
+      
+      formatted = newContent;
+    }
+    
+    // Remover <br> dentro de parágrafos mas manter entre parágrafos
+    formatted = formatted.replace(/<p>(.*?)<br>(.*?)<\/p>/g, '<p>$1 $2</p>');
+    
+    // Adicionar classes para realçar características importantes
+    formatted = formatted.replace(/<strong>(.*?)<\/strong>/g, '<strong class="text-gray-800 font-medium">$1</strong>');
+    
+    // Garantir que títulos tenham formatação adequada
+    formatted = formatted.replace(/<h([1-6])>(.*?)<\/h([1-6])>/g, '<h$1 class="text-gray-800 font-semibold my-3">$2</h$3>');
+    
+    return formatted;
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
@@ -432,40 +488,113 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           </nav>
           
           {/* Ferramentas de IA */}
-          <div className="border-t pt-6 space-y-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">FERRAMENTAS DE IA</h3>
+          <div className="border-t pt-6">
+            <div className="flex items-center mb-4">
+              <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 h-5 w-1 rounded-full mr-2"></div>
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">Ferramentas de IA</h3>
+            </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="w-full justify-start text-sm px-3 py-2 h-auto bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100"
-              onClick={() => setActiveTab("reviews")}
-            >
-              <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13 10V3L4 14H7V21L16 10H13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <div className="text-left">
-                <span className="font-medium">Gerar Avaliações</span>
-                <p className="text-xs text-indigo-600/70 mt-0.5">Crie reviews com IA</p>
+            {/* Ferramentas de Produto */}
+            <div className="mb-4">
+              <h4 className="text-xs text-gray-500 font-medium ml-1 mb-2 flex items-center">
+                <span className="h-1 w-1 rounded-full bg-blue-500 mr-1.5"></span>
+                Produto
+              </h4>
+              
+              <div className="space-y-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="group w-full justify-start text-sm px-4 py-3 h-auto rounded-xl transition-all duration-300 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 text-blue-700 shadow-sm hover:shadow"
+                  onClick={() => setIsTranslationDialogOpen(true)}
+                >
+                  <div className="relative mr-3">
+                    <div className="absolute -inset-1 bg-blue-400 rounded-full opacity-20 group-hover:opacity-40 group-hover:blur-sm transition-all duration-300"></div>
+                    <Languages className="h-5 w-5 relative text-blue-600" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium">Traduzir Produto</span>
+                    <p className="text-xs text-blue-600/70 mt-0.5">Tradução automática</p>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="group w-full justify-start text-sm px-4 py-3 h-auto rounded-xl transition-all duration-300 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border border-purple-200 text-purple-700 shadow-sm hover:shadow"
+                  onClick={() => setIsImproveDescriptionDialogOpen(true)}
+                >
+                  <div className="relative mr-3">
+                    <div className="absolute -inset-1 bg-purple-400 rounded-full opacity-20 group-hover:opacity-40 group-hover:blur-sm transition-all duration-300"></div>
+                    <Sparkles className="h-5 w-5 relative text-purple-600" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium">Melhorar Descrição</span>
+                    <p className="text-xs text-purple-600/70 mt-0.5">Otimização com IA</p>
+                  </div>
+                </Button>
               </div>
-            </Button>
+            </div>
             
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="w-full justify-start text-sm px-3 py-2 h-auto bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
-              onClick={() => setIsTranslationDialogOpen(true)}
-            >
-              <svg className="h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 5H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M9 3V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <path d="M10 14L14 9M8 9H16H8ZM9 21L14 9L9 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <div className="text-left">
-                <span className="font-medium">Traduzir Produto</span>
-                <p className="text-xs text-blue-600/70 mt-0.5">Tradução automática</p>
+            {/* Ferramentas de Avaliação */}
+            <div>
+              <h4 className="text-xs text-gray-500 font-medium ml-1 mb-2 flex items-center">
+                <span className="h-1 w-1 rounded-full bg-indigo-500 mr-1.5"></span>
+                Avaliações
+              </h4>
+              
+              <div className="space-y-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="group w-full justify-start text-sm px-4 py-3 h-auto rounded-xl transition-all duration-300 bg-gradient-to-br from-indigo-50 to-indigo-100 hover:from-indigo-100 hover:to-indigo-200 border border-indigo-200 text-indigo-700 shadow-sm hover:shadow"
+                  onClick={() => setActiveTab("reviews")}
+                >
+                  <div className="relative mr-3">
+                    <div className="absolute -inset-1 bg-indigo-400 rounded-full opacity-20 group-hover:opacity-40 group-hover:blur-sm transition-all duration-300"></div>
+                    <svg className="h-5 w-5 relative text-indigo-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M13 10V3L4 14H7V21L16 10H13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium">Gerar Avaliações</span>
+                    <p className="text-xs text-indigo-600/70 mt-0.5">Crie reviews com IA</p>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="group w-full justify-start text-sm px-4 py-3 h-auto rounded-xl transition-all duration-300 bg-gradient-to-br from-amber-50 to-amber-100 hover:from-amber-100 hover:to-amber-200 border border-amber-200 text-amber-700 shadow-sm hover:shadow"
+                  onClick={() => setActiveTab("reviews")}
+                >
+                  <div className="relative mr-3">
+                    <div className="absolute -inset-1 bg-amber-400 rounded-full opacity-20 group-hover:opacity-40 group-hover:blur-sm transition-all duration-300"></div>
+                    <Sparkles className="h-5 w-5 relative text-amber-600" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium">Melhorar Avaliações</span>
+                    <p className="text-xs text-amber-600/70 mt-0.5">Otimize reviews existentes</p>
+                  </div>
+                </Button>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="group w-full justify-start text-sm px-4 py-3 h-auto rounded-xl transition-all duration-300 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border border-green-200 text-green-700 shadow-sm hover:shadow"
+                  onClick={() => setActiveTab("reviews")}
+                >
+                  <div className="relative mr-3">
+                    <div className="absolute -inset-1 bg-green-400 rounded-full opacity-20 group-hover:opacity-40 group-hover:blur-sm transition-all duration-300"></div>
+                    <Languages className="h-5 w-5 relative text-green-600" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-medium">Traduzir Avaliações</span>
+                    <p className="text-xs text-green-600/70 mt-0.5">Traduza reviews existentes</p>
+                  </div>
+                </Button>
               </div>
-            </Button>
+            </div>
           </div>
         </aside>
         
@@ -644,9 +773,14 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="prose prose-sm max-w-none">
+                <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-gray-800 prose-p:text-gray-600 prose-p:my-3 prose-strong:text-gray-800 prose-strong:font-medium prose-ul:my-3 prose-ul:list-disc prose-ul:pl-5 prose-li:my-1 prose-a:text-blue-600 space-y-4">
                   {product.description ? (
-                    <div dangerouslySetInnerHTML={{ __html: product.description }} />
+                    <div 
+                      dangerouslySetInnerHTML={{ 
+                        __html: formatProductDescription(product.description) 
+                      }} 
+                      className="description-content p-1 rounded-md"
+                    />
                   ) : (
                     <p className="text-muted-foreground italic">
                       Este produto não possui uma descrição detalhada.
