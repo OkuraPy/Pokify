@@ -224,30 +224,71 @@ export default function DashboardPage() {
           return;
         }
         
+        if (!storesData || storesData.length === 0) {
+          setStores([]);
+          setAggregatedStats({
+            totalStores: 0,
+            totalProducts: 0,
+            totalReviews: 0,
+            averageRating: 0,
+            conversionRate: 0,
+            trendsProducts: [],
+            trendsReviews: []
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Log para depuração
+        console.log("Dados das lojas recebidos:", storesData);
+        
         // Atualizar o número real de produtos em cada loja
         const updatedStores = await Promise.all(storesData.map(async (store) => {
           try {
             // Buscar produtos reais de cada loja
-            const { data: storeProducts } = await getProducts(store.id);
+            const { data: storeProducts, error: productsError } = await getProducts(store.id);
+            
+            if (productsError) {
+              console.error(`Erro ao buscar produtos da loja ${store.id}:`, productsError);
+              return {
+                ...store,
+                products_count: 0,
+                reviews_count: 0
+              };
+            }
+            
+            // Log para depuração de produtos
+            console.log(`Produtos da loja ${store.name}:`, storeProducts);
+            
+            // Garantir que storeProducts seja um array válido
+            const validProducts = Array.isArray(storeProducts) ? storeProducts : [];
+            const productCount = validProducts.length;
             
             // Calcular o total de reviews para esta loja
             let storeReviewsCount = 0;
-            if (storeProducts && storeProducts.length > 0) {
-              storeReviewsCount = storeProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
+            if (validProducts.length > 0) {
+              storeReviewsCount = validProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
             }
             
             // Atualizar o valor de products_count com o número real de produtos
             // e adicionar o reviews_count para cada loja
             return {
               ...store,
-              products_count: storeProducts ? storeProducts.length : 0,
+              products_count: productCount,
               reviews_count: storeReviewsCount
             };
           } catch (error) {
             console.error(`Erro ao buscar produtos da loja ${store.id}:`, error);
-            return store; // manter os dados originais em caso de erro
+            return {
+              ...store,
+              products_count: 0,
+              reviews_count: 0
+            }; // definir valores padrão em caso de erro
           }
         }));
+        
+        // Log para depuração das lojas atualizadas
+        console.log("Lojas atualizadas com contagem de produtos:", updatedStores);
         
         setStores(updatedStores || []);
         
@@ -258,21 +299,21 @@ export default function DashboardPage() {
           let totalReviews = 0;
           let totalRatingsSum = 0;
           let productsWithRatings = 0;
-          let totalSales = 0;
-          let totalViews = 0;
           
           // Recuperar estatísticas de cada loja
           for (const store of updatedStores) {
-            // Adicionar o número de produtos diretamente da loja 
-            // (não buscar produtos individuais para evitar duplicações)
-            totalProducts += store.products_count || 0;
+            // Somar produtos de cada loja
+            const storeProductCount = store.products_count || 0;
+            totalProducts += storeProductCount;
+            
+            // Somar reviews de cada loja
+            const storeReviewCount = store.reviews_count || 0;
+            totalReviews += storeReviewCount;
             
             try {
-              // Buscar produtos apenas para contar reviews se necessário
+              // Buscar produtos apenas para calcular ratings médios se necessário
               const { data: storeProducts } = await getProducts(store.id);
-              if (storeProducts) {
-                totalReviews += storeProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
-                
+              if (storeProducts && storeProducts.length > 0) {
                 // Calcular a soma dos ratings para média geral
                 storeProducts.forEach(product => {
                   if (product.average_rating && product.average_rating > 0) {
@@ -281,27 +322,21 @@ export default function DashboardPage() {
                   }
                 });
               }
-              
-              // Opcionalmente, fazer chamada para obter estatísticas detalhadas da loja
-              try {
-                const storeStats = await getStoreStats(store.id);
-                if (storeStats) {
-                  totalSales += storeStats.totalSales || 0;
-                  totalViews += storeStats.totalViews || 0;
-                }
-              } catch (storeError) {
-                console.error(`Erro ao obter estatísticas da loja ${store.id}:`, storeError);
-              }
             } catch (productsError) {
-              console.error(`Erro ao buscar produtos da loja ${store.id}:`, productsError);
+              console.error(`Erro ao buscar produtos para ratings da loja ${store.id}:`, productsError);
             }
           }
           
+          // Log para depuração dos totais
+          console.log("Estatísticas calculadas:", { 
+            totalStores: updatedStores.length,
+            totalProducts,
+            totalReviews,
+            avgRating: productsWithRatings > 0 ? (totalRatingsSum / productsWithRatings) : 0
+          });
+          
           // Calcular média geral de avaliações
           const averageRating = productsWithRatings > 0 ? (totalRatingsSum / productsWithRatings) : 0;
-          
-          // Calcular taxa de conversão
-          const conversionRate = totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
           
           // Buscar dados reais para os gráficos
           const productsData = await fetchProductsChartData(period);
@@ -312,7 +347,7 @@ export default function DashboardPage() {
             totalProducts,
             totalReviews,
             averageRating,
-            conversionRate,
+            conversionRate: 0, // Removido cálculo que dependia de totalViews e totalSales
             trendsProducts: productsData.length > 0 ? productsData : [],
             trendsReviews: reviewsData.length > 0 ? reviewsData : []
           });

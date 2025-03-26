@@ -347,6 +347,8 @@ export async function verifyShopifyCredentials(
 // Funções de Gerenciamento de Produtos
 export async function getProducts(storeId?: string, status?: 'imported' | 'editing' | 'ready' | 'published' | 'archived') {
   try {
+    console.log(`Buscando produtos ${storeId ? `da loja ${storeId}` : "de todas as lojas"}${status ? ` com status ${status}` : ""}`);
+    
     let query = supabase
       .from('products')
       .select('*')
@@ -363,9 +365,42 @@ export async function getProducts(storeId?: string, status?: 'imported' | 'editi
     // Executar diretamente a query
     const productsResult = await query;
     
+    // Verificar se o resultado é válido
+    if (productsResult.error) {
+      console.error('Erro ao buscar produtos:', productsResult.error);
+      return { 
+        data: [], 
+        error: productsResult.error 
+      };
+    }
+    
+    // Garantir que o resultado seja sempre um array, mesmo que vazio
+    const products = productsResult.data || [];
+    
+    // Log para depuração
+    console.log(`Encontrados ${products.length} produtos${storeId ? ` para a loja ${storeId}` : ""}`);
+    
+    // Se houver um storeId e produtos foram encontrados, atualizar a contagem na tabela de lojas
+    if (storeId && !status) {
+      try {
+        // Atualizar o contador de produtos da loja diretamente na tabela
+        await supabase
+          .from('stores')
+          .update({ 
+            products_count: products.length,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', storeId);
+          
+        console.log(`Atualizada contagem de produtos da loja ${storeId} para ${products.length}`);
+      } catch (updateError) {
+        console.error(`Erro ao atualizar contagem de produtos da loja ${storeId}:`, updateError);
+      }
+    }
+    
     return { 
-      data: productsResult.data || [], 
-      error: productsResult.error 
+      data: products, 
+      error: null 
     };
   } catch (error) {
     console.error('Erro ao buscar produtos:', error);
@@ -971,7 +1006,7 @@ export async function generateAIReviews(
     
     // Parsear o JSON retornado
     try {
-      // Tentar extrair o JSON da resposta, mesmo que esteja dentro de um bloco de código
+      // Tentar extrair o JSON da resposta, mesmo que esteja dentro de um bloco de código markdown, extrair apenas o JSON
       let jsonContent = generatedContent;
       
       // Se o conteúdo tiver blocos de código markdown, extrair apenas o JSON
