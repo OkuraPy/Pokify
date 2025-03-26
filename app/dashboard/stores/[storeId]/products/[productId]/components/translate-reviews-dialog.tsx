@@ -56,9 +56,7 @@ export function TranslateReviewsDialog({
 }: TranslateReviewsDialogProps) {
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [isTranslating, setIsTranslating] = useState(false);
-  const [translatedReviews, setTranslatedReviews] = useState<Array<{id: string; translatedContent: string}>>([]);
-  const [showPreview, setShowPreview] = useState(false);
-
+  
   const handleTranslate = async () => {
     if (!targetLanguage) {
       toast.error('Selecione um idioma');
@@ -95,14 +93,14 @@ export function TranslateReviewsDialog({
       if (!data.success || !data.translations) {
         throw new Error('Resposta inválida do servidor');
       }
-
-      setTranslatedReviews(data.translations);
-      setShowPreview(true);
       
-      // Salvar automaticamente as traduções
+      // Salvar automaticamente as traduções sem mostrar preview
       await handleSave(data.translations);
       
       toast.success(`${reviews.length === 1 ? 'Avaliação traduzida' : 'Avaliações traduzidas'} para ${getLanguageName(targetLanguage)}`);
+      
+      // Fechar o diálogo automaticamente após salvar
+      onClose();
     } catch (error) {
       console.error('Erro na tradução:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao traduzir o conteúdo');
@@ -167,63 +165,28 @@ export function TranslateReviewsDialog({
               </SelectContent>
             </Select>
           </div>
-
-          {showPreview && (
-            <div className="space-y-4">
-              <div className="bg-green-50 p-3 rounded border border-green-200 text-green-700">
-                <p className="font-medium flex items-center">
-                  <Check className="mr-2 h-4 w-4" />
-                  Traduções concluídas e salvas com sucesso
-                </p>
-              </div>
-              
-              {translatedReviews.map((translated) => {
-                const originalReview = reviews.find(r => r.id === translated.id);
-                return (
-                  <div key={translated.id} className="border rounded-md p-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm text-gray-500">Avaliação Original</Label>
-                        <div className="p-2 bg-gray-50 rounded-md mt-1 whitespace-pre-wrap">
-                          {originalReview?.content}
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm text-gray-500">Avaliação Traduzida</Label>
-                        <div className="p-2 bg-blue-50 rounded-md mt-1 whitespace-pre-wrap">
-                          {translated.translatedContent}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Fechar
+            Cancelar
           </Button>
-          {!showPreview && (
-            <Button 
-              onClick={handleTranslate} 
-              disabled={isTranslating}
-            >
-              {isTranslating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Traduzindo...
-                </>
-              ) : (
-                <>
-                  <Languages className="mr-2 h-4 w-4" />
-                  Traduzir para {getLanguageName(targetLanguage)}
-                </>
-              )}
-            </Button>
-          )}
+          <Button 
+            onClick={handleTranslate} 
+            disabled={isTranslating}
+          >
+            {isTranslating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Traduzindo...
+              </>
+            ) : (
+              <>
+                <Languages className="mr-2 h-4 w-4" />
+                Traduzir para {getLanguageName(targetLanguage)}
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
