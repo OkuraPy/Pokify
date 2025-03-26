@@ -37,8 +37,8 @@ interface Store {
   platform: string;
   url: string;
   products: number;
-  orders: number;
-  revenue: number;
+  reviews: number;
+  average_rating: number;
 }
 
 interface StoreListProps {
@@ -99,8 +99,8 @@ export function StoreList({ stores }: StoreListProps) {
             <TableHead>Loja</TableHead>
             <TableHead>Plataforma</TableHead>
             <TableHead className="hidden md:table-cell">Produtos</TableHead>
-            <TableHead className="hidden md:table-cell">Pedidos</TableHead>
-            <TableHead className="hidden lg:table-cell">Faturamento</TableHead>
+            <TableHead className="hidden md:table-cell">Avaliações</TableHead>
+            <TableHead className="hidden lg:table-cell">Média de Avaliações</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -126,10 +126,10 @@ export function StoreList({ stores }: StoreListProps) {
                 {store.products}
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                {store.orders}
+                {store.reviews}
               </TableCell>
               <TableCell className="hidden lg:table-cell">
-                {formatCurrency(store.revenue)}
+                {store.average_rating.toFixed(2)}
               </TableCell>
               <TableCell className="text-right">
                 <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-end gap-1">

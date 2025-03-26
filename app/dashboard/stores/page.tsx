@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Plus, Store, Loader2 } from 'lucide-react';
 import { StoreList } from '@/components/stores/store-list';
 import { StoreForm } from './store-form';
-import { getStores } from '@/lib/supabase';
+import { getStores, getProducts } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface Store {
@@ -16,8 +16,8 @@ interface Store {
   platform: string;
   url: string;
   products: number;
-  orders: number;
-  revenue: number;
+  reviews: number;
+  average_rating: number;
 }
 
 export default function StoresPage() {
@@ -42,18 +42,63 @@ export default function StoresPage() {
         return;
       }
       
-      // Converter dados do Supabase para o formato esperado pelo componente
-      const formattedStores = data?.map((store: any) => ({
-        id: store.id,
-        name: store.name,
-        platform: store.platform,
-        url: store.url || '',
-        products: store.products_count || 0,
-        orders: store.orders_count || 0,
-        revenue: 0, // Valor padrão já que não temos essa informação no Supabase
-      })) || [];
+      // Buscar produtos e calcular estatísticas para cada loja
+      const storesWithStats = await Promise.all(data?.map(async (store: any) => {
+        try {
+          // Buscar produtos reais de cada loja
+          const { data: storeProducts } = await getProducts(store.id);
+          
+          // Calcular o número real de produtos
+          const productsCount = storeProducts ? storeProducts.length : 0;
+          
+          // Calcular reviews totais e média de rating
+          let reviewsCount = 0;
+          let totalRating = 0;
+          let productsWithRating = 0;
+          
+          if (storeProducts && storeProducts.length > 0) {
+            // Contar total de reviews
+            reviewsCount = storeProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
+            
+            // Calcular média de ratings
+            storeProducts.forEach(product => {
+              if (product.average_rating && product.average_rating > 0) {
+                totalRating += product.average_rating;
+                productsWithRating++;
+              }
+            });
+          }
+          
+          // Calcular média de avaliações
+          const averageRating = productsWithRating > 0
+            ? (totalRating / productsWithRating)
+            : 0;
+          
+          return {
+            id: store.id,
+            name: store.name,
+            platform: store.platform,
+            url: store.url || '',
+            products: productsCount,
+            reviews: reviewsCount,
+            average_rating: averageRating,
+          };
+        } catch (error) {
+          console.error('Erro ao buscar dados da loja:', error);
+          // Retornar dados básicos com valores padrão em caso de erro
+          return {
+            id: store.id,
+            name: store.name,
+            platform: store.platform,
+            url: store.url || '',
+            products: store.products_count || 0,
+            reviews: 0,
+            average_rating: 0,
+          };
+        }
+      }) || []);
       
-      setStores(formattedStores);
+      setStores(storesWithStats);
     } catch (error) {
       console.error('Erro ao buscar lojas:', error);
       toast.error('Erro ao carregar suas lojas');
