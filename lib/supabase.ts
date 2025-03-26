@@ -272,10 +272,10 @@ export async function updateStore(id: string, store: Partial<Store>) {
       .eq('id', id);
     
     const selectQuery = query.select();
-    const singleQuery = selectQuery.single();
+    const filteredQuery = selectQuery.single();
     
     // Executar diretamente a query
-    const result = await singleQuery;
+    const result = await filteredQuery;
     
     return { 
       data: result.data, 
@@ -347,6 +347,8 @@ export async function verifyShopifyCredentials(
 // Funções de Gerenciamento de Produtos
 export async function getProducts(storeId?: string, status?: 'imported' | 'editing' | 'ready' | 'published' | 'archived') {
   try {
+    console.log(`Buscando produtos ${storeId ? `da loja ${storeId}` : "de todas as lojas"}${status ? ` com status ${status}` : ""}`);
+    
     let query = supabase
       .from('products')
       .select('*')
@@ -363,9 +365,42 @@ export async function getProducts(storeId?: string, status?: 'imported' | 'editi
     // Executar diretamente a query
     const productsResult = await query;
     
+    // Verificar se o resultado é válido
+    if (productsResult.error) {
+      console.error('Erro ao buscar produtos:', productsResult.error);
+      return { 
+        data: [], 
+        error: productsResult.error 
+      };
+    }
+    
+    // Garantir que o resultado seja sempre um array, mesmo que vazio
+    const products = productsResult.data || [];
+    
+    // Log para depuração
+    console.log(`Encontrados ${products.length} produtos${storeId ? ` para a loja ${storeId}` : ""}`);
+    
+    // Se houver um storeId e produtos foram encontrados, atualizar a contagem na tabela de lojas
+    if (storeId && !status) {
+      try {
+        // Atualizar o contador de produtos da loja diretamente na tabela
+        await supabase
+          .from('stores')
+          .update({ 
+            products_count: products.length,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', storeId);
+          
+        console.log(`Atualizada contagem de produtos da loja ${storeId} para ${products.length}`);
+      } catch (updateError) {
+        console.error(`Erro ao atualizar contagem de produtos da loja ${storeId}:`, updateError);
+      }
+    }
+    
     return { 
-      data: productsResult.data || [], 
-      error: productsResult.error 
+      data: products, 
+      error: null 
     };
   } catch (error) {
     console.error('Erro ao buscar produtos:', error);
@@ -828,7 +863,8 @@ export async function generateReviewsWithAI(
 export async function generateAIReviews(
   productId: string,
   count: number,
-  averageRating: number
+  averageRating: number,
+  language: string = 'portuguese'
 ): Promise<{ success: boolean; count: number; error?: string }> {
   try {
     // Primeiro, obtemos os dados do produto
@@ -854,6 +890,54 @@ export async function generateAIReviews(
     // Limitar o número de avaliações (segurança)
     const reviewCount = Math.min(Math.max(count, 1), 100);
     
+    // Mapear idiomas para configurações específicas
+    const languageConfig: Record<string, { 
+      language: string, 
+      dateFormat: string, 
+      namesType: string,
+      instructions: string
+    }> = {
+      portuguese: {
+        language: "português",
+        dateFormat: "dd/MM/yyyy",
+        namesType: "brasileiros",
+        instructions: "Os nomes de clientes devem ser brasileiros. As datas devem seguir o formato brasileiro."
+      },
+      english: {
+        language: "inglês",
+        dateFormat: "MM/dd/yyyy",
+        namesType: "americanos ou internacionais",
+        instructions: "Os nomes de clientes devem ser internacionais. As datas devem seguir o formato americano."
+      },
+      spanish: {
+        language: "espanhol",
+        dateFormat: "dd/MM/yyyy",
+        namesType: "hispânicos",
+        instructions: "Os nomes de clientes devem ser hispânicos. As datas devem seguir o formato espanhol."
+      },
+      french: {
+        language: "francês",
+        dateFormat: "dd/MM/yyyy",
+        namesType: "franceses",
+        instructions: "Os nomes de clientes devem ser franceses. As datas devem seguir o formato francês."
+      },
+      german: {
+        language: "alemão",
+        dateFormat: "dd.MM.yyyy",
+        namesType: "alemães",
+        instructions: "Os nomes de clientes devem ser alemães. As datas devem seguir o formato alemão."
+      },
+      italian: {
+        language: "italiano",
+        dateFormat: "dd/MM/yyyy",
+        namesType: "italianos",
+        instructions: "Os nomes de clientes devem ser italianos. As datas devem seguir o formato italiano."
+      }
+    };
+    
+    // Usar a configuração do idioma selecionado ou português como padrão
+    const config = languageConfig[language] || languageConfig.portuguese;
+    
     // Construir o prompt para a geração de avaliações
     const systemPrompt = `Você é um assistente especializado em gerar reviews de clientes autênticos e persuasivos para produtos de e-commerce. 
     Você deve gerar cada review como se fosse escrito por um cliente real, com personalidade, histórias e detalhes pessoais.
@@ -870,7 +954,7 @@ export async function generateAIReviews(
     - Mencione benefícios específicos e experiências reais com o produto
     - Cada review deve ter no mínimo 240 caracteres para ser rico em detalhes
     - Evite repetir as mesmas experiências ou razões para gostar do produto
-    - Os nomes de clientes devem ser brasileiros
+    - ${config.instructions}
     - Os emails podem ser de qualquer provedor comum (gmail, hotmail, outlook, etc)
     - Mantenha um tom natural, não exagere em adjetivos positivos
     
@@ -889,7 +973,7 @@ export async function generateAIReviews(
     
     Mantenha sua resposta apenas neste formato JSON, sem introdução ou conclusão.`;
     
-    const userPrompt = `Gere ${reviewCount} reviews persuasivos em português para o seguinte produto:
+    const userPrompt = `Gere ${reviewCount} reviews persuasivos em ${config.language} para o seguinte produto:
     
     Título: ${product.title}
     Descrição: ${product.description}
@@ -922,7 +1006,7 @@ export async function generateAIReviews(
     
     // Parsear o JSON retornado
     try {
-      // Tentar extrair o JSON da resposta, mesmo que esteja dentro de um bloco de código
+      // Tentar extrair o JSON da resposta, mesmo que esteja dentro de um bloco de código markdown, extrair apenas o JSON
       let jsonContent = generatedContent;
       
       // Se o conteúdo tiver blocos de código markdown, extrair apenas o JSON

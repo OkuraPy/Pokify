@@ -42,10 +42,8 @@ interface Store {
   platform: string;
   url: string;
   products: number;
-  orders: number;
-  revenue: number;
+  reviews_count: number;
   products_count: number;
-  orders_count?: number;
   last_sync?: string;
   created_at: string;
 }
@@ -53,12 +51,11 @@ interface Store {
 interface StoreCardProps {
   store: Store;
   maxProducts?: number;
-  maxOrders?: number;
-  maxRevenue?: number;
+  maxReviews?: number;
   onClick?: () => void;
 }
 
-export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxRevenue = 100000, onClick }: StoreCardProps) {
+export function StoreCard({ store, maxProducts = 500, maxReviews = 1000, onClick }: StoreCardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const [isHovered, setIsHovered] = useState(false);
@@ -87,9 +84,8 @@ export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxReven
   };
   
   // Calcular percentual de cada métrica para as barras de progresso
-  const productsPercentage = Math.min(Math.round((store.products / maxProducts) * 100), 100);
-  const ordersPercentage = Math.min(Math.round((store.orders / maxOrders) * 100), 100);
-  const revenuePercentage = Math.min(Math.round((store.revenue / maxRevenue) * 100), 100);
+  const productsPercentage = Math.min(Math.round((store.products_count / maxProducts) * 100), 100);
+  const reviewsPercentage = Math.min(Math.round(((store.reviews_count || 0) / maxReviews) * 100), 100);
   
   // Animação para o cartão
   const cardVariants = {
@@ -176,165 +172,167 @@ export function StoreCard({ store, maxProducts = 500, maxOrders = 1000, maxReven
       >
         <Card 
           className={cn(
-            "h-full cursor-pointer transition-all overflow-hidden border-border/80", 
+            "h-full cursor-pointer transition-all overflow-hidden border shadow-sm hover:shadow-md", 
             isHovered && "border-primary/50"
           )}
           onClick={onClick}
         >
-          {/* Borda superior colorida baseada na plataforma */}
-          <div className={`h-1.5 w-full ${colorClasses.bg}`} />
+          {/* Gradiente no topo baseado na plataforma */}
+          <div className={`h-2 w-full bg-gradient-to-r ${
+            colorClasses.bg === 'bg-emerald-500' ? 'from-emerald-400 to-emerald-600' :
+            colorClasses.bg === 'bg-purple-500' ? 'from-purple-400 to-purple-600' :
+            colorClasses.bg === 'bg-orange-500' ? 'from-orange-400 to-orange-600' :
+            colorClasses.bg === 'bg-yellow-500' ? 'from-yellow-400 to-yellow-600' :
+            colorClasses.bg === 'bg-amber-500' ? 'from-amber-400 to-amber-600' :
+            'from-blue-400 to-blue-600'
+          }`} />
           
-          <CardHeader className="p-5 pb-0">
+          <CardHeader className="p-5 pb-2">
             <div className="flex items-center justify-between">
-              <Badge variant="outline" className={`${colorClasses.bgLight} ${colorClasses.text} ${colorClasses.border}`}>
+              <div className="flex items-center gap-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${colorClasses.bgLight}`}>
+                  <Globe className={`h-4 w-4 ${colorClasses.text}`} />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-bold text-gray-800">{store.name}</CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground mt-0.5 truncate max-w-[180px]">
+                    {store.url}
+                  </CardDescription>
+                </div>
+              </div>
+              
+              <Badge variant="outline" className={`${colorClasses.bgLight} ${colorClasses.text} ${colorClasses.border} font-medium text-xs`}>
                 {store.platform}
               </Badge>
-              
-              <div className="flex items-center gap-1">
-                {getSyncStatusIcon()}
-                
-                <div onClick={(e) => e.stopPropagation()} className="ml-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-muted">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Ações</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56 border-border/80 shadow-lg">
-                      <DropdownMenuLabel>Ações para {store.name}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        className="cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          window.open(store.url, '_blank');
-                        }}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2 text-blue-600" />
-                        <span>Visitar Loja</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="cursor-pointer"
-                        disabled={isLoading}
-                        onClick={handleSyncStore}
-                      >
-                        {isLoading ? (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                            <span>Sincronizando...</span>
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="h-4 w-4 mr-2 text-blue-600" />
-                            <span>Sincronizar</span>
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        className="cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <Edit className="h-4 w-4 mr-2 text-amber-500" />
-                        <span>Editar</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-rose-500 focus:text-rose-500 cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <Trash className="h-4 w-4 mr-2" />
-                        <span>Excluir</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
             </div>
-            
-            <CardTitle className="text-xl mt-3 text-blue-900">
-              {store.name}
-            </CardTitle>
-            <CardDescription className="line-clamp-1 mt-1">
-              <a 
-                href={store.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="hover:text-blue-500 transition-colors"
-              >
-                {store.url}
-              </a>
-            </CardDescription>
           </CardHeader>
           
-          <CardContent className="p-5">
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Package className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm font-medium">Produtos</span>
+          <CardContent className="p-5 pt-2">
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              {/* Produtos Card */}
+              <div className="bg-gray-50 rounded-lg p-3 flex flex-col">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="bg-blue-100 p-1 rounded-full">
+                    <Package className="h-3.5 w-3.5 text-blue-600" />
                   </div>
-                  <span className="text-sm font-semibold">{formatNumber(store.products)}</span>
+                  <span className="text-xs font-medium text-gray-600">Produtos</span>
                 </div>
-                <Progress value={productsPercentage} className="h-1.5" indicatorClassName="bg-blue-500" />
+                <div className="text-lg font-bold">{formatNumber(store.products_count)}</div>
+                <Progress 
+                  value={productsPercentage} 
+                  className="h-1.5 mt-1.5" 
+                  indicatorClassName="bg-blue-500" 
+                />
               </div>
               
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <ShoppingCart className="h-4 w-4 text-emerald-600" />
-                    <span className="text-sm font-medium">Pedidos</span>
+              {/* Avaliações Card */}
+              <div className="bg-gray-50 rounded-lg p-3 flex flex-col">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="bg-amber-100 p-1 rounded-full">
+                    <Star className="h-3.5 w-3.5 text-amber-600" />
                   </div>
-                  <span className="text-sm font-semibold">{formatNumber(store.orders)}</span>
+                  <span className="text-xs font-medium text-gray-600">Avaliações</span>
                 </div>
-                <Progress value={ordersPercentage} className="h-1.5" indicatorClassName="bg-emerald-500" />
-              </div>
-              
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Wallet className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-medium">Faturamento</span>
-                  </div>
-                  <span className="text-sm font-semibold">{formatCurrency(store.revenue)}</span>
-                </div>
-                <Progress value={revenuePercentage} className="h-1.5" indicatorClassName="bg-amber-500" />
+                <div className="text-lg font-bold">{formatNumber(store.reviews_count || 0)}</div>
+                <Progress 
+                  value={reviewsPercentage} 
+                  className="h-1.5 mt-1.5" 
+                  indicatorClassName="bg-amber-500" 
+                />
               </div>
             </div>
           </CardContent>
           
-          <CardFooter className="p-5 pt-0 flex justify-between gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-blue-700 border-blue-200 hover:bg-blue-50 hover:text-blue-800 transition-colors"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                window.open(store.url, '_blank');
-              }}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Visitar
-            </Button>
+          <CardFooter className="px-5 py-3 bg-gray-50 border-t flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <RefreshCw className={`h-3.5 w-3.5 text-gray-500 ${isLoading ? 'animate-spin' : ''}`} />
+              <span className="text-xs text-gray-500">
+                {store.last_sync 
+                  ? `Sincronizado em ${format(new Date(store.last_sync), "dd MMM", { locale: ptBR })}`
+                  : `Criado em ${format(new Date(store.created_at), "dd MMM", { locale: ptBR })}`
+                }
+              </span>
+            </div>
             
-            <Button
-              variant="default"
-              size="sm"
-              className="w-full"
-            >
-              <BarChart4 className="h-4 w-4 mr-2" />
-              Detalhes
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="h-7 px-2 text-xs bg-white border border-gray-100 text-gray-700 hover:bg-gray-100"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.open(store.url, '_blank');
+                }}
+              >
+                <ExternalLink className="h-3 w-3 mr-1" />
+                Visitar
+              </Button>
+              
+              <div onClick={(e) => e.stopPropagation()} className="ml-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 bg-white border border-gray-100 text-gray-700 hover:bg-gray-100">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Ações</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 border-border/80 shadow-lg">
+                    <DropdownMenuLabel>Ações para {store.name}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="cursor-pointer hover:bg-blue-50 hover:text-blue-600"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(store.url, '_blank');
+                      }}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2 text-blue-600" />
+                      <span>Visitar Loja</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="cursor-pointer hover:bg-blue-50 hover:text-blue-600"
+                      disabled={isLoading}
+                      onClick={handleSyncStore}
+                    >
+                      {isLoading ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin text-blue-600" />
+                          <span>Sincronizando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 text-blue-600" />
+                          <span>Sincronizar</span>
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="cursor-pointer hover:bg-amber-50 hover:text-amber-600"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-2 text-amber-500" />
+                      <span>Editar</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <Trash className="h-4 w-4 mr-2" />
+                      <span>Excluir</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
           </CardFooter>
         </Card>
       </motion.div>

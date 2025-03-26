@@ -21,7 +21,7 @@ import * as z from 'zod';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Package, Link, Upload, X } from 'lucide-react';
+import { Package, Link, Upload, X, Loader2 } from 'lucide-react';
 import { ProductImagesUpload } from '@/components/products/product-images-upload';
 import { createProduct } from '@/lib/supabase';
 
@@ -44,6 +44,7 @@ interface ProductFormProps {
 
 export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [method, setMethod] = useState<'manual' | 'import'>('manual');
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -57,6 +58,7 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
       active: true,
       tags: '',
       images: [],
+      url: '',
     },
   });
 
@@ -106,6 +108,85 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
     }
   };
 
+  const importProduct = async (url: string) => {
+    if (!url) {
+      toast.error('Por favor, insira uma URL válida');
+      return;
+    }
+
+    try {
+      setIsImporting(true);
+      
+      // Fazer a chamada para nossa API interna que serve como proxy para a API Linkfy
+      const response = await fetch('/api/product/extract', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro ao importar produto: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.data) {
+        throw new Error('Não foi possível extrair informações do produto');
+      }
+
+      // Processar o resultado para extrair informações relevantes
+      const productData = result.data;
+      
+      // Extrair imagens do markdown (URLs de imagens)
+      const imageRegex = /!\[.*?\]\((.*?)\)/g;
+      const markdownText = productData.markdownText || '';
+      const imageMatches = [...markdownText.matchAll(imageRegex)];
+      const images = imageMatches
+        .map(match => match[1])
+        .filter(url => url && !url.includes('placeholder') && (url.includes('.jpg') || url.includes('.png') || url.includes('.webp')))
+        .slice(0, 5); // Limitar a 5 imagens
+
+      // Extrair possíveis tags do conteúdo
+      const possibleTags = productData.title
+        ?.toLowerCase()
+        .split(' ')
+        .filter(word => word.length > 3)
+        .slice(0, 5)
+        .join(', ') || '';
+
+      // Extrair possível preço do texto
+      let price = '';
+      const priceRegex = /R\$\s*(\d+[.,]\d+)/;
+      const priceMatch = markdownText.match(priceRegex);
+      if (priceMatch && priceMatch[1]) {
+        price = priceMatch[1].replace(',', '.');
+      }
+
+      // Preencher o formulário com os dados extraídos
+      form.setValue('title', productData.title || '');
+      form.setValue('description', productData.description || '');
+      if (price) form.setValue('price', price);
+      form.setValue('tags', possibleTags);
+      
+      // Se encontrou imagens, definir no formulário
+      if (images.length > 0) {
+        form.setValue('images', images);
+      }
+
+      toast.success('Produto importado com sucesso!');
+      
+      // Mudar para a aba de cadastro manual para editar os detalhes
+      setMethod('manual');
+    } catch (error) {
+      console.error('Erro ao importar produto:', error);
+      toast.error(error instanceof Error ? error.message : 'Erro ao importar produto');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px]">
@@ -121,34 +202,45 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
           </TabsList>
 
           <TabsContent value="import">
-            <div className="space-y-4 py-4">
-              <p className="text-sm text-muted-foreground">
-                Cole a URL de um produto para importar automaticamente suas informações.
-              </p>
-              
-              <FormField
-                control={form.control}
-                name="url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL do Produto</FormLabel>
-                    <FormControl>
-                      <div className="flex gap-2">
-                        <Input placeholder="https://exemplo.com/produto" {...field} />
-                        <Button type="button" className="shrink-0">
-                          <Upload className="mr-2 h-4 w-4" />
-                          Importar
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      Funciona com AliExpress, Shopify e outros
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <Form {...form}>
+              <div className="space-y-4 py-4">
+                <p className="text-sm text-muted-foreground">
+                  Cole a URL de um produto para importar automaticamente suas informações.
+                </p>
+                
+                <FormField
+                  control={form.control}
+                  name="url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL do Produto</FormLabel>
+                      <FormControl>
+                        <div className="flex gap-2">
+                          <Input placeholder="https://exemplo.com/produto" {...field} />
+                          <Button 
+                            type="button" 
+                            className="shrink-0"
+                            onClick={() => importProduct(field.value)}
+                            disabled={isImporting}
+                          >
+                            {isImporting ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Upload className="mr-2 h-4 w-4" />
+                            )}
+                            {isImporting ? 'Importando...' : 'Importar'}
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Funciona com qualquer site de e-commerce
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </Form>
           </TabsContent>
 
           <TabsContent value="manual">

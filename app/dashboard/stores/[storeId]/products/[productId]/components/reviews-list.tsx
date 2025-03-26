@@ -50,6 +50,7 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
   // Estados para geração com IA
   const [reviewCount, setReviewCount] = useState(5);
   const [averageRating, setAverageRating] = useState(4.5);
+  const [reviewLanguage, setReviewLanguage] = useState<string>('portuguese');
   
   // Referência para input de arquivo CSV
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,7 +185,8 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
       const { success, count, error } = await generateAIReviews(
         productId,
         reviewCount,
-        averageRating
+        averageRating,
+        reviewLanguage
       );
       
       if (!success || error) {
@@ -242,10 +244,195 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
           <p className="text-sm text-muted-foreground mb-4">
             Importe avaliações para este produto ou gere avaliações de exemplo.
           </p>
-          <Button onClick={() => setImportDialogOpen(true)}>
+          <Button 
+            onClick={() => {
+              console.log("Opening dialog from empty state", importDialogOpen);
+              setImportDialogOpen(true);
+            }}
+          >
             <Download className="mr-2 h-4 w-4" />
             Importar Avaliações
           </Button>
+          
+          {/* Dialog directly in the empty state return */}
+          <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Importar Avaliações</DialogTitle>
+                <DialogDescription className="text-muted-foreground">
+                  Escolha uma opção para importar avaliações para este produto.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Tabs defaultValue="ai" value={importMethod} onValueChange={(value) => setImportMethod(value as 'url' | 'csv' | 'ai')}>
+                <TabsList className="grid grid-cols-3 mb-4">
+                  <TabsTrigger value="url" className="flex items-center gap-1">
+                    <Link className="h-4 w-4" />
+                    <span>URL</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="csv" className="flex items-center gap-1">
+                    <FileUp className="h-4 w-4" />
+                    <span>CSV</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="ai" className="flex items-center gap-1">
+                    <Sparkles className="h-4 w-4" />
+                    <span>IA</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="url" className="space-y-4">
+                  {/* URL content */}
+                  <div className="space-y-2">
+                    <Label>URL do Produto</Label>
+                    <Input 
+                      placeholder="https://www.aliexpress.com/item/..." 
+                      value={productUrl}
+                      onChange={(e) => setProductUrl(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Insira a URL do produto para importar suas avaliações
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Plataforma</Label>
+                    <Select value={platform} onValueChange={setPlatform}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a plataforma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="aliexpress">AliExpress</SelectItem>
+                        <SelectItem value="shopify">Shopify</SelectItem>
+                        <SelectItem value="shopee">Shopee</SelectItem>
+                        <SelectItem value="amazon">Amazon</SelectItem>
+                        <SelectItem value="other">Outra</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione a plataforma de onde o produto é originário
+                    </p>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="csv" className="space-y-4">
+                  {/* CSV content */}
+                  <div className="space-y-2">
+                    <Label>Arquivo CSV</Label>
+                    <div 
+                      className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <input 
+                        type="file" 
+                        accept=".csv" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        className="hidden" 
+                      />
+                      <FileUp className="h-10 w-10 text-muted-foreground mb-2" />
+                      <p className="text-sm text-center text-muted-foreground">
+                        Clique para selecionar um arquivo CSV ou arraste e solte aqui
+                      </p>
+                      <p className="text-xs text-center text-muted-foreground mt-2">
+                        O arquivo deve conter colunas: autor, avaliação, conteúdo, data, imagens (opcional)
+                      </p>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="ai" className="space-y-4">
+                  {/* AI content */}
+                  <div className="grid gap-2 mb-3">
+                    <Label htmlFor="reviewCount">Quantidade de Avaliações</Label>
+                    <div className="flex items-center">
+                      <span className="w-10 text-sm">1</span>
+                      <Slider
+                        id="reviewCount"
+                        className="flex-1 mx-3"
+                        value={[reviewCount]}
+                        min={1}
+                        max={100}
+                        step={1}
+                        onValueChange={(value) => setReviewCount(value[0])}
+                      />
+                      <span className="w-10 text-sm text-right">{reviewCount}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid gap-2 mb-3">
+                    <Label htmlFor="averageRating">Média de Avaliação</Label>
+                    <div className="flex items-center">
+                      <span className="w-10 text-sm">1.0</span>
+                      <Slider 
+                        id="averageRating"
+                        className="flex-1 mx-3"
+                        value={[averageRating]} 
+                        min={1} 
+                        max={5} 
+                        step={0.1} 
+                        onValueChange={(value) => setAverageRating(value[0])} 
+                      />
+                      <span className="flex items-center gap-1 text-sm">
+                        {averageRating.toFixed(1)}
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid gap-2 mb-3">
+                    <Label htmlFor="reviewLanguage">Idioma das Avaliações</Label>
+                    <Select 
+                      value={reviewLanguage} 
+                      onValueChange={setReviewLanguage}
+                    >
+                      <SelectTrigger id="reviewLanguage">
+                        <SelectValue placeholder="Selecione o idioma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="portuguese">Português</SelectItem>
+                        <SelectItem value="english">Inglês</SelectItem>
+                        <SelectItem value="spanish">Espanhol</SelectItem>
+                        <SelectItem value="french">Francês</SelectItem>
+                        <SelectItem value="german">Alemão</SelectItem>
+                        <SelectItem value="italian">Italiano</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Selecione o idioma em que as avaliações serão geradas
+                    </p>
+                  </div>
+                  
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                    <p className="font-medium">Avaliações Persuasivas com IA</p>
+                    <p className="text-muted-foreground">
+                      Gera reviews realistas e persuasivos, utilizando dados específicos do produto.
+                      As avaliações seguem uma abordagem de copywriting que ressalta as qualidades do produto
+                      e aborda possíveis objeções de compra.
+                    </p>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleImport} disabled={isImporting}>
+                  {isImporting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importando...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Importar Avaliações
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     );
@@ -472,6 +659,29 @@ export function ReviewsList({ productId, reviewsCount }: ReviewsListProps) {
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                   </span>
                 </div>
+              </div>
+              
+              <div className="grid gap-2 mb-3">
+                <Label htmlFor="reviewLanguage">Idioma das Avaliações</Label>
+                <Select 
+                  value={reviewLanguage} 
+                  onValueChange={setReviewLanguage}
+                >
+                  <SelectTrigger id="reviewLanguage">
+                    <SelectValue placeholder="Selecione o idioma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="portuguese">Português</SelectItem>
+                    <SelectItem value="english">Inglês</SelectItem>
+                    <SelectItem value="spanish">Espanhol</SelectItem>
+                    <SelectItem value="french">Francês</SelectItem>
+                    <SelectItem value="german">Alemão</SelectItem>
+                    <SelectItem value="italian">Italiano</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Selecione o idioma em que as avaliações serão geradas
+                </p>
               </div>
               
               <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">

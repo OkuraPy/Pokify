@@ -27,10 +27,11 @@ interface Store {
 }
 
 interface StoreStats {
-  totalSales: number;
-  totalRevenue: number;
-  averageOrderValue: number;
-  productsSold: number;
+  totalProducts: number;
+  totalReviews: number;
+  averageRating: number;
+  productsWithImages: number;
+  totalProductsCount: number;
 }
 
 interface StoreClientProps {
@@ -73,32 +74,48 @@ export function StoreClient({ storeId }: StoreClientProps) {
           // Continuar mesmo com erro nos produtos
         } else {
           setProducts(productsData || []);
-        }
-        
-        // Calcular o total de avaliações somando reviews_count de todos os produtos
-        if (productsData) {
-          const reviewsCount = productsData.reduce((total, product) => total + (product.reviews_count || 0), 0);
-          setTotalReviews(reviewsCount);
-        }
-        
-        // Carregar estatísticas de vendas
-        try {
-          const salesStats = await getSalesStats(storeId);
-          setStats({
-            totalSales: salesStats.totalSales,
-            totalRevenue: salesStats.totalRevenue,
-            averageOrderValue: salesStats.averageOrderValue,
-            productsSold: salesStats.totalItems
-          });
-        } catch (statsError) {
-          console.error('Erro ao carregar estatísticas:', statsError);
-          // Criar estatísticas vazias se houver erro
-          setStats({
-            totalSales: 0,
-            totalRevenue: 0,
-            averageOrderValue: 0,
-            productsSold: 0
-          });
+          
+          // Calcular o total de avaliações somando reviews_count de todos os produtos
+          if (productsData) {
+            const reviewsCount = productsData.reduce((total: number, product: any) => total + (product.reviews_count || 0), 0);
+            setTotalReviews(reviewsCount);
+            
+            // Calcular média de avaliações (média das médias)
+            let totalRating = 0;
+            let productsWithRatings = 0;
+            
+            productsData.forEach((product: any) => {
+              if (product.average_rating && product.average_rating > 0) {
+                totalRating += product.average_rating;
+                productsWithRatings++;
+              }
+            });
+            
+            const averageRating = productsWithRatings > 0 ? (totalRating / productsWithRatings) : 0;
+            
+            // Contar produtos com imagens (pelo menos uma imagem)
+            const productsWithImages = productsData.filter((product: any) => 
+              product.images && Array.isArray(product.images) && product.images.length > 0
+            ).length;
+            
+            // Criar novas estatísticas para o componente atualizado
+            setStats({
+              totalProducts: productsData.length,
+              totalReviews: reviewsCount,
+              averageRating: averageRating,
+              productsWithImages: productsWithImages,
+              totalProductsCount: productsData.length
+            });
+          } else {
+            // Estatísticas vazias se não houver produtos
+            setStats({
+              totalProducts: 0,
+              totalReviews: 0,
+              averageRating: 0,
+              productsWithImages: 0,
+              totalProductsCount: 0
+            });
+          }
         }
       } catch (err) {
         console.error('Erro ao carregar dados da loja:', err);
