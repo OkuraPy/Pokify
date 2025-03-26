@@ -6,12 +6,14 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Languages, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { Label } from '@/components/ui/label';
 
 // Idiomas suportados
 const languages = [
@@ -45,6 +47,7 @@ export function TranslationDialog({
   const [translatedData, setTranslatedData] = useState<{
     title: string;
     description: string;
+    marketingNotes?: string;
   }>({ title: '', description: '' });
   const [showPreview, setShowPreview] = useState(false);
 
@@ -84,7 +87,8 @@ export function TranslationDialog({
 
       setTranslatedData({
         title: translatedTitle,
-        description: translatedDesc
+        description: translatedDesc,
+        marketingNotes: data.marketingNotes
       });
       
       setShowPreview(true);
@@ -121,94 +125,83 @@ export function TranslationDialog({
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Languages className="h-5 w-5 text-blue-500" />
-            Traduzir Produto
-          </DialogTitle>
+          <DialogTitle>Traduzir Produto</DialogTitle>
+          <DialogDescription>
+            Traduza o título e descrição do produto para outro idioma
+          </DialogDescription>
         </DialogHeader>
 
-        {!showPreview ? (
-          <div className="py-4 space-y-4">
-            <div className="bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
-              <p>Traduza automaticamente o título e descrição do produto para o idioma desejado.</p>
-            </div>
-            
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Selecione o idioma de destino</label>
-                <Select 
-                  value={targetLanguage} 
-                  onValueChange={setTargetLanguage}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecione o idioma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        {lang.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="language">Idioma de destino</Label>
+            <Select
+              value={targetLanguage}
+              onValueChange={setTargetLanguage}
+            >
+              <SelectTrigger id="language">
+                <SelectValue placeholder="Selecione o idioma" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        ) : (
-          <div className="py-4 space-y-4">
-            <div className="border-l-4 border-green-500 pl-3 py-1 bg-green-50 text-green-800 rounded-r-md">
-              <p className="font-medium">Tradução concluída com sucesso</p>
-              <p className="text-sm text-green-600">O produto foi atualizado para {getLanguageName(targetLanguage)}</p>
-            </div>
-            
+
+          {showPreview && (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-500">Título Traduzido</h3>
-                <p className="p-3 bg-gray-50 rounded-md">{translatedData.title}</p>
+              <div className="grid gap-2">
+                <Label>Título Traduzido</Label>
+                <div className="p-2 bg-muted rounded-md">
+                  {translatedData.title}
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-500">Descrição Traduzida</h3>
-                <div 
-                  className="p-3 bg-gray-50 rounded-md prose prose-sm max-w-none" 
-                  dangerouslySetInnerHTML={{ __html: translatedData.description }}
-                />
+
+              <div className="grid gap-2">
+                <Label>Descrição Traduzida</Label>
+                <div className="p-2 bg-muted rounded-md whitespace-pre-wrap">
+                  {translatedData.description}
+                </div>
               </div>
+
+              {translatedData.marketingNotes && (
+                <div className="grid gap-2">
+                  <Label>Notas de Adaptação</Label>
+                  <div className="p-2 bg-muted/50 rounded-md text-sm text-muted-foreground">
+                    {translatedData.marketingNotes}
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <DialogFooter>
-          {!showPreview ? (
-            <Button
-              onClick={handleTranslate}
-              disabled={isTranslating}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              {isTranslating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Traduzindo...
-                </>
-              ) : (
-                <>
-                  <Languages className="mr-2 h-4 w-4" />
-                  Traduzir para {getLanguageName(targetLanguage)}
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={onClose}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Check className="mr-2 h-4 w-4" />
-              Concluído
-            </Button>
-          )}
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
+          <Button 
+            onClick={handleTranslate} 
+            disabled={isTranslating}
+          >
+            {isTranslating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Traduzindo...
+              </>
+            ) : (
+              <>
+                <Languages className="mr-2 h-4 w-4" />
+                Traduzir
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -30,22 +30,43 @@ export async function POST(request: Request) {
     const title = texts.find((t: any) => t.id === 'title')?.text || '';
     const description = texts.find((t: any) => t.id === 'description')?.text || '';
 
-    const prompt = `Traduza e adapte para ${targetLanguage}:
+    const systemPrompt = `Você é um especialista em marketing internacional e localização de produtos para e-commerce, com profundo conhecimento em adaptação cultural e comercial. Sua missão é não apenas traduzir, mas adaptar o conteúdo para ressoar com o público-alvo do idioma de destino.
 
-TÍTULO: ${title}
-DESCRIÇÃO: ${description}
+Considere:
+1. Terminologia específica do mercado local
+2. Nomes alternativos ou mais populares do produto no país de destino
+3. Aspectos culturais que podem afetar a percepção do produto
+4. Palavras-chave relevantes para SEO no mercado local
+5. Convenções de comunicação do e-commerce local
 
-Diretrizes:
-1. Mantenha o tom comercial e persuasivo
-2. Adapte termos técnicos para equivalentes locais mais conhecidos
-3. Preserve palavras-chave importantes para SEO
-4. Mantenha formatação HTML se presente
-5. Se o produto tiver um nome mais comum no mercado-alvo, inclua-o entre parênteses
+Mantenha:
+- O tom persuasivo e comercial
+- Os benefícios principais do produto
+- A intenção de venda
+- A clareza da comunicação
 
-Retorne apenas o JSON no formato:
+Se encontrar termos específicos que têm uma variante mais popular ou efetiva no mercado-alvo, inclua ambos (ex: "Produto X (também conhecido como Y)")`;
+
+    const userPrompt = `Traduza e adapte o seguinte conteúdo de produto para ${targetLanguage}, otimizando-o para o mercado local:
+
+TÍTULO DO PRODUTO:
+${title}
+
+DESCRIÇÃO DO PRODUTO:
+${description}
+
+Requisitos específicos:
+1. Adapte termos técnicos para equivalentes locais mais conhecidos
+2. Mantenha ou melhore o apelo comercial do texto
+3. Use terminologia comum em e-commerce do mercado-alvo
+4. Preserve palavras-chave importantes, adaptando-as para o mercado local
+5. Se houver nomes alternativos populares para o produto, inclua-os estrategicamente
+
+Retorne no formato:
 {
-  "title": "título traduzido",
-  "description": "descrição traduzida"
+  "title": "título traduzido e adaptado",
+  "description": "descrição traduzida e adaptada",
+  "marketingNotes": "notas sobre adaptações específicas feitas (opcional)"
 }`;
 
     try {
@@ -54,22 +75,23 @@ Retorne apenas o JSON no formato:
         messages: [
           {
             role: "system",
-            content: "Você é um tradutor profissional especializado em e-commerce, com profundo conhecimento em marketing internacional e adaptação cultural. Sua missão é traduzir e adaptar conteúdo mantendo o tom comercial e persuasivo. Responda apenas com o JSON solicitado, sem explicações adicionais."
+            content: systemPrompt
           },
-          { role: "user", content: prompt }
+          { role: "user", content: userPrompt }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 2000
       });
 
       const translatedContent = JSON.parse(completion.choices[0]?.message?.content || '{}');
       
-      // Formatar resposta no formato esperado pelo componente
+      // Formatar resposta incluindo as notas de marketing se disponíveis
       return NextResponse.json({
         translations: [
           { id: 'title', text: translatedContent.title },
           { id: 'description', text: translatedContent.description }
         ],
+        marketingNotes: translatedContent.marketingNotes,
         success: true
       });
       
