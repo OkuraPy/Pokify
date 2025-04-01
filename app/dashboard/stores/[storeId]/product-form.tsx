@@ -24,6 +24,7 @@ import { Label } from '@/components/ui/label';
 import { Package, Link, Upload, X, Loader2 } from 'lucide-react';
 import { ProductImagesUpload } from '@/components/products/product-images-upload';
 import { createProduct } from '@/lib/supabase';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const formSchema = z.object({
   images: z.array(z.string()).optional(),
@@ -34,6 +35,7 @@ const formSchema = z.object({
   stock: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, 'Estoque deve ser um número positivo'),
   active: z.boolean().default(true),
   tags: z.string().optional(),
+  url: z.string().optional(),
 });
 
 interface ProductFormProps {
@@ -46,6 +48,7 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [method, setMethod] = useState<'manual' | 'import'>('manual');
+  const [extractorType, setExtractorType] = useState<'simple' | 'ai'>('simple');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,9 +77,9 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
         title: values.title,
         description: values.description,
         price: parseFloat(values.price),
-        compare_at_price: values.compare_at_price ? parseFloat(values.compare_at_price) : null,
+        compare_at_price: values.compare_at_price ? parseFloat(values.compare_at_price) : undefined,
         stock: parseInt(values.stock, 10),
-        status: values.active ? 'ready' : 'archived',
+        status: values.active ? 'ready' : 'archived' as 'ready' | 'archived',
         images: values.images || [],
         tags: tagsArray,
         reviews_count: 0,
@@ -108,7 +111,7 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
     }
   };
 
-  const importProduct = async (url: string) => {
+  const importProduct = async (url: string | undefined) => {
     if (!url) {
       toast.error('Por favor, insira uma URL válida');
       return;
@@ -117,8 +120,13 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
     try {
       setIsImporting(true);
       
-      // Fazer a chamada para nossa API interna que serve como proxy para a API Linkfy
-      const response = await fetch('/api/product/extract', {
+      // Determinar qual endpoint usar com base no tipo de extrator selecionado
+      const endpoint = extractorType === 'simple' 
+        ? '/api/product/extract' 
+        : '/api/products/extract-openai';
+      
+      // Fazer a chamada para nossa API interna
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,47 +140,117 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
 
       const result = await response.json();
       
-      if (!result.data) {
+      if (!result.data && extractorType === 'simple') {
         throw new Error('Não foi possível extrair informações do produto');
       }
 
-      // Processar o resultado para extrair informações relevantes
-      const productData = result.data;
-      
-      // Extrair imagens do markdown (URLs de imagens)
-      const imageRegex = /!\[.*?\]\((.*?)\)/g;
-      const markdownText = productData.markdownText || '';
-      const imageMatches = [...markdownText.matchAll(imageRegex)];
-      const images = imageMatches
-        .map(match => match[1])
-        .filter(url => url && !url.includes('placeholder') && (url.includes('.jpg') || url.includes('.png') || url.includes('.webp')))
-        .slice(0, 5); // Limitar a 5 imagens
+      // Processar o resultado dependendo do tipo de extrator
+      if (extractorType === 'simple') {
+        // Processamento para extrator simples (atual)
+        const productData = result.data;
+        
+        // Extrair imagens do markdown (URLs de imagens)
+        const imageRegex = /!\[.*?\]\((.*?)\)/g;
+        const markdownText = productData.markdownText || '';
+        const imageMatches = [...markdownText.matchAll(imageRegex)];
+        const images = imageMatches
+          .map(match => match[1])
+          .filter((url: string) => url && !url.includes('placeholder') && (url.includes('.jpg') || url.includes('.png') || url.includes('.webp')))
+          .slice(0, 5); // Limitar a 5 imagens
 
-      // Extrair possíveis tags do conteúdo
-      const possibleTags = productData.title
-        ?.toLowerCase()
-        .split(' ')
-        .filter(word => word.length > 3)
-        .slice(0, 5)
-        .join(', ') || '';
+        // Extrair possíveis tags do conteúdo
+        const possibleTags = productData.title
+          ?.toLowerCase()
+          .split(' ')
+          .filter((word: string) => word.length > 3)
+          .slice(0, 5)
+          .join(', ') || '';
 
-      // Extrair possível preço do texto
-      let price = '';
-      const priceRegex = /R\$\s*(\d+[.,]\d+)/;
-      const priceMatch = markdownText.match(priceRegex);
-      if (priceMatch && priceMatch[1]) {
-        price = priceMatch[1].replace(',', '.');
-      }
+        // Extrair possível preço do texto
+        let price = '';
+        const priceRegex = /R\$\s*(\d+[.,]\d+)/;
+        const priceMatch = markdownText.match(priceRegex);
+        if (priceMatch && priceMatch[1]) {
+          price = priceMatch[1].replace(',', '.');
+        }
 
-      // Preencher o formulário com os dados extraídos
-      form.setValue('title', productData.title || '');
-      form.setValue('description', productData.description || '');
-      if (price) form.setValue('price', price);
-      form.setValue('tags', possibleTags);
-      
-      // Se encontrou imagens, definir no formulário
-      if (images.length > 0) {
-        form.setValue('images', images);
+        // Preencher o formulário com os dados extraídos
+        form.setValue('title', productData.title || '');
+        form.setValue('description', productData.description || '');
+        if (price) form.setValue('price', price);
+        form.setValue('tags', possibleTags);
+        
+        // Se encontrou imagens, definir no formulário
+        if (images.length > 0) {
+          form.setValue('images', images);
+        }
+      } else {
+        // Processamento para extrator com IA (OpenAI)
+        // O extrator OpenAI já retorna dados estruturados
+        console.log(`[Extrator] Processando resposta da extração com IA`, {
+          titulo: result.title || 'Não encontrado',
+          totalImagens: (result.mainImages?.length || 0) + (result.descriptionImages?.length || 0) || (result.images?.length || 0)
+        });
+        
+        form.setValue('title', result.title || '');
+        form.setValue('description', result.description || '');
+        
+        // Preço já vem em formato numérico
+        if (result.price) form.setValue('price', result.price.toString());
+        
+        // Usar tags do título se disponível
+        const possibleTags = result.title
+          ?.toLowerCase()
+          .split(' ')
+          .filter((word: string) => word.length > 3)
+          .slice(0, 5)
+          .join(', ') || '';
+        form.setValue('tags', possibleTags);
+        
+        // Usar imagens principais retornadas pela IA - SEM LIMITAR A QUANTIDADE
+        console.log(`[Extrator] Imagens disponíveis:`, {
+          mainImages: result.mainImages?.length || 0,
+          descriptionImages: result.descriptionImages?.length || 0,
+          allImages: result.images?.length || 0
+        });
+        
+        // Verificar e filtrar URLs válidas
+        const validateImageUrl = (url: string) => {
+          // Verificar se a URL é válida
+          try {
+            new URL(url);
+          } catch {
+            console.log(`[Extrator] URL inválida ignorada: ${url}`);
+            return false;
+          }
+          
+          // Verificar extensão de arquivo
+          const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+          const hasValidExtension = validExtensions.some(ext => 
+            url.toLowerCase().includes(ext)
+          );
+          
+          if (!hasValidExtension) {
+            console.log(`[Extrator] URL sem extensão válida ignorada: ${url}`);
+            return false;
+          }
+          
+          return true;
+        };
+        
+        if (result.mainImages && result.mainImages.length > 0) {
+          // Filtrar imagens válidas
+          const validImages = result.mainImages.filter(validateImageUrl);
+          console.log(`[Extrator] Total de imagens: ${result.mainImages.length}, Válidas: ${validImages.length}`);
+          
+          form.setValue('images', validImages);
+        } else if (result.images && result.images.length > 0) {
+          // Alternativa: usar todas as imagens
+          const validImages = result.images.filter(validateImageUrl);
+          console.log(`[Extrator] Usando imagens alternativas: ${validImages.length} válidas de ${result.images.length} total`);
+          
+          form.setValue('images', validImages);
+        }
       }
 
       toast.success('Produto importado com sucesso!');
@@ -207,6 +285,34 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
                 <p className="text-sm text-muted-foreground">
                   Cole a URL de um produto para importar automaticamente suas informações.
                 </p>
+                
+                <RadioGroup 
+                  defaultValue="simple" 
+                  value={extractorType}
+                  onValueChange={(value) => setExtractorType(value as 'simple' | 'ai')}
+                  className="grid grid-cols-2 gap-4 mb-4"
+                >
+                  <div>
+                    <RadioGroupItem value="simple" id="extractor-simple" className="peer sr-only" />
+                    <Label
+                      htmlFor="extractor-simple"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Extração Simples</span>
+                      <span className="text-xs text-muted-foreground">Mais rápido, dados básicos</span>
+                    </Label>
+                  </div>
+                  <div>
+                    <RadioGroupItem value="ai" id="extractor-ai" className="peer sr-only" />
+                    <Label
+                      htmlFor="extractor-ai"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+                    >
+                      <span className="text-sm font-medium">Extração com IA</span>
+                      <span className="text-xs text-muted-foreground">Mais preciso, dados detalhados</span>
+                    </Label>
+                  </div>
+                </RadioGroup>
                 
                 <FormField
                   control={form.control}
@@ -383,7 +489,7 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
                             />
                           </FormControl>
                           <FormDescription>
-                            Adicione até 5 imagens do seu produto
+                            Adicione imagens do seu produto (as principais aparecem primeiro)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

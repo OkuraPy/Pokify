@@ -118,118 +118,181 @@ export async function extractProductReviews(
 /**
  * Salva um produto extraído no banco de dados Supabase
  */
-export async function saveExtractedProduct(
-  storeId: string,
-  product: ExtractedProduct
-): Promise<{ success: boolean; productId?: string; error?: string }> {
+export async function saveExtractedProduct(product: ExtractedProduct, storeId: string): Promise<{ success: boolean; error?: string; data?: any }> {
+  const errorHandler = (error: any, stage: string): { success: boolean; error: string } => {
+    console.error(`[saveExtractedProduct] Erro ao ${stage}:`, error);
+    return { success: false, error: `Erro ao ${stage}: ${error.message || error}` };
+  };
+
+  console.log(`[saveExtractedProduct] Iniciando salvamento do produto "${product.title}" para loja ${storeId}`);
+  console.log(`[saveExtractedProduct] Total de imagens para processar: ${product.images?.length || 0}`);
+
   try {
-    // Primeiro, salvamos as imagens no Storage do Supabase
-    const imagePromises = product.images.map(async (imageUrl) => {
-      // Gera um nome único para a imagem
-      const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
+    // Verificar imagens inválidas
+    const filteredImages = product.images.filter(url => {
+      // Verificar se é uma URL válida
+      try {
+        new URL(url);
+      } catch (e) {
+        console.log(`[saveExtractedProduct] URL inválida descartada: ${url}`);
+        return false;
+      }
+
+      // Verificar se a URL termina com uma extensão de imagem conhecida
+      const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+      const hasValidExtension = validExtensions.some(ext => url.toLowerCase().includes(ext));
       
-      // Baixa a imagem e faz upload para o Supabase Storage
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      const { data, error } = await supabase.storage
-        .from('images')
-        .upload(`${storeId}/${filename}`, blob);
-      
-      if (error) throw new Error(`Falha ao fazer upload da imagem: ${(error as any).message || 'erro desconhecido'}`);
-      
-      // Retorna a URL pública da imagem
-      const { data: publicUrl } = supabase.storage
-        .from('images')
-        .getPublicUrl(`${storeId}/${filename}`);
-      
-      return publicUrl.publicUrl;
+      if (!hasValidExtension) {
+        console.log(`[saveExtractedProduct] URL sem extensão de imagem válida: ${url}`);
+        return false;
+      }
+
+      return true;
     });
-    
-    // Processa todas as promessas de upload de imagens
-    const supabaseImageUrls = await Promise.all(imagePromises);
-    
-    // Prepara o objeto do produto para inserção no banco
-    const newProduct = {
-      store_id: storeId,
-      title: product.title,
-      description: product.description,
-      price: product.price,
-      compare_at_price: product.compare_at_price,
-      images: supabaseImageUrls,
-      original_url: product.original_url,
-      original_platform: product.original_platform,
-      stock: product.stock || 100,
-      status: 'imported' as const,
-      reviews_count: product.reviews?.length || 0,
-      average_rating: product.average_rating,
-      tags: product.tags,
-      variants: product.variants,
-    };
-    
-    // Insere o produto na tabela de produtos
-    const productResult: any = await supabase
-      .from('products')
-      .insert(newProduct)
-      .select();
-    
-    const productData = productResult?.data;
-    const productError = productResult?.error;
-    
-    if (productError) {
-      throw new Error(`Erro ao salvar produto: ${(productError as any).message || 'erro desconhecido'}`);
-    }
-    
-    // Extrair o ID do produto salvo
-    const productId = productData && productData.length > 0 ? productData[0].id : null;
-    
-    if (!productId) {
-      throw new Error('Não foi possível obter o ID do produto salvo');
-    }
-    
-    // Se houver avaliações, salvamos na tabela de reviews
-    if (product.reviews && product.reviews.length > 0) {
-      const reviewsToInsert = product.reviews.map(review => {
-        // Converter created_at para string se for um objeto Date
-        const created_at = typeof review.created_at === 'object' && review.created_at 
-          ? (review.created_at as Date).toISOString() 
-          : (review.created_at as string || new Date().toISOString());
+
+    console.log(`[saveExtractedProduct] Imagens filtradas: ${filteredImages.length} de ${product.images.length} são válidas`);
+
+    // Processar imagens
+    const imageUrls: string[] = [];
+    for (let i = 0; i < filteredImages.length; i++) {
+      try {
+        console.log(`[saveExtractedProduct] Processando imagem ${i + 1}/${filteredImages.length}: ${filteredImages[i].substring(0, 50)}...`);
         
-        return {
-          product_id: productId,
-          author: review.author,
-          rating: review.rating,
-          content: review.content,
-          date: review.date,
-          images: review.images,
-          is_selected: false,
-          is_published: false,
-          created_at
-        };
-      });
-      
-      const reviewsResult: any = await supabase
-        .from('reviews')
-        .insert(reviewsToInsert);
-      
-      const reviewsError = reviewsResult?.error;
-      
-      if (reviewsError) {
-        console.error('Erro ao salvar avaliações:', reviewsError);
-        // Continuamos mesmo com erro ao salvar avaliações
+        // Gerar nome de arquivo único baseado no timestamp e índice
+        const fileName = `${Date.now()}_${i}_${Math.random().toString(36).substring(2, 10)}.jpg`;
+        const storageUrl = `products/${storeId}/${fileName}`;
+        
+        // Baixar a imagem
+        const start = Date.now();
+        const imageResponse = await fetch(filteredImages[i], {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          }
+        });
+        
+        if (!imageResponse.ok) {
+          console.log(`[saveExtractedProduct] Falha ao baixar imagem ${i + 1}: Status ${imageResponse.status}`);
+          continue;
+        }
+        
+        const imageBlob = await imageResponse.blob();
+        console.log(`[saveExtractedProduct] Imagem ${i + 1} baixada em ${Date.now() - start}ms. Tamanho: ${(imageBlob.size / 1024).toFixed(2)}KB`);
+        
+        // Fazer upload para o Supabase Storage
+        const buffer = await imageBlob.arrayBuffer();
+        const { data, error } = await supabase.storage
+          .from('products')
+          .upload(storageUrl, buffer, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+        
+        if (error) {
+          console.log(`[saveExtractedProduct] Erro ao fazer upload da imagem ${i + 1}:`, error.message);
+          continue;
+        }
+        
+        // Obter URL pública
+        const { data: urlData } = supabase.storage
+          .from('products')
+          .getPublicUrl(storageUrl);
+        
+        imageUrls.push(urlData.publicUrl);
+        console.log(`[saveExtractedProduct] Imagem ${i + 1} processada com sucesso: ${urlData.publicUrl.substring(0, 50)}...`);
+      } catch (error) {
+        console.error(`[saveExtractedProduct] Erro ao processar imagem ${i + 1}:`, error);
+        // Continue para a próxima imagem
       }
     }
-    
-    return {
-      success: true,
-      productId: productId.toString(),
-    };
+
+    console.log(`[saveExtractedProduct] Processamento de imagens concluído. ${imageUrls.length} imagens salvas com sucesso.`);
+
+    // Inserir produto
+    try {
+      // Prepara o objeto do produto para inserção no banco
+      const newProduct = {
+        store_id: storeId,
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        compare_at_price: product.compare_at_price,
+        images: imageUrls,
+        original_url: product.original_url,
+        original_platform: product.original_platform,
+        stock: product.stock || 100,
+        status: 'imported' as const,
+        reviews_count: product.reviews?.length || 0,
+        average_rating: product.average_rating,
+        tags: product.tags,
+        variants: product.variants,
+      };
+      
+      // Insere o produto na tabela de produtos
+      const productResult: any = await supabase
+        .from('products')
+        .insert(newProduct)
+        .select();
+      
+      const productData = productResult?.data;
+      const productError = productResult?.error;
+      
+      if (productError) {
+        throw new Error(`Erro ao salvar produto: ${(productError as any).message || 'erro desconhecido'}`);
+      }
+      
+      // Extrair o ID do produto salvo
+      const productId = productData && productData.length > 0 ? productData[0].id : null;
+      
+      if (!productId) {
+        throw new Error('Não foi possível obter o ID do produto salvo');
+      }
+      
+      // Se houver avaliações, salvamos na tabela de reviews
+      if (product.reviews && product.reviews.length > 0) {
+        const reviewsToInsert = product.reviews.map(review => {
+          // Converter created_at para string se for um objeto Date
+          const created_at = typeof review.created_at === 'object' && review.created_at 
+            ? (review.created_at as Date).toISOString() 
+            : (review.created_at as string || new Date().toISOString());
+          
+          return {
+            product_id: productId,
+            author: review.author,
+            rating: review.rating,
+            content: review.content,
+            date: review.date,
+            images: review.images,
+            is_selected: false,
+            is_published: false,
+            created_at
+          };
+        });
+        
+        const reviewsResult: any = await supabase
+          .from('reviews')
+          .insert(reviewsToInsert);
+        
+        const reviewsError = reviewsResult?.error;
+        
+        if (reviewsError) {
+          console.error('Erro ao salvar avaliações:', reviewsError);
+          // Continuamos mesmo com erro ao salvar avaliações
+        }
+      }
+      
+      return {
+        success: true,
+        data: {
+          id: productId.toString(),
+          title: product.title,
+          images: imageUrls.length
+        }
+      };
+    } catch (error) {
+      return errorHandler(error, 'inserir produto');
+    }
   } catch (error) {
-    console.error('Erro ao salvar produto extraído:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Erro desconhecido ao salvar o produto.',
-    };
+    return errorHandler(error, 'salvar produto');
   }
 }
 

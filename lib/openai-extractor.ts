@@ -67,84 +67,79 @@ export class OpenAIExtractor {
   private async extractWithMarkdown(url: string, markdown: string): Promise<ExtractionResponse> {
     try {
       // Construir o prompt para o sistema
-      const systemPrompt = `Você é um assistente especializado em extrair informações estruturadas de descrições de produtos e-commerce.
+      const systemPrompt = `Você é um extrator especializado em analisar páginas de produtos e-commerce.
   
-  Sua tarefa é analisar o conteúdo markdown de uma página de produto e extrair:
-  1. Título exato do produto
-  2. Preço atual
-  3. Preço comparativo/antigo (se existir)
-  4. Descrição COMPLETA e DETALHADA do produto - inclua TODAS as características, especificações, diferenciais e informações relevantes
-  5. URLs de imagens principais (fotos principais do produto)
-  6. URLs de imagens da descrição (imagens incorporadas na descrição)
+SUA MISSÃO É EXTRAIR TODAS AS INFORMAÇÕES IMPORTANTES DO PRODUTO:
+
+1. TÍTULO COMPLETO E EXATO do produto
+2. PREÇO ATUAL em formato numérico
+3. PREÇO COMPARATIVO/ANTERIOR (se existir)
+4. DESCRIÇÃO COMPLETA E DETALHADA do produto em formato HTML (com tags <p>, <br>, <ul>, <li>)
+5. TODAS AS IMAGENS do produto, separadas em:
+   - Imagens principais (carrossel/galeria)
+   - Imagens da descrição (incorporadas no texto)
+
+PARA EXTRAÇÃO DE IMAGENS, PROCURE POR:
+- <img src="URL">
+- <img data-src="URL">
+- <source srcset="URL">
+- <meta property="og:image" content="URL">
+- data-gallery-items contendo URLs
+- data-product-images contendo URLs
+- data-zoom-image="URL"
+- qualquer atributo contendo URL de imagem
+- image URLs em scripts JSON
+- arrays de imagens em qualquer formato
+
+OBSERVE QUE É FUNDAMENTAL IDENTIFICAR CORRETAMENTE:
+- As imagens da descrição: que aparecem dentro de <div> ou <p> no texto de descrição
+- As imagens principais: que aparecem no carrossel/galeria de fotos do produto
+   
+NÃO IGNORE NENHUMA INFORMAÇÃO. EXTRAIA ABSOLUTAMENTE TUDO.`;
   
-  Imagens principais geralmente são as imagens de destaque/carrossel do produto, aparecem no topo da página, são maiores, mostram o produto completo, e têm foco em diferentes ângulos.
-  
-  Imagens de descrição geralmente são menores, mostram detalhes específicos e aparecem ao longo do texto descritivo.`;
-  
-      const userPrompt = `Você é um parser de HTML especializado em encontrar URLs de imagens. Analise o HTML/markdown fornecido e extraia TODAS as URLs de imagens do produto.
+      const userPrompt = `Este é um HTML/markdown de uma página de produto de e-commerce. 
+EXTRAIA TODAS AS INFORMAÇÕES DO PRODUTO, incluindo:
 
-INSTRUÇÕES TÉCNICAS PARA EXTRAÇÃO DE IMAGENS:
+1. TÍTULO: O título exato e completo do produto
+2. PREÇO: O preço atual do produto (em formato numérico)
+3. DESCRIÇÃO: A descrição completa em formato HTML válido (não apenas texto plano)
+4. IMAGENS: Todas as imagens do produto, com atenção especial às IMAGENS DA DESCRIÇÃO
 
-1. PROCURE POR TODAS AS OCORRÊNCIAS DE:
-   - <img src="URL">
-   - <img data-src="URL">
-   - <source srcset="URL">
-   - <meta property="og:image" content="URL">
-   - data-gallery-items contendo URLs
-   - data-product-images contendo URLs
-   - data-zoom-image="URL"
-   - qualquer atributo contendo URL de imagem
+PARA IMAGENS, SEPARE EM:
+- mainImages: imagens principais do carrossel do produto (grandes, mostram o produto em diferentes ângulos)
+- descriptionImages: imagens menores que aparecem DENTRO da descrição, entre os parágrafos, mostrando detalhes específicos
 
-2. PROCURE EM TODOS OS ELEMENTOS:
-   - div.product-gallery
-   - div.product-images
-   - div[data-product-images]
-   - section.product-images
-   - [data-gallery]
-   - [data-slider]
-   - [data-zoom]
+REQUISITOS PARA A DESCRIÇÃO:
+- DEVE ser em formato HTML válido com tags apropriadas (<p>, <br>, <ul>, <li>)
+- NÃO use apenas quebras de linha (\\n)
+- INCORPORE as imagens que encontrar na descrição usando tags <img>
+- MANTENHA a formatação original (negrito, itálico, listas, etc.)
+- PRESERVE emojis e símbolos especiais
 
-3. PROCURE EM SCRIPTS POR:
-   - "product_images": [...]
-   - "gallery_images": [...]
-   - "zoom_images": [...]
-   - Qualquer array de URLs de imagem
-
-4. INCLUA TODAS AS VARIAÇÕES:
-   - Diferentes resoluções
-   - Diferentes formatos (jpg, png, webp)
-   - Diferentes tamanhos
-   - Diferentes CDNs
-
-RETORNE NO FORMATO:
-{
-  "title": "título exato do produto",
-  "price": "preço em formato numérico",
-  "description": "descrição completa",
-  "mainImages": [
-    // TODAS as URLs de imagem encontradas, sem exceção
-    // Uma URL por linha para facilitar a leitura
-    "url1",
-    "url2",
-    "url3",
-    ...
-  ],
-  "descriptionImages": [],
-  "reviews": []
-}
+Dê ATENÇÃO EXTRA às imagens da descrição, pois elas são essenciais para ilustrar os detalhes do produto.
 
 REGRAS OBRIGATÓRIAS:
-1. NÃO IGNORE nenhuma URL de imagem
-2. NÃO MODIFIQUE as URLs encontradas
-3. INCLUA URLs mesmo que pareçam duplicadas
-4. MANTENHA as URLs EXATAMENTE como estão no HTML
-5. INCLUA URLs mesmo que sejam variações da mesma imagem
-6. NÃO LIMITE o número de URLs retornadas
+1. NUNCA deixe campos vazios (título, preço e descrição são OBRIGATÓRIOS)
+2. IDENTIFIQUE CUIDADOSAMENTE quais imagens aparecem na descrição do produto
+3. Inclua TODOS os detalhes do produto na descrição
+4. NÃO IGNORE nenhuma URL de imagem
+5. NÃO LIMITE o número de URLs retornadas
+6. RETORNE EXATAMENTE no formato JSON abaixo:
+
+{
+  "title": "Título exato do produto",
+  "price": "99.90",
+  "comparePrice": "129.90",
+  "description": "<p>Descrição completa em <strong>HTML</strong> com todas as formatações</p><p><img src='url_imagem_descricao' alt='Detalhe do produto'></p>",
+  "mainImages": ["url1", "url2", "url3", ...],
+  "descriptionImages": ["url1", "url2", ...]
+}
 
 HTML/Markdown para análise:
-${markdown.substring(0, 8000)}`;
+${markdown.substring(0, 12000)}`;
 
-      console.log('[OpenAI Extractor] Enviando prompt para OpenAI');
+      console.log('[OpenAI Extractor] Enviando prompt melhorado para OpenAI');
+      console.log(`[OpenAI Extractor] Tamanho do prompt: ${userPrompt.length} caracteres`);
       
       try {
         // Chamar a API da OpenAI
@@ -153,11 +148,11 @@ ${markdown.substring(0, 8000)}`;
           messages: [
             {
               role: 'system',
-              content: 'Você é um assistente especializado em extrair informações estruturadas de descrições de produtos em formato markdown. RETORNE APENAS JSON VÁLIDO, nada mais.'
+              content: systemPrompt
             },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.2,
+          temperature: 0.1, // Reduzir temperatura para resultados mais consistentes
           max_tokens: 4000,
           response_format: { type: 'json_object' }
         });
@@ -183,6 +178,9 @@ ${markdown.substring(0, 8000)}`;
           ...(extractedData.descriptionImages || [])
         ];
 
+        console.log(`[OpenAI Extractor] Total de imagens encontradas: ${allImages.length}`);
+        console.log(`[OpenAI Extractor] Detalhamento: ${extractedData.mainImages?.length || 0} imagens principais, ${extractedData.descriptionImages?.length || 0} imagens de descrição`);
+
         // Adicionar as imagens combinadas ao objeto final
         const result: ExtractedProduct = {
           title: extractedData.title || '',
@@ -193,6 +191,38 @@ ${markdown.substring(0, 8000)}`;
           images: this.removeDuplicateUrls(allImages),
           reviews: extractedData.reviews || []
         };
+
+        // Buscar imagens adicionais para descrição se o array estiver vazio
+        if (result.descriptionImages.length === 0) {
+          console.log(`[OpenAI Extractor] OpenAI não encontrou imagens de descrição, buscando no markdown original`);
+          
+          // Usar regex para encontrar imagens no markdown
+          const imageRegex = /!\[.*?\]\((.*?)\)|<img.*?src=["'](.*?)["']/g;
+          const urlsFoundInMarkdown: string[] = [];
+          let match;
+          
+          while ((match = imageRegex.exec(markdown)) !== null) {
+            const imgUrl = match[1] || match[2];
+            if (imgUrl && 
+                this.isValidImageUrl(imgUrl) && 
+                !urlsFoundInMarkdown.includes(imgUrl) &&
+                !result.mainImages.includes(imgUrl)) {
+              urlsFoundInMarkdown.push(imgUrl);
+            }
+          }
+          
+          // Se encontramos mais de 3 imagens, assumir que algumas são da descrição
+          if (urlsFoundInMarkdown.length > 3) {
+            // Assumir que as primeiras imagens são principais, e as restantes são da descrição
+            // Começar após as 3 primeiras imagens
+            const potentialDescImages = urlsFoundInMarkdown.slice(3);
+            
+            if (potentialDescImages.length > 0) {
+              console.log(`[OpenAI Extractor] Encontradas ${potentialDescImages.length} possíveis imagens de descrição no markdown`);
+              result.descriptionImages = potentialDescImages;
+            }
+          }
+        }
 
         console.log(`[OpenAI Extractor] Extração concluída com sucesso.`);
         console.log(`[OpenAI Extractor] Título: ${result.title}`);
@@ -351,6 +381,38 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
           reviews: extractedData.reviews || []
         };
 
+        // Buscar imagens adicionais para descrição se o array estiver vazio
+        if (result.descriptionImages.length === 0) {
+          console.log(`[OpenAI Extractor] OpenAI não encontrou imagens de descrição, buscando no markdown original`);
+          
+          // Usar regex para encontrar imagens no markdown
+          const imageRegex = /!\[.*?\]\((.*?)\)|<img.*?src=["'](.*?)["']/g;
+          const urlsFoundInMarkdown: string[] = [];
+          let match;
+          
+          while ((match = imageRegex.exec(markdown)) !== null) {
+            const imgUrl = match[1] || match[2];
+            if (imgUrl && 
+                this.isValidImageUrl(imgUrl) && 
+                !urlsFoundInMarkdown.includes(imgUrl) &&
+                !result.mainImages.includes(imgUrl)) {
+              urlsFoundInMarkdown.push(imgUrl);
+            }
+          }
+          
+          // Se encontramos mais de 3 imagens, assumir que algumas são da descrição
+          if (urlsFoundInMarkdown.length > 3) {
+            // Assumir que as primeiras imagens são principais, e as restantes são da descrição
+            // Começar após as 3 primeiras imagens
+            const potentialDescImages = urlsFoundInMarkdown.slice(3);
+            
+            if (potentialDescImages.length > 0) {
+              console.log(`[OpenAI Extractor] Encontradas ${potentialDescImages.length} possíveis imagens de descrição no markdown`);
+              result.descriptionImages = potentialDescImages;
+            }
+          }
+        }
+
         console.log(`[OpenAI Extractor] Extração com Vision concluída com sucesso`);
         console.log(`[OpenAI Extractor] Título: ${result.title}`);
         console.log(`[OpenAI Extractor] Preço: ${result.price}`);
@@ -460,24 +522,19 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
   }
 
   /**
-   * Verifica se a URL fornecida é uma URL de imagem válida
+   * Verifica se uma URL é uma imagem válida
    */
-  isValidImageUrl(url: string): boolean {
+  private isValidImageUrl(url: string): boolean {
+    // Verificar se a URL parece válida
     if (!url || typeof url !== 'string') return false;
     
-    console.log(`[URL Validator] Verificando URL: ${url}`);
+    // Verificar se termina com uma extensão de imagem comum
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    const hasValidExtension = validExtensions.some(ext => 
+      url.toLowerCase().includes(ext)
+    );
     
-    // Verificar se a URL tem formato de imagem ou é uma URL válida
-    const isImageUrl = url.match(/\.(jpeg|jpg|gif|png|webp)$/i) !== null;
-    const isValidUrl = url.match(/^(https?:\/\/|\/\/)/i) !== null;
-    const isShopifyImage = url.includes('/cdn/shop/') || 
-                          url.includes('shopifypreview.com') || 
-                          url.includes('cdn.shopify.com');
-    
-    const isValid = isImageUrl || (isValidUrl && isShopifyImage);
-    console.log(`[URL Validator] Resultado: ${isValid ? 'Válida' : 'Inválida'} (formato: ${isImageUrl}, estrutura: ${isValidUrl}, shopify: ${isShopifyImage})`);
-    
-    return isValid;
+    return hasValidExtension;
   }
 
   /**
