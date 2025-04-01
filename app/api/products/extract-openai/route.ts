@@ -160,7 +160,8 @@ export async function POST(request: NextRequest) {
 
       // Verificar se a descrição está em formato de texto simples (sem tags HTML)
       // e converter para HTML com formatação adequada
-      if (openaiResult.data.description && 
+      if (openaiResult.data && 
+          openaiResult.data.description && 
           !openaiResult.data.description.includes('<') && 
           !openaiResult.data.description.includes('>')) {
         
@@ -189,12 +190,58 @@ export async function POST(request: NextRequest) {
         logger.info(`🖼️ Inserindo ${openaiResult.data.descriptionImages.length} imagens na descrição HTML`);
         
         try {
+          // Verificar e ajustar URLs das imagens da descrição
+          const validatedImages = openaiResult.data.descriptionImages.map(imgUrl => {
+            if (!imgUrl) return null;
+            
+            try {
+              // Validar se a URL é absoluta e válida
+              let fullUrl = imgUrl;
+              if (!imgUrl.startsWith('http')) {
+                // Tentar consertar URLs relativas
+                if (imgUrl.startsWith('//')) {
+                  fullUrl = `https:${imgUrl}`;
+                } else if (imgUrl.startsWith('/')) {
+                  // Extrair o domínio da URL original do produto
+                  try {
+                    const urlObj = new URL(url);
+                    fullUrl = `${urlObj.origin}${imgUrl}`;
+                  } catch (e: any) {
+                    logger.error(`❌ URL inválida: ${imgUrl}`);
+                    return null; // Pular esta imagem
+                  }
+                } else {
+                  // URL relativa sem barra inicial
+                  try {
+                    const urlObj = new URL(url);
+                    const basePathMatch = urlObj.pathname.match(/(.*\/)/);
+                    const basePath = basePathMatch ? basePathMatch[1] : '/';
+                    fullUrl = `${urlObj.origin}${basePath}${imgUrl}`;
+                  } catch (e: any) {
+                    logger.error(`❌ URL inválida: ${imgUrl}`);
+                    return null; // Pular esta imagem
+                  }
+                }
+              }
+              
+              // Verificar se a URL é válida
+              new URL(fullUrl);
+              return fullUrl;
+            } catch (e: any) {
+              logger.error(`❌ Erro ao processar URL da imagem: ${e.message}`);
+              return null;
+            }
+          }).filter(Boolean) as string[];
+          
+          // Atualizar o array de imagens com URLs validadas
+          openaiResult.data.descriptionImages = validatedImages;
+          
           // Usar a função de utilidade para preservar imagens na descrição
           const enhancedDescription = preserveImagesInDescription(
             openaiResult.data.description,
             linkfyResult.data.markdown || '',  // Passando o markdown original
             url,  // URL base para resolver caminhos relativos
-            openaiResult.data.descriptionImages  // Imagens da descrição identificadas pela OpenAI
+            validatedImages  // Imagens da descrição validadas
           );
           
           // Verificar se o processo de enriquecimento modificou a descrição
@@ -230,21 +277,82 @@ export async function POST(request: NextRequest) {
             openaiResult.data.description = htmlDescription;
           }
           
-          // Adicionar as imagens ao final da descrição
-          let enhancedDescription = openaiResult.data.description;
+          // Solução simplificada e mais robusta para adicionar imagens
+          // Este é um método mais direto e menos propenso a erros
+          const validImages: string[] = [];
           
-          // Adicionar galeria ao final da descrição
-          enhancedDescription += '<div class="product-gallery">';
-          imagesToUse.forEach(imgUrl => {
-            enhancedDescription += `<p><img src="${imgUrl}" alt="Imagem do produto" class="product-detail-image"></p>`;
-          });
-          enhancedDescription += '</div>';
+          // Validar e processar cada URL de imagem
+          for (const imgUrl of imagesToUse) {
+            try {
+              // Verificar se é uma URL válida (deve ser absoluta)
+              if (!imgUrl || typeof imgUrl !== 'string') continue;
+              
+              // Garantir que a URL seja absoluta
+              let validUrl = imgUrl;
+              if (!imgUrl.startsWith('http')) {
+                if (imgUrl.startsWith('//')) {
+                  validUrl = `https:${imgUrl}`;
+                } else {
+                  // Pular URLs relativas - muito problemáticas
+                  logger.warn(`⚠️ Pulando URL relativa: ${imgUrl}`);
+                  continue;
+                }
+              }
+              
+              // Verificar se a URL é válida
+              new URL(validUrl);
+              
+              // Adicionar à lista de imagens válidas
+              validImages.push(validUrl);
+            } catch (e: any) {
+              logger.error(`❌ URL de imagem inválida: ${imgUrl} - ${e.message}`);
+            }
+          }
           
-          // Atualizar descrição e array de imagens de descrição
-          openaiResult.data.description = enhancedDescription;
-          openaiResult.data.descriptionImages = imagesToUse;
-          
-          logger.info(`✅ Descrição enriquecida artificialmente com ${imagesToUse.length} imagens`);
+          // Adicionar imagens diretamente na descrição
+          if (validImages.length > 0) {
+            // Construir HTML com imagens diretas
+            let imgHtml = '<div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">';
+            
+            for (const imgSrc of validImages) {
+              imgHtml += `
+                <div style="margin: 10px 0;">
+                  <img 
+                    src="${imgSrc}" 
+                    alt="Imagem do produto" 
+                    style="max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px;"
+                    loading="lazy"
+                    onerror="this.style.display='none'" 
+                  />
+                </div>
+              `;
+            }
+            
+            imgHtml += '</div>';
+            
+            // Atualizar a descrição adicionando as imagens
+            openaiResult.data.description = `${openaiResult.data.description}${imgHtml}`;
+            
+            // Atualizar o array de imagens com as URLs validadas
+            openaiResult.data.descriptionImages = validImages;
+            
+            logger.info(`✅ Descrição enriquecida com ${validImages.length} imagens válidas (HTML direto)`);
+          } else {
+            logger.warn('⚠️ Nenhuma imagem válida foi encontrada para a descrição');
+          }
+        }
+      }
+
+      // Garantir que o preço sempre use ponto decimal (nunca vírgula)
+      if (openaiResult.data && openaiResult.data.price) {
+        // Converter sempre para string para manipulação
+        const priceStr = openaiResult.data.price.toString();
+        
+        // Se contém vírgula, converter para ponto
+        if (priceStr.includes(',')) {
+          const originalPrice = priceStr;
+          openaiResult.data.price = priceStr.replace(',', '.');
+          logger.info(`💰 Convertido preço de ${originalPrice} para ${openaiResult.data.price}`);
         }
       }
 
@@ -313,4 +421,4 @@ export async function POST(request: NextRequest) {
       }
     );
   }
-} 
+}

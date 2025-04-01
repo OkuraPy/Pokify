@@ -61,10 +61,13 @@ export function preserveImagesInDescription(
           // Remover atributos de largura e altura fixos para permitir responsividade
           $img.removeAttr('width');
           $img.removeAttr('height');
-          $img.removeAttr('style');
           
-          // Adicionar classe para estilização
-          $img.addClass('desc-image');
+          // Adicionar estilos inline para garantir a exibição correta
+          $img.attr('style', 'max-width: 100%; height: auto; display: block; margin: 10px auto; border-radius: 8px;');
+          
+          // Adicionar atributos de carregamento e erro
+          $img.attr('loading', 'lazy');
+          $img.attr('onerror', "this.style.display='none'");
           
           // Garantir que a tag <img> tenha atributo alt
           if (!$img.attr('alt')) {
@@ -79,93 +82,36 @@ export function preserveImagesInDescription(
     // Se não há imagens no HTML e temos descriptionImages, adicionar essas imagens
     const imageCount = $('img').length;
     
-    if (imageCount === 0) {
-      if (descriptionImages && descriptionImages.length > 0) {
-        // Se temos uma lista específica de imagens da descrição, usar apenas essas
-        console.log(`[markdown-utils] Adicionando ${descriptionImages.length} imagens específicas da descrição`);
-        
-        descriptionImages.forEach(imgSrc => {
-          if (imgSrc && !imgSrc.includes('placeholder')) {
-            let src = imgSrc;
-            
-            // Resolver URLs relativas se temos um baseUrl
-            if (baseUrl && (src.startsWith('//') || src.startsWith('/'))) {
-              try {
-                const urlObj = new URL(baseUrl);
-                const domain = urlObj.origin;
-                
-                if (src.startsWith('//')) {
-                  src = `https:${src}`;
-                } else if (src.startsWith('/')) {
-                  src = `${domain}${src}`;
-                }
-              } catch (e) {
-                console.error('[markdown-utils] Erro ao resolver URL relativa:', e);
-              }
-            }
+    if (imageCount === 0 && descriptionImages && descriptionImages.length > 0) {
+      // Adicionar um contêiner para as imagens
+      const $gallery = $('<div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;"></div>');
+      
+      // Adicionar cada imagem ao contêiner
+      descriptionImages.forEach(imgSrc => {
+        if (imgSrc && !imgSrc.includes('placeholder')) {
+          try {
+            // Verificar se a URL é válida
+            new URL(imgSrc);
             
             // Adicionar a imagem à descrição
-            $('div').append(`<img src="${src}" alt="Imagem do produto" class="desc-image extracted" />`);
-          }
-        });
-      } else if (markdown) {
-        // Se não temos imagens específicas, tentar extrair apenas do markdown,
-        // mas com uma heurística para identificar imagens que parecem ser da descrição
-        console.log('[markdown-utils] Tentando identificar imagens da descrição no markdown');
-        
-        // Extrair imagens do markdown com regex
-        const imagePattern = /!\[.*?\]\((.*?)\)|<img.*?src=["'](.*?)["']/g;
-        let match;
-        const allImages = [];
-        
-        while ((match = imagePattern.exec(markdown)) !== null) {
-          const imgSrc = match[1] || match[2];
-          if (imgSrc && !imgSrc.includes('placeholder')) {
-            allImages.push(imgSrc);
+            const $container = $('<div style="margin: 10px 0;"></div>');
+            const $img = $('<img>')
+              .attr('src', imgSrc)
+              .attr('alt', 'Imagem do produto')
+              .attr('style', 'max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px;')
+              .attr('loading', 'lazy')
+              .attr('onerror', "this.style.display='none'");
+            
+            $container.append($img);
+            $gallery.append($container);
+          } catch (e) {
+            console.error('[markdown-utils] URL inválida:', imgSrc);
           }
         }
-        
-        // Heurística: se temos muitas imagens (mais de 10), as primeiras geralmente são do carrossel
-        // e as do meio/final são da descrição
-        let descImages = allImages;
-        if (allImages.length > 10) {
-          // Pegar imagens da metade para o final, assumindo que as primeiras são do carrossel
-          const startIndex = Math.floor(allImages.length / 2);
-          // Limitar a 5 imagens para não sobrecarregar a descrição
-          descImages = allImages.slice(startIndex).slice(0, 5);
-          console.log(`[markdown-utils] Usando heurística - de ${allImages.length} imagens, escolheu ${descImages.length} para a descrição`);
-        } else {
-          // Se temos poucas imagens, usar no máximo 1-2 para a descrição
-          descImages = allImages.slice(0, Math.min(2, allImages.length));
-          console.log(`[markdown-utils] Poucas imagens - usando apenas ${descImages.length} para a descrição`);
-        }
-        
-        // Adicionar apenas as imagens identificadas como pertencentes à descrição
-        descImages.forEach(imgSrc => {
-          let src = imgSrc;
-          
-          // Resolver URLs relativas se temos um baseUrl
-          if (baseUrl) {
-            try {
-              const urlObj = new URL(baseUrl);
-              const domain = urlObj.origin;
-              
-              if (src.startsWith('//')) {
-                src = `https:${src}`;
-              } else if (src.startsWith('/')) {
-                src = `${domain}${src}`;
-              } else if (!src.startsWith('http')) {
-                src = `${domain}/${src}`;
-              }
-            } catch (e) {
-              console.error('[markdown-utils] Erro ao resolver URL relativa:', e);
-            }
-          }
-          
-          // Adicionar a imagem à descrição
-          $('div').append(`<img src="${src}" alt="Imagem do produto" class="desc-image extracted" />`);
-        });
-      }
+      });
+      
+      // Adicionar a galeria à descrição
+      $('div').append($gallery);
     }
 
     const processedHtml = $.html();
