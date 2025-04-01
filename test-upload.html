@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste de Upload de Screenshot</title>
+    <script>
+        async function enviarRequisicao() {
+            const url = document.getElementById('url').value;
+            const screenshotFile = document.getElementById('screenshot').files[0];
+            
+            if (!url || !screenshotFile) {
+                alert('Por favor, preencha a URL e selecione um arquivo de screenshot');
+                return;
+            }
+            
+            // Ler o arquivo como base64
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64Data = e.target.result.split(',')[1]; // Remover o prefixo "data:image/..."
+                
+                try {
+                    const response = await fetch('http://localhost:3000/api/products/extract-openai', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            url: url,
+                            screenshot: base64Data
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+                } catch (error) {
+                    document.getElementById('result').textContent = 'Erro: ' + error.message;
+                }
+            };
+            
+            reader.readAsDataURL(screenshotFile);
+        }
+    </script>
+</head>
+<body>
+    <h1>Teste de Upload de Screenshot</h1>
+    <div>
+        <label for="url">URL do produto:</label>
+        <input type="text" id="url" value="https://midastime.com.br/products/body-shaper-body-modelador-canelado-queima-de-estoque" style="width: 500px;">
+    </div>
+    <div>
+        <label for="screenshot">Screenshot (arquivo .jpg, .png, etc):</label>
+        <input type="file" id="screenshot" accept="image/*">
+    </div>
+    <div>
+        <button onclick="enviarRequisicao()">Enviar</button>
+    </div>
+    <div>
+        <h2>Resultado:</h2>
+        <pre id="result" style="background-color: #f0f0f0; padding: 10px; max-height: 500px; overflow: auto;"></pre>
+    </div>
+</body>
+</html> 

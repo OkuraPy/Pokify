@@ -69,14 +69,6 @@ export function ProductGrid({ storeId, products }: ProductGridProps) {
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
-                <Button 
-                  size="icon" 
-                  variant="secondary" 
-                  className="h-9 w-9 bg-white hover:bg-white/90 shadow-sm"
-                  onClick={() => router.push(`/dashboard/stores/${storeId}/products/${product.id}/edit`)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
               </div>
               {product.stock <= 20 && (
                 <Badge 
