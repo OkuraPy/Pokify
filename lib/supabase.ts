@@ -516,28 +516,64 @@ export async function createProduct(product: Partial<Product> & { store_id: stri
  * Atualiza um produto existente
  */
 export async function updateProduct(productId: string, product: Partial<Product>) {
+  console.log('===== INÍCIO DA FUNÇÃO updateProduct =====');
+  console.log('Dados recebidos:', {
+    productId,
+    productData: {
+      ...product,
+      description: product.description ? `${product.description.substring(0, 50)}...` : null
+    }
+  });
+  
   try {
+    console.log('Construindo query Supabase para atualizar produto');
     const query = supabase
       .from('products')
       .update(product)
       .eq('id', productId);
     
+    console.log('Adicionando select() à query');
     const selectQuery = query.select();
+    console.log('Adicionando single() à query');
     const filteredQuery = selectQuery.single();
     
     // Executar diretamente a query
+    console.log('Executando query...');
     const productResult = await filteredQuery;
     
+    if (productResult.error) {
+      console.error('Erro retornado pelo Supabase:', productResult.error);
+      console.error('Detalhes do erro:', {
+        code: productResult.error?.code,
+        message: productResult.error?.message,
+        details: productResult.error?.details,
+        hint: productResult.error?.hint
+      });
+    } else {
+      console.log('Produto atualizado com sucesso. Dados retornados:', {
+        id: productResult.data?.id,
+        title: productResult.data?.title
+      });
+    }
+    
+    console.log('Retornando resultado da operação');
     return { 
       data: productResult.data, 
       error: productResult.error 
     };
   } catch (error) {
-    console.error('Erro ao atualizar produto:', error);
+    console.error('Erro grave ao atualizar produto:', error);
+    if (error instanceof Error) {
+      console.error('Mensagem do erro:', error.message);
+      console.error('Stack trace:', error.stack);
+    }
+    console.log('Retornando erro encapsulado');
     return {
       data: null,
       error: error instanceof Error ? error : new Error('Erro desconhecido')
     };
+  } finally {
+    console.log('===== FIM DA FUNÇÃO updateProduct =====');
   }
 }
 

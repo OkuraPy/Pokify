@@ -339,30 +339,65 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
     product.status === 'editing' ? 'Em edição' : 'Arquivado';
 
   const handleSaveTranslation = async (data: { title?: string; description?: string; language?: string }) => {
-    if (!product) return;
+    console.log('===== INICIANDO FUNÇÃO handleSaveTranslation =====');
+    console.log('Dados recebidos para salvar tradução:', {
+      title: data.title?.substring(0, 50) + '...',
+      descriptionLength: data.description?.length || 0,
+      language: data.language,
+      productId: product?.id
+    });
+    
+    if (!product) {
+      console.error('Erro: Produto não encontrado/indefinido');
+      return Promise.reject(new Error('Produto não encontrado'));
+    }
     
     try {
+      console.log('Chamando updateProduct com:', {
+        productId: product.id,
+        dataKeys: Object.keys(data)
+      });
+      
       const { error } = await updateProduct(product.id, data);
       
       if (error) {
+        console.error('Erro retornado por updateProduct:', error);
         throw new Error('Falha ao atualizar o produto');
       }
       
+      console.log('updateProduct executado com sucesso, sem erros');
+      
       // Update local product state with the new translated data
+      console.log('Atualizando estado local do produto');
       setProduct(prev => {
-        if (!prev) return null;
-        return {
+        if (!prev) {
+          console.warn('Estado anterior do produto é nulo');
+          return null;
+        }
+        const updatedProduct = {
           ...prev,
           ...data
         };
+        console.log('Estado do produto atualizado:', {
+          id: updatedProduct.id,
+          title: updatedProduct.title,
+          language: updatedProduct.language
+        });
+        return updatedProduct;
       });
       
+      console.log('Exibindo mensagem de sucesso');
       toast.success('Tradução salva com sucesso');
+      console.log('Retornando Promise.resolve()');
       return Promise.resolve();
     } catch (error) {
-      console.error('Erro ao salvar tradução:', error);
+      console.error('Erro ao salvar tradução - detalhado:', error);
+      console.error('Erro stack trace:', error instanceof Error ? error.stack : 'Sem stack');
       toast.error('Erro ao salvar tradução');
+      console.log('Retornando Promise.reject()');
       return Promise.reject(error);
+    } finally {
+      console.log('===== FIM DA FUNÇÃO handleSaveTranslation =====');
     }
   };
 

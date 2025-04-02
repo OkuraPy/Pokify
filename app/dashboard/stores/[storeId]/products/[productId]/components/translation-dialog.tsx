@@ -228,7 +228,17 @@ export function TranslationDialog({
   }, [isOpen]);
 
   const handleTranslate = async () => {
+    console.log('===== INICIANDO PROCESSO DE TRADUÇÃO =====');
+    console.log('Dados do produto:', {
+      id: product.id,
+      title: product.title,
+      description: product.description?.substring(0, 100) + '...',
+      sourceLanguage: detectedSourceLanguage,
+      targetLanguage
+    });
+    
     if (!targetLanguage) {
+      console.error('Erro: Idioma de destino não selecionado');
       toast.error('Selecione um idioma');
       return;
     }
@@ -250,43 +260,66 @@ export function TranslationDialog({
     try {
       setTranslationStatus('translating');
       
-      console.log('Enviando requisição de tradução:', {
+      console.log('TRADUÇÃO: Preparando requisição com os seguintes dados:', {
         textos: { 
-          title: product.title.substring(0, 30) + '...',
-          description: (product.description || '').substring(0, 30) + '...'
+          title: product.title,
+          description: product.description
         },
         idioma_destino: targetLanguage,
-        idioma_origem: detectedSourceLanguage
+        idioma_origem: detectedSourceLanguage,
+        url: '/api/translate/batch'
       });
+      
+      // Criando o body da requisição para logar separadamente
+      const requestBody = {
+        texts: [
+          { id: 'title', text: product.title },
+          { id: 'description', text: product.description || '' }
+        ],
+        targetLanguage,
+        sourceLanguage: detectedSourceLanguage
+      };
+      
+      console.log('TRADUÇÃO: Body da requisição:', JSON.stringify(requestBody));
       
       const response = await fetch('/api/translate/batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          texts: [
-            { id: 'title', text: product.title },
-            { id: 'description', text: product.description || '' }
-          ],
-          targetLanguage,
-          sourceLanguage: detectedSourceLanguage // Enviar o idioma detectado para a API
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      const data = await response.json();
+      console.log('TRADUÇÃO: Resposta recebida, status:', response.status);
+      console.log('TRADUÇÃO: Headers da resposta:', Object.fromEntries(response.headers.entries()));
       
-      console.log('Resposta da API de tradução:', {
-        status: response.status,
+      // Tentativa de obter o texto da resposta para debug
+      const responseText = await response.text();
+      console.log('TRADUÇÃO: Resposta bruta:', responseText);
+      
+      // Converter texto para JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('TRADUÇÃO: Resposta JSON parseada com sucesso');
+      } catch(parseError) {
+        console.error('TRADUÇÃO: Erro ao converter resposta para JSON:', parseError);
+        throw new Error('Erro ao processar resposta do servidor: ' + responseText);
+      }
+      
+      console.log('TRADUÇÃO: Dados da resposta:', {
         success: data.success,
-        translations: data.translations ? 'Traduções presentes' : 'Sem traduções',
-        tradução_título: data.translations && data.translations.length > 0 ? 
-          data.translations.find((t: any) => t.id === 'title')?.text?.substring(0, 30) + '...' : 'Nenhuma'
+        hasTranslations: !!data.translations,
+        translationsCount: data.translations?.length || 0,
+        firstTitle: data.translations?.find((t: any) => t.id === 'title')?.text?.substring(0, 30) + '...',
+        firstDesc: data.translations?.find((t: any) => t.id === 'description')?.text?.substring(0, 30) + '...'
       });
 
       if (!response.ok) {
+        console.error('TRADUÇÃO: Resposta não-OK do servidor:', data.error || 'Sem mensagem de erro');
         throw new Error(data.error || 'Falha na tradução');
       }
 
       if (!data.success || !data.translations) {
+        console.error('TRADUÇÃO: Resposta sem sucesso ou sem traduções:', data);
         throw new Error('Resposta inválida do servidor');
       }
 
@@ -296,21 +329,34 @@ export function TranslationDialog({
       const translatedTitle = data.translations.find((t: any) => t.id === 'title')?.text || '';
       const translatedDesc = data.translations.find((t: any) => t.id === 'description')?.text || '';
       
-      // Salvar automaticamente sem mostrar prévia
-      await handleSave({
-        title: translatedTitle,
-        description: translatedDesc
-        // Removendo language para garantir compatibilidade com o banco
+      console.log('TRADUÇÃO: Dados a serem salvos:', {
+        title: translatedTitle?.substring(0, 30) + '...',
+        description: translatedDesc?.substring(0, 30) + '...',
+        targetLanguage
       });
+      
+      // Salvar automaticamente sem mostrar prévia
+      try {
+        await handleSave({
+          title: translatedTitle,
+          description: translatedDesc
+        });
+        console.log('TRADUÇÃO: handleSave concluído com sucesso');
+      } catch (saveError) {
+        console.error('TRADUÇÃO: Erro no handleSave:', saveError);
+        throw saveError;
+      }
       
       clearInterval(progressInterval);
       setTranslationProgress(100);
       setTranslationStatus('completed');
       
+      console.log('TRADUÇÃO: Processo finalizado com sucesso');
       toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
       
       // Pequeno atraso para o usuário ver o progresso concluído
       setTimeout(() => {
+        console.log('TRADUÇÃO: Fechando diálogo após sucesso');
         // Fechar o diálogo automaticamente após salvar
         onClose();
       }, 800);
@@ -318,15 +364,25 @@ export function TranslationDialog({
       clearInterval(progressInterval);
       setTranslationStatus('error');
       setTranslationProgress(0);
-      console.error('Erro na tradução:', error);
+      console.error('TRADUÇÃO: Erro crítico durante o processo:', error);
+      console.error('TRADUÇÃO: Stack trace:', error instanceof Error ? error.stack : 'Sem stack trace');
       toast.error(error instanceof Error ? error.message : 'Erro ao traduzir o conteúdo');
     } finally {
       clearInterval(progressInterval);
       setIsTranslating(false);
+      console.log('===== FIM DO PROCESSO DE TRADUÇÃO =====');
     }
   };
 
   const handleSave = async (data: { title: string; description: string; language?: string }) => {
+    console.log('===== INICIANDO PROCESSO DE SALVAMENTO DA TRADUÇÃO =====');
+    console.log('Dados recebidos para salvamento:', {
+      titleLength: data.title?.length || 0,
+      descriptionLength: data.description?.length || 0,
+      language: data.language,
+      targetLanguage: targetLanguage
+    });
+    
     try {
       console.log('TranslationDialog: Tentando salvar dados traduzidos:', data);
       
@@ -344,30 +400,52 @@ export function TranslationDialog({
       };
       
       console.log('TranslationDialog: Dados finais a serem salvos:', saveData);
+      console.log('TranslationDialog: Chamando onSaveTranslation, product.id =', product.id);
       
       // Chamar a função de callback para salvar a tradução
-      await onSaveTranslation(saveData);
+      try {
+        await onSaveTranslation(saveData);
+        console.log('TranslationDialog: onSaveTranslation retornou com sucesso');
+      } catch (callbackError) {
+        console.error('TranslationDialog: onSaveTranslation lançou exceção:', callbackError);
+        throw callbackError;
+      }
       
       // Verificar se a função foi concluída com sucesso
       console.log('TranslationDialog: Dados salvos com sucesso');
       
       // Forçar a atualização da página após um pequeno delay para garantir que o banco de dados foi atualizado
+      console.log('TranslationDialog: Programando reload da página em 800ms');
       setTimeout(() => {
+        console.log('TranslationDialog: Executando timeout de 800ms');
         // Fechar o diálogo imediatamente
+        console.log('TranslationDialog: Fechando diálogo');
         onClose();
         
         // Mostrar mensagem de sucesso
+        console.log('TranslationDialog: Exibindo toast de sucesso');
         toast.success(`Tradução para ${getLanguageName(targetLanguage)} aplicada com sucesso`);
         
         // Recarregar a página para garantir que todos os dados estejam atualizados
+        console.log('TranslationDialog: Recarregando página');
         window.location.reload();
       }, 800);
       
+      console.log('TranslationDialog: Retornando Promise.resolve()');
       return Promise.resolve();
     } catch (error) {
-      console.error('TranslationDialog: Erro ao salvar a tradução:', error);
+      console.error('TranslationDialog: Erro detalhado ao salvar a tradução:', error);
+      if (error instanceof Error) {
+        console.error('TranslationDialog: Mensagem do erro:', error.message);
+        console.error('TranslationDialog: Stack trace:', error.stack);
+      } else {
+        console.error('TranslationDialog: Erro não é uma instância de Error:', typeof error);
+      }
       toast.error('Erro ao salvar a tradução. Por favor, tente novamente.');
+      console.log('TranslationDialog: Retornando Promise.reject()');
       return Promise.reject(error);
+    } finally {
+      console.log('===== FIM DO PROCESSO DE SALVAMENTO DA TRADUÇÃO =====');
     }
   };
 
