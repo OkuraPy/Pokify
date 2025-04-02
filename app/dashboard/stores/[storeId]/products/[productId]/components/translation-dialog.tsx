@@ -330,17 +330,44 @@ export function TranslationDialog({
     try {
       console.log('TranslationDialog: Tentando salvar dados traduzidos:', data);
       
-      // Envia apenas título e descrição para evitar problemas com o campo language
-      await onSaveTranslation({
+      // Verificar se os dados de tradução não estão vazios
+      if (!data.title.trim() || !data.description.trim()) {
+        console.error('TranslationDialog: Dados de tradução inválidos ou vazios');
+        throw new Error('Os dados de tradução parecem estar vazios ou inválidos');
+      }
+
+      // Garantir que o idioma de destino seja incluído nos dados salvos
+      const saveData = {
         title: data.title,
-        description: data.description
-        // Removendo o campo language para garantir compatibilidade
-      });
+        description: data.description,
+        language: targetLanguage // Incluir o idioma de destino explicitamente
+      };
       
+      console.log('TranslationDialog: Dados finais a serem salvos:', saveData);
+      
+      // Chamar a função de callback para salvar a tradução
+      await onSaveTranslation(saveData);
+      
+      // Verificar se a função foi concluída com sucesso
       console.log('TranslationDialog: Dados salvos com sucesso');
+      
+      // Forçar a atualização da página após um pequeno delay para garantir que o banco de dados foi atualizado
+      setTimeout(() => {
+        // Fechar o diálogo imediatamente
+        onClose();
+        
+        // Mostrar mensagem de sucesso
+        toast.success(`Tradução para ${getLanguageName(targetLanguage)} aplicada com sucesso`);
+        
+        // Recarregar a página para garantir que todos os dados estejam atualizados
+        window.location.reload();
+      }, 800);
+      
+      return Promise.resolve();
     } catch (error) {
       console.error('TranslationDialog: Erro ao salvar a tradução:', error);
-      toast.error('Erro ao salvar a tradução');
+      toast.error('Erro ao salvar a tradução. Por favor, tente novamente.');
+      return Promise.reject(error);
     }
   };
 
