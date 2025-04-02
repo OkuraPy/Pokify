@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getProduct } from '@/lib/supabase';
 
+// Constante para definir o tamanho máximo do lote
+const BATCH_SIZE = 20;
+
 export async function POST(request: Request) {
   try {
     console.log('Recebida requisição para melhoria de reviews');
@@ -57,8 +60,16 @@ export async function POST(request: Request) {
       }
     }
 
-    console.log('Iniciando melhoria de reviews para produto:', productName);
+    console.log(`Iniciando melhoria de ${reviews.length} reviews para produto: ${productName}`);
     
+    // Dividir em lotes se tivermos muitos reviews
+    const totalReviews = reviews.length;
+    const batches = Math.ceil(totalReviews / BATCH_SIZE);
+    console.log(`Processando em ${batches} lotes de até ${BATCH_SIZE} reviews cada`);
+    
+    // Array para armazenar todos os resultados
+    const allEnhancements = [];
+
     // Configuração dos prompts
     const systemPrompt = `Você é um copywriter especializado em avaliações curtas e persuasivas para e-commerce.
 
@@ -66,11 +77,20 @@ Seu trabalho é melhorar reviews existentes para serem mais persuasivos, autênt
 Mantenha apenas o texto da avaliação, sem incluir metadados como ID ou AUTOR.
 Retorne exclusivamente o texto melhorado, sem introduções ou prefixos.`;
     
-    // Processar cada review em lote
-    const enhancementPromises = reviews.map(async (review: any) => {
-      console.log(`Processando review ${review.id}`);
+    // Processar reviews em lotes
+    for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+      console.log(`Processando lote ${batchIndex + 1} de ${batches}`);
       
-      const userPrompt = `Melhore a seguinte avaliação para o produto "${productName || 'este produto'}" para torná-la mais persuasiva e autêntica:
+      // Obter o lote atual
+      const startIndex = batchIndex * BATCH_SIZE;
+      const endIndex = Math.min(startIndex + BATCH_SIZE, totalReviews);
+      const currentBatch = reviews.slice(startIndex, endIndex);
+      
+      // Processar cada review no lote atual
+      const batchPromises = currentBatch.map(async (review: any) => {
+        console.log(`Processando review ${review.id}`);
+        
+        const userPrompt = `Melhore a seguinte avaliação para o produto "${productName || 'este produto'}" para torná-la mais persuasiva e autêntica:
 
 ID: ${review.id}
 AUTOR: ${review.author}
@@ -87,49 +107,58 @@ Diretrizes para melhoria:
 
 RETORNE APENAS O TEXTO DA AVALIAÇÃO MELHORADA. NÃO inclua "ID:", "AUTOR:", ou "AVALIAÇÃO MELHORADA:" no início.`;
 
-      try {
-        console.log('Enviando prompt para OpenAI:', { systemPrompt, userPrompt });
-        
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4",
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            },
-            { role: "user", content: userPrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000
-        });
+        try {
+          console.log(`Enviando prompt para OpenAI para review ${review.id}`);
+          
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt
+              },
+              { role: "user", content: userPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 1000
+          });
 
-        const enhancedContent = completion.choices[0]?.message?.content || '';
-        
-        if (!enhancedContent) {
-          throw new Error('Falha ao gerar conteúdo melhorado');
+          const enhancedContent = completion.choices[0]?.message?.content || '';
+          
+          if (!enhancedContent) {
+            throw new Error('Falha ao gerar conteúdo melhorado');
+          }
+          
+          console.log(`Review ${review.id} melhorado com sucesso`);
+          
+          return {
+            id: review.id,
+            enhancedContent: enhancedContent
+          };
+        } catch (error) {
+          console.error(`Erro ao melhorar review ${review.id}:`, error);
+          return {
+            id: review.id,
+            error: 'Falha na melhoria'
+          };
         }
-        
-        console.log(`Review ${review.id} melhorado com sucesso`);
-        
-        return {
-          id: review.id,
-          enhancedContent: enhancedContent
-        };
-      } catch (error) {
-        console.error(`Erro ao melhorar review ${review.id}:`, error);
-        return {
-          id: review.id,
-          error: 'Falha na melhoria'
-        };
-      }
-    });
+      });
 
-    const enhancedReviews = await Promise.all(enhancementPromises);
+      // Aguardar o processamento do lote atual
+      const batchResults = await Promise.all(batchPromises);
+      allEnhancements.push(...batchResults);
+      
+      // Adicionar um pequeno atraso entre os lotes para evitar limitações de taxa da API
+      if (batchIndex < batches - 1) {
+        console.log('Aguardando 1 segundo antes do próximo lote...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
     
-    console.log('Melhorias concluídas:', enhancedReviews);
+    console.log(`Melhorias concluídas: ${allEnhancements.length} reviews processados`);
     
     return NextResponse.json({
-      enhancements: enhancedReviews,
+      enhancements: allEnhancements,
       success: true
     });
     
