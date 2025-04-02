@@ -1003,32 +1003,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         }}
       />
       
-      {/* Dialog para o recurso de Fornecedores */}
-      <Dialog open={isSupplierFeatureDialogOpen} onOpenChange={setIsSupplierFeatureDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle>Recurso em Desenvolvimento</DialogTitle>
-          <div className="space-y-4 py-4">
-            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <Lock className="h-5 w-5 text-amber-500" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-amber-800">Recurso Premium</h3>
-                  <div className="mt-2 text-sm text-amber-700">
-                    <p>O recurso de gerenciamento de fornecedores estará disponível em breve!</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p className="text-sm text-gray-500">
-              Esta funcionalidade permitirá encontrar e comparar fornecedores alternativos para seus produtos, ajudando a melhorar suas margens.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Dialog para IA Imagens */}
+      {/* Dialog para IA Imagens - Versão simplificada e com data corrigida */}
       <Dialog open={isImageTranslationDialogOpen} onOpenChange={setIsImageTranslationDialogOpen}>
         <DialogContent className="sm:max-w-3xl bg-gradient-to-b from-background to-muted/20 shadow-lg border-muted">
           <DialogHeader className="space-y-4">
@@ -1058,23 +1033,8 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                     <Badge className="ml-2 bg-blue-100 text-blue-600 border-0">Em breve</Badge>
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Identifique e traduza automaticamente qualquer texto presente nas imagens
-                    do seu produto para o idioma que desejar.
+                    Identifique e traduza automaticamente qualquer texto presente nas imagens.
                   </p>
-                  <ul className="text-xs space-y-1 text-gray-500">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-blue-500" />
-                      <span>Tradução de textos embutidos</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-blue-500" />
-                      <span>Preservação da fonte e estilo</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-blue-500" />
-                      <span>Suporte para 40+ idiomas</span>
-                    </li>
-                  </ul>
                 </div>
               </div>
               
@@ -1090,23 +1050,8 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                     <Badge className="ml-2 bg-purple-100 text-purple-600 border-0">Premium</Badge>
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Melhore automaticamente a qualidade, brilho e nitidez das 
-                    fotos do seu produto.
+                    Melhore automaticamente a qualidade, brilho e nitidez das suas fotos.
                   </p>
-                  <ul className="text-xs space-y-1 text-gray-500">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-purple-500" />
-                      <span>Super-resolução 4x</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-purple-500" />
-                      <span>Remoção de ruído e grãos</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-purple-500" />
-                      <span>Correção automática de cor</span>
-                    </li>
-                  </ul>
                 </div>
               </div>
               
@@ -1122,29 +1067,14 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                     <Badge className="ml-2 bg-amber-100 text-amber-600 border-0">Avançado</Badge>
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Crie variações profissionais das suas imagens com diversos
-                    fundos e estilos.
+                    Crie variações profissionais com diversos fundos e estilos.
                   </p>
-                  <ul className="text-xs space-y-1 text-gray-500">
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-amber-500" />
-                      <span>Remoção de fundo automática</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-amber-500" />
-                      <span>Novos fundos profissionais</span>
-                    </li>
-                    <li className="flex items-center">
-                      <Check className="h-3 w-3 mr-1 text-amber-500" />
-                      <span>Múltiplos ângulos de produto</span>
-                    </li>
-                  </ul>
                 </div>
               </div>
             </div>
 
-            {/* Informações sobre o lançamento */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 space-y-3">
+            {/* Informações sobre o lançamento - Data corrigida para Maio */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
               <div className="flex items-start">
                 <div className="flex-shrink-0 bg-blue-500/10 p-2 rounded-full">
                   <Lock className="h-5 w-5 text-blue-500" />
@@ -1152,14 +1082,13 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                 <div className="ml-4">
                   <h3 className="text-sm font-semibold text-blue-800">Recurso Premium — Em Desenvolvimento</h3>
                   <p className="mt-1 text-sm text-blue-600">
-                    Esta funcionalidade estará disponível em breve! Estamos colocando os toques finais
-                    na nossa tecnologia de processamento de imagens.
+                    Esta funcionalidade estará disponível em breve!
                   </p>
                   
                   <div className="mt-4 relative">
                     <div className="absolute inset-0 bg-blue-100/50 rounded-md flex items-center justify-center z-10">
                       <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-0 px-3 py-1 text-xs">
-                        Lançamento em Outubro
+                        Lançamento em Maio
                       </Badge>
                     </div>
                     <div className="h-8 w-full bg-gray-100 rounded-md overflow-hidden">
@@ -1171,59 +1100,6 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                       </div>
                     </div>
                   </div>
-                  
-                  <p className="mt-4 text-sm text-gray-600">
-                    Será possível processar até <strong>100 imagens por mês</strong> no plano Premium, 
-                    melhorando significativamente a qualidade das suas fotos de produto e 
-                    aumentando as taxas de conversão.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
-                <div className="flex items-start">
-                  <div className="bg-indigo-500/10 p-1.5 rounded-full">
-                    <svg className="h-5 w-5 text-indigo-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-sm font-medium text-indigo-700">Fotografias Profissionais</h4>
-                    <p className="mt-1 text-xs text-indigo-600">
-                      Transforme fotos amadoras em imagens com qualidade profissional 
-                      usando nossa IA de aprimoramento visual.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                <div className="flex items-start">
-                  <div className="bg-green-500/10 p-1.5 rounded-full">
-                    <svg className="h-5 w-5 text-green-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M16 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M3.5 9.08984H20.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M15.6947 13.7002H15.7037" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M15.6947 16.7002H15.7037" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M11.9955 13.7002H12.0045" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M11.9955 16.7002H12.0045" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M8.29431 13.7002H8.30329" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M8.29431 16.7002H8.30329" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-sm font-medium text-green-700">Prepare-se</h4>
-                    <p className="mt-1 text-xs text-green-600">
-                      Cadastre-se na nossa lista de espera para ser notificado 
-                      quando este recurso estiver disponível para o seu plano.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1234,6 +1110,160 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
               Fechar
             </Button>
             <Button variant="default" className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsImageTranslationDialogOpen(false)}>
+              <span className="mr-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 20.5H7C4 20.5 2 19 2 15.5V8.5C2 5 4 3.5 7 3.5H17C20 3.5 22 5 22 8.5V15.5C22 19 20 20.5 17 20.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M17 9L13.87 11.5C12.84 12.32 11.15 12.32 10.12 11.5L7 9" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              Inscrever-se para novidades
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para o recurso de Fornecedores */}
+      <Dialog open={isSupplierFeatureDialogOpen} onOpenChange={setIsSupplierFeatureDialogOpen}>
+        <DialogContent className="sm:max-w-3xl bg-gradient-to-b from-background to-muted/20 shadow-lg border-muted">
+          <DialogHeader className="space-y-4">
+            <div className="flex items-center justify-start space-x-2">
+              <div className="bg-amber-500/10 p-2 rounded-full">
+                <Store className="h-5 w-5 text-amber-500" />
+              </div>
+              <DialogTitle className="text-xl">IA para Fornecedores</DialogTitle>
+            </div>
+            <DialogDescription className="text-base opacity-90">
+              Encontre os melhores fornecedores para seus produtos com análise inteligente
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Funcionalidades de IA para fornecedores */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white border border-amber-100 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] duration-300">
+                <div className="h-32 bg-gradient-to-r from-amber-100 to-yellow-50 flex items-center justify-center p-6">
+                  <div className="relative">
+                    <Search className="h-14 w-14 text-amber-500 opacity-80" />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-amber-700 mb-2 flex items-center">
+                    Busca Inteligente
+                    <Badge className="ml-2 bg-amber-100 text-amber-600 border-0">AliExpress</Badge>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Varredura automática do AliExpress para encontrar os melhores fornecedores.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white border border-green-100 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] duration-300">
+                <div className="h-32 bg-gradient-to-r from-green-100 to-emerald-50 flex items-center justify-center p-6">
+                  <div className="relative">
+                    <svg className="h-14 w-14 text-green-500 opacity-80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-green-700 mb-2 flex items-center">
+                    Análise de Qualidade
+                    <Badge className="ml-2 bg-green-100 text-green-600 border-0">Avaliações</Badge>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Análise detalhada de avaliações e reputação de cada fornecedor.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-white border border-blue-100 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] duration-300">
+                <div className="h-32 bg-gradient-to-r from-blue-100 to-cyan-50 flex items-center justify-center p-6">
+                  <div className="relative">
+                    <svg className="h-14 w-14 text-blue-500 opacity-80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M2 16.4V7.6C2 7.26863 2.26863 7 2.6 7H21.4C21.7314 7 22 7.26863 22 7.6V16.4C22 16.7314 21.7314 17 21.4 17H2.6C2.26863 17 2 16.7314 2 16.4Z" stroke="currentColor" strokeWidth="2" />
+                      <path d="M15 12H18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M11 12H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <path d="M2 10.5H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-blue-700 mb-2 flex items-center">
+                    Comparação de Preços
+                    <Badge className="ml-2 bg-blue-100 text-blue-600 border-0">Economia</Badge>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Comparação de preços e condições para maximizar sua margem de lucro.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Detalhes do recurso */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-amber-500/10 p-2 rounded-full">
+                  <svg className="h-5 w-5 text-amber-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 10V20M8 10L4 9.99998V20L8 20M8 10L13.1956 3.93847C13.6886 3.3633 14.4642 3.11604 15.1992 3.29977L15.2467 3.31166C16.5885 3.64711 17.1929 5.21057 16.4258 6.36135L14 9.99998H18.5604C19.8225 9.99998 20.7691 11.1546 20.5216 12.3922L19.3216 18.3922C19.1346 19.3271 18.3138 20 17.3604 20L8 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-sm font-semibold text-amber-800">Como funciona</h3>
+                  <p className="mt-1 text-sm text-amber-700">
+                    Nossa IA analisa milhares de fornecedores no AliExpress para encontrar os melhores parceiros para seu negócio.
+                  </p>
+                  
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-lg p-3 border border-amber-100">
+                      <div className="flex items-start">
+                        <Check className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                        <div className="ml-2">
+                          <h4 className="text-xs font-medium text-amber-800">Qualidade verificada</h4>
+                          <p className="text-xs text-amber-700 mt-0.5">
+                            Fornecedores com histórico comprovado de qualidade e entrega
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-3 border border-amber-100">
+                      <div className="flex items-start">
+                        <Check className="h-4 w-4 mt-0.5 text-amber-600 flex-shrink-0" />
+                        <div className="ml-2">
+                          <h4 className="text-xs font-medium text-amber-800">Melhores preços</h4>
+                          <p className="text-xs text-amber-700 mt-0.5">
+                            Comparação automática para encontrar as melhores ofertas
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 relative">
+                    <div className="absolute inset-0 bg-amber-100/50 rounded-md flex items-center justify-center z-10">
+                      <Badge className="bg-amber-500 hover:bg-amber-600 text-white border-0 px-3 py-1 text-xs">
+                        Lançamento em Maio
+                      </Badge>
+                    </div>
+                    <div className="h-8 w-full bg-gray-100 rounded-md overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-amber-400 to-amber-500 flex items-center justify-center text-white text-xs font-medium"
+                        style={{ width: '90%' }}
+                      >
+                        90% concluído
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+            <Button variant="outline" onClick={() => setIsSupplierFeatureDialogOpen(false)}>
+              Fechar
+            </Button>
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => setIsSupplierFeatureDialogOpen(false)}>
               <span className="mr-2">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M17 20.5H7C4 20.5 2 19 2 15.5V8.5C2 5 4 3.5 7 3.5H17C20 3.5 22 5 22 8.5V15.5C22 19 20 20.5 17 20.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
