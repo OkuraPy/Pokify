@@ -44,6 +44,7 @@ interface Product {
   shopify_product_id?: string;
   shopify_product_url?: string;
   variants?: any;
+  language?: string;
   created_at: string;
   updated_at: string;
 }
@@ -336,7 +337,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
     product.status === 'imported' ? 'Importado' :
     product.status === 'editing' ? 'Em edição' : 'Arquivado';
 
-  const handleSaveTranslation = async (data: { title?: string; description?: string }) => {
+  const handleSaveTranslation = async (data: { title?: string; description?: string; language?: string }) => {
     if (!product) return;
     
     try {
@@ -355,9 +356,11 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         };
       });
       
+      toast.success('Tradução salva com sucesso');
       return Promise.resolve();
     } catch (error) {
       console.error('Erro ao salvar tradução:', error);
+      toast.error('Erro ao salvar tradução');
       return Promise.reject(error);
     }
   };
@@ -950,16 +953,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         isOpen={isTranslationDialogOpen}
         onClose={() => setIsTranslationDialogOpen(false)}
         product={product!}
-        onSaveTranslation={async (data) => {
-          try {
-            await updateProduct(productId, data);
-            setProduct(prev => prev ? { ...prev, ...data } : null);
-            toast.success('Tradução salva com sucesso');
-          } catch (error) {
-            console.error('Erro ao salvar tradução:', error);
-            toast.error('Erro ao salvar tradução');
-          }
-        }}
+        onSaveTranslation={handleSaveTranslation}
       />
 
       {/* Dialog de Melhoria de Descrição */}

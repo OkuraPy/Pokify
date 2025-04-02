@@ -78,6 +78,7 @@ export interface Product {
   average_rating?: number;
   tags?: string[];
   variants?: any;
+  language?: string;
   created_at: string;
   updated_at: string;
 }

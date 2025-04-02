@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       apiKey: process.env.OPENAI_API_KEY
     });
 
-    const { texts, targetLanguage } = await request.json();
+    const { texts, targetLanguage, sourceLanguage = 'pt' } = await request.json();
     
     if (!texts || !targetLanguage) {
       return NextResponse.json(
@@ -30,7 +30,20 @@ export async function POST(request: Request) {
     const title = texts.find((t: any) => t.id === 'title')?.text || '';
     const description = texts.find((t: any) => t.id === 'description')?.text || '';
 
-    const systemPrompt = `Você é um especialista em marketing internacional e localização de produtos para e-commerce, com profundo conhecimento em adaptação cultural e comercial. Sua missão é não apenas traduzir, mas adaptar o conteúdo para ressoar com o público-alvo do idioma de destino.
+    // Mapear códigos de idioma para nomes completos para o prompt
+    const languageNames: Record<string, string> = {
+      'pt': 'português brasileiro',
+      'en': 'inglês',
+      'es': 'espanhol',
+      'fr': 'francês',
+      'de': 'alemão',
+      'it': 'italiano'
+    };
+
+    const sourceLangName = languageNames[sourceLanguage] || 'português brasileiro';
+    const targetLangName = languageNames[targetLanguage] || 'inglês';
+
+    const systemPrompt = `Você é um especialista em marketing internacional e localização de produtos para e-commerce, com profundo conhecimento em adaptação cultural e comercial. Sua missão é não apenas traduzir, mas adaptar o conteúdo de ${sourceLangName} para ${targetLangName} para que ressoe com o público-alvo do idioma de destino.
 
 Considere:
 1. Terminologia específica do mercado local
@@ -47,7 +60,7 @@ Mantenha:
 
 Se encontrar termos específicos que têm uma variante mais popular ou efetiva no mercado-alvo, inclua ambos (ex: "Produto X (também conhecido como Y)")`;
 
-    const userPrompt = `Traduza e adapte o seguinte conteúdo de produto para ${targetLanguage}, otimizando-o para o mercado local:
+    const userPrompt = `Traduza e adapte o seguinte conteúdo de produto de ${sourceLangName} para ${targetLangName}, otimizando-o para o mercado local:
 
 TÍTULO DO PRODUTO:
 ${title}
@@ -84,6 +97,12 @@ Retorne no formato:
       });
 
       const translatedContent = JSON.parse(completion.choices[0]?.message?.content || '{}');
+      
+      // Log da resposta da OpenAI para debug
+      console.log('API Translate/batch - Resposta OpenAI:', { 
+        title: translatedContent.title?.substring(0, 30) + '...',
+        description: translatedContent.description?.substring(0, 30) + '...'
+      });
       
       // Formatar resposta incluindo as notas de marketing se disponíveis
       return NextResponse.json({
