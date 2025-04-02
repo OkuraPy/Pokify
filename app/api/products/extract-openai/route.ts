@@ -320,9 +320,30 @@ export async function POST(request: NextRequest) {
         // Se não tiver imagens de descrição, vamos criar artificialmente
         if (openaiResult.data.mainImages && openaiResult.data.mainImages.length > 0) {
           // Usar algumas das imagens principais como imagens de descrição
-          const imagesToUse = openaiResult.data.mainImages.slice(0, 3); // Usar até 3 imagens principais
+          // Selecionar no máximo 4 imagens, se houver muitas imagens
+          let imagesToUse = [];
+          if (openaiResult.data.mainImages.length > 6) {
+            // Se há muitas imagens, selecionar algumas estrategicamente
+            imagesToUse = [
+              openaiResult.data.mainImages[0], // Primeira imagem (principal)
+              openaiResult.data.mainImages[Math.floor(openaiResult.data.mainImages.length * 0.33)], // 1/3 do caminho
+              openaiResult.data.mainImages[Math.floor(openaiResult.data.mainImages.length * 0.66)], // 2/3 do caminho
+              openaiResult.data.mainImages[openaiResult.data.mainImages.length - 1] // Última imagem
+            ];
+          } else if (openaiResult.data.mainImages.length > 1) {
+            // Selecionar primeira, meio e última se houver ao menos 3 imagens
+            imagesToUse = [
+              openaiResult.data.mainImages[0],
+              ...(openaiResult.data.mainImages.length >= 3 ? 
+                [openaiResult.data.mainImages[Math.floor(openaiResult.data.mainImages.length / 2)]] : []),
+              openaiResult.data.mainImages[openaiResult.data.mainImages.length - 1]
+            ];
+          } else {
+            // Usar a única imagem disponível
+            imagesToUse = openaiResult.data.mainImages;
+          }
           
-          logger.info(`🎨 Criando descrição enriquecida com ${imagesToUse.length} imagens do produto`);
+          logger.info(`🎨 Criando descrição enriquecida com ${imagesToUse.length} imagens do produto (de ${openaiResult.data.mainImages.length} disponíveis)`);
           
           // Verificar se a descrição já está em HTML, caso contrário converter
           if (!openaiResult.data.description.includes('<')) {
@@ -396,25 +417,32 @@ export async function POST(request: NextRequest) {
           
           // Adicionar imagens diretamente na descrição
           if (validImages.length > 0) {
-            // Construir HTML com imagens diretas - mais proeminente
-            let imgHtml = '<div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; text-align: center;">';
-            imgHtml += '<h3 style="font-size: 1.2em; margin-bottom: 15px; color: #333;">Imagens do Produto</h3>';
+            // Construir HTML com imagens diretas - mais proeminente e visualmente atraente
+            let imgHtml = `
+              <div class="product-image-gallery">
+                <h3>Galeria do Produto</h3>
+                <div class="image-grid">
+            `;
             
             for (const imgSrc of validImages) {
               imgHtml += `
-                <div style="margin: 15px 0; text-align: center;">
-                  <img 
-                    src="${imgSrc}" 
-                    alt="Imagem do produto" 
-                    style="max-width: 100%; width: auto; height: auto; max-height: 400px; display: block; margin: 0 auto; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"
-                    loading="lazy"
-                    onerror="this.style.display='none'" 
-                  />
+                <div class="image-card">
+                  <div class="image-container">
+                    <img 
+                      src="${imgSrc}" 
+                      alt="Imagem do produto" 
+                      loading="lazy"
+                      onerror="this.parentNode.parentNode.style.display='none'" 
+                    />
+                  </div>
                 </div>
               `;
             }
             
-            imgHtml += '</div>';
+            imgHtml += `
+                </div>
+              </div>
+            `;
             
             // Atualizar a descrição adicionando as imagens
             openaiResult.data.description = `${openaiResult.data.description}${imgHtml}`;
