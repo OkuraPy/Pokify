@@ -125,65 +125,65 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
     <>
       <aside
         className={cn(
-          'h-screen sticky top-0 bg-white border-r shadow-sm flex flex-col',
-          isCollapsed ? 'w-[70px]' : 'w-[240px]',
-          'transition-all duration-300 ease-in-out'
+          'h-screen sticky top-0 border-r shadow-sm flex flex-col',
+          isCollapsed ? 'w-[70px]' : 'w-[250px]',
+          'transition-all duration-300 ease-in-out bg-gradient-to-b from-white via-white to-gray-50/50'
         )}
       >
-        {/* Header da barra lateral - com gradiente sutil */}
-        <div className="px-4 py-5 flex items-center justify-between border-b bg-gradient-to-r from-white to-blue-50/30">
+        {/* Header da barra lateral - com gradiente premium */}
+        <div className="px-4 py-5 flex items-center justify-between border-b bg-gradient-to-r from-white to-blue-50/50">
           <div className={cn("flex items-center", isCollapsed && "justify-center")}>
-            <div className="flex items-center justify-center bg-blue-600 rounded-lg h-9 w-9 shadow-sm">
-              <ShoppingBag className="h-5 w-5 text-white" />
+            <div className="flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl h-9 w-9 shadow-md shadow-blue-100/60 hover:shadow-blue-200/80 transition-all duration-300 hover:scale-105">
+              <ShoppingBag className="h-[18px] w-[18px] text-white drop-shadow-sm" />
             </div>
             {!isCollapsed && (
-              <span className="ml-2.5 text-lg font-semibold text-blue-600">Pokify</span>
+              <span className="ml-3 text-lg font-semibold text-slate-800 tracking-tight">Pokify</span>
             )}
           </div>
         </div>
 
-        {/* Conteúdo principal com melhor espaçamento e visuais */}
-        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+        {/* Conteúdo principal com design premium */}
+        <div className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-blue-100 scrollbar-track-transparent">
           <div className="px-3 py-5">
-            {/* Dashboard com estilo melhorado */}
+            {/* Menu principal com microtransições */}
             <div className="mb-5 space-y-1.5">
               <Link href="/dashboard">
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'w-full justify-start rounded-xl transition-all duration-200 h-10',
+                    'w-full justify-start rounded-xl transition-all duration-200 h-10 border border-transparent',
                     isCollapsed && 'justify-center p-0',
                     activeRoute === '/dashboard'
-                      ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 font-medium border border-blue-200 shadow-sm hover:shadow'
-                      : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50/50'
+                      ? 'bg-gradient-to-r from-blue-50 to-blue-100/70 text-blue-700 font-medium border-blue-200/70 shadow-sm hover:shadow hover:border-blue-300/50'
+                      : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/50 hover:border-blue-100/50'
                   )}
                   onClick={() => setActiveRoute('/dashboard')}
                 >
                   <div className={cn(
-                    'flex items-center justify-center h-7 w-7 rounded-lg',
+                    'flex items-center justify-center h-7 w-7 rounded-lg transition-all duration-200',
                     activeRoute === '/dashboard' 
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-gray-500 bg-gray-100'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-sm'
+                      : 'text-slate-500 bg-slate-100/80 hover:bg-blue-100/50 group-hover:text-blue-600'
                   )}>
-                    <LayoutDashboard className="h-4 w-4" />
+                    <LayoutDashboard className="h-4 w-4 drop-shadow-sm" />
                   </div>
                   {!isCollapsed && <span className="ml-2.5 font-medium">Dashboard</span>}
                 </Button>
               </Link>
               
-              {/* TrendHunter IA Button com estilo refinado */}
+              {/* TrendHunter IA Button com design premium e cadeado reposicionado */}
               <Button
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  'w-full justify-start rounded-xl transition-all duration-200 h-10',
+                  'w-full justify-start rounded-xl transition-all duration-200 h-10 border border-transparent group relative',
                   isCollapsed && 'justify-center p-0',
-                  'hover:bg-purple-50/50 hover:text-purple-700'
+                  'hover:bg-purple-50/50 hover:text-purple-700 hover:border-purple-100/50'
                 )}
                 onClick={() => setIsTrendHunterDialogOpen(true)}
               >
-                <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-purple-100 text-purple-600">
+                <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-gradient-to-br from-purple-100 to-purple-200 text-purple-600 transition-all duration-200 shadow-sm group-hover:bg-gradient-to-br group-hover:from-purple-200 group-hover:to-purple-300/80">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9.5 14.5L3 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M14.5 9.5L17 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -200,40 +200,47 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 {!isCollapsed && (
                   <>
                     <span className="ml-2.5 font-medium text-purple-700">TrendHunter IA</span>
-                    <div className="absolute right-2 flex items-center">
-                      <Lock className="h-3.5 w-3.5 text-amber-500" />
+                    <div className="absolute right-3.5 top-1/2 transform -translate-y-1/2 flex items-center transition-all duration-200 group-hover:scale-110">
+                      <div className="bg-amber-50 rounded-full p-0.5">
+                        <Lock className="h-3 w-3 text-amber-500" />
+                      </div>
                     </div>
                   </>
                 )}
                 {isCollapsed && (
                   <div className="absolute -right-1 -top-1">
-                    <Badge className="h-2 w-2 p-0 bg-amber-400 rounded-full border-0" />
+                    <div className="bg-amber-50 rounded-full p-0.5 shadow-sm">
+                      <div className="h-1.5 w-1.5 bg-amber-400 rounded-full" />
+                    </div>
                   </div>
                 )}
               </Button>
             </div>
             
-            {/* Separador estilizado */}
-            <div className="my-5 flex items-center">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+            {/* Separador estilizado com elegância premium */}
+            <div className="my-6 flex items-center px-1">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-70"></div>
             </div>
             
-            {/* Lojas com design moderno */}
-            <div className="mb-4">
+            {/* Lojas com design refinado */}
+            <div className="mb-5">
               <div className="flex items-center justify-between px-2 pb-3">
                 {!isCollapsed && (
-                  <h4 className="text-xs font-semibold text-blue-800 uppercase tracking-wide">
+                  <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
                     Suas Lojas
                   </h4>
                 )}
               </div>
               
-              {/* Lista de Lojas com refinamento visual */}
-              <ScrollArea className={cn('h-[220px] pr-2', isCollapsed && 'h-auto')}>
+              {/* Lista de Lojas com microinterações aprimoradas */}
+              <ScrollArea className={cn('h-[230px] pr-2', isCollapsed && 'h-auto')}>
                 <div className="space-y-1.5 pr-1">
                   {isLoading ? (
                     <div className="flex justify-center py-6">
-                      <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      <div className="relative h-6 w-6">
+                        <div className="absolute inset-0 rounded-full border-2 border-blue-100 opacity-20 animate-ping"></div>
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                      </div>
                     </div>
                   ) : stores.length > 0 ? (
                     stores.map((store) => (
@@ -242,43 +249,48 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                           variant="ghost"
                           size="sm"
                           className={cn(
-                            'w-full justify-start rounded-xl transition-all duration-200 h-10 group',
+                            'w-full justify-start rounded-xl transition-all duration-200 h-10 group border border-transparent',
                             isCollapsed && 'justify-center p-0',
                             activeRoute === store.href 
-                              ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200 shadow-xs'
-                              : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50/50'
+                              ? 'bg-blue-50/80 text-blue-700 font-medium border-blue-200/60 shadow-sm hover:shadow-md hover:border-blue-300/50'
+                              : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/40 hover:border-blue-100/40'
                           )}
                           onClick={() => handleStoreClick(store.href)}
                         >
                           <div className={cn(
                             "h-2 w-2 rounded-full mr-2.5 transition-all duration-200",
-                            activeRoute === store.href ? "bg-blue-500" : "bg-gray-300 group-hover:bg-blue-400"
+                            activeRoute === store.href 
+                              ? "bg-blue-500 shadow-sm shadow-blue-200" 
+                              : "bg-slate-300 group-hover:bg-blue-400"
                           )} />
                           {!isCollapsed ? (
-                            <span className="truncate">{store.name}</span>
+                            <span className="truncate text-sm font-medium">{store.name}</span>
                           ) : (
                             <div className={cn(
                               "h-2 w-2 rounded-full",
-                              activeRoute === store.href ? "bg-blue-500" : "bg-gray-300 group-hover:bg-blue-400"
+                              activeRoute === store.href 
+                                ? "bg-blue-500 shadow-sm shadow-blue-200" 
+                                : "bg-slate-300 group-hover:bg-blue-400"
                             )} />
                           )}
                         </Button>
                       </Link>
                     ))
                   ) : (
-                    <div className="text-center py-4 text-sm text-gray-500">
+                    <div className="text-center py-4">
                       {!isCollapsed && (
-                        <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
-                          <div className="bg-white h-8 w-8 rounded-full flex items-center justify-center mx-auto mb-2 shadow-sm">
-                            <ShoppingBag className="h-4 w-4 text-gray-400" />
+                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-5 transition-all duration-300 hover:shadow-sm">
+                          <div className="bg-white h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                            <ShoppingBag className="h-5 w-5 text-slate-400" />
                           </div>
-                          <p className="text-xs text-gray-500">Nenhuma loja encontrada</p>
+                          <p className="text-sm text-slate-500 font-medium">Nenhuma loja encontrada</p>
+                          <p className="text-xs text-slate-400 mt-1">Crie sua primeira loja abaixo</p>
                         </div>
                       )}
                     </div>
                   )}
                   
-                  {/* Botão de Nova Loja aprimorado */}
+                  {/* Botão de Nova Loja premium e elegante */}
                   {storesCount < maxStores ? (
                     <TooltipProvider>
                       <Tooltip>
@@ -288,23 +300,29 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                             size="sm"
                             disabled={isLoading}
                             className={cn(
-                              'w-full justify-start mt-3 rounded-xl h-10 transition-all duration-200 bg-blue-50/50 border border-blue-100 hover:bg-blue-100/60 text-blue-700',
-                              isCollapsed && 'justify-center p-0'
+                              'w-full justify-start mt-3 rounded-xl h-10 transition-all duration-300 border shadow-sm',
+                              isCollapsed && 'justify-center p-0',
+                              'bg-gradient-to-r from-blue-50 to-blue-100/50 hover:from-blue-100/80 hover:to-blue-200/50 text-blue-700 border-blue-200/50 hover:shadow-md hover:scale-[1.01]'
                             )}
                             onClick={navigateToNewStore}
                           >
                             {isLoading ? (
-                              <Loader2 className={cn('h-4 w-4 animate-spin', isCollapsed ? 'mx-0' : 'mr-2.5')} />
+                              <div className="relative h-6 w-6">
+                                <div className="absolute inset-0 rounded-full border-2 border-blue-100 opacity-40 animate-ping"></div>
+                                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                              </div>
                             ) : (
-                              <div className="h-7 w-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <PlusCircle className="h-4 w-4 text-blue-600" />
+                              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                                <PlusCircle className="h-4 w-4 text-white" />
                               </div>
                             )}
                             {!isCollapsed && <span className="ml-2.5 font-medium">Nova Loja</span>}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="right" className="bg-blue-700 text-white border-blue-800">
-                          <p>Adicionar nova loja</p>
+                        <TooltipContent side="right" className="bg-gradient-to-br from-blue-700 to-blue-800 text-white border-none shadow-lg">
+                          <div className="px-1 py-1">
+                            <p>Adicionar nova loja</p>
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -315,27 +333,27 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
           </div>
         </div>
 
-        {/* Menu de Perfil e Suporte com design refinado */}
+        {/* Menu de Perfil e Suporte com design premium */}
         {!isCollapsed && (
-          <div className="border-t border-gray-100 mt-auto">
+          <div className="border-t border-slate-100 mt-auto">
             <div className="p-3 space-y-1.5">
               <Link href="/dashboard/profile">
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'w-full justify-start rounded-xl transition-all duration-200 h-10 hover:bg-blue-50/50',
+                    'w-full justify-start rounded-xl transition-all duration-200 h-10 border border-transparent',
                     activeRoute.includes('/dashboard/profile') 
-                      ? 'text-blue-700 bg-blue-50 font-medium border border-blue-100'
-                      : 'text-gray-600 hover:text-blue-700'
+                      ? 'text-blue-700 bg-blue-50 font-medium border-blue-100/70 shadow-sm'
+                      : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/40 hover:border-blue-100/40'
                   )}
                   onClick={() => setActiveRoute('/dashboard/profile')}
                 >
                   <div className={cn(
-                    'h-7 w-7 rounded-lg flex items-center justify-center',
+                    'h-7 w-7 rounded-lg flex items-center justify-center shadow-sm',
                     activeRoute.includes('/dashboard/profile') 
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'bg-gray-100 text-gray-500'
+                      ? 'bg-gradient-to-br from-blue-400 to-blue-500 text-white'
+                      : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100'
                   )}>
                     <Users className="h-4 w-4" />
                   </div>
@@ -348,18 +366,18 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'w-full justify-start rounded-xl transition-all duration-200 h-10 hover:bg-blue-50/50',
+                    'w-full justify-start rounded-xl transition-all duration-200 h-10 border border-transparent',
                     activeRoute === '/dashboard/help' 
-                      ? 'text-blue-700 bg-blue-50 font-medium border border-blue-100'
-                      : 'text-gray-600 hover:text-blue-700'
+                      ? 'text-blue-700 bg-blue-50 font-medium border-blue-100/70 shadow-sm'
+                      : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/50 hover:border-blue-100/40'
                   )}
                   onClick={() => setActiveRoute('/dashboard/help')}
                 >
                   <div className={cn(
-                    'h-7 w-7 rounded-lg flex items-center justify-center',
+                    'h-7 w-7 rounded-lg flex items-center justify-center shadow-sm',
                     activeRoute === '/dashboard/help' 
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'bg-gray-100 text-gray-500'
+                      ? 'bg-gradient-to-br from-blue-400 to-blue-500 text-white'
+                      : 'bg-slate-100 text-slate-500'
                   )}>
                     <LifeBuoy className="h-4 w-4" />
                   </div>
@@ -370,10 +388,10 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-start rounded-xl h-10 text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 mt-2"
+                className="w-full justify-start rounded-xl h-10 border border-transparent text-red-600 hover:bg-red-50/70 hover:text-red-700 hover:border-red-100/40 transition-all duration-200 mt-2"
                 onClick={() => logout()}
               >
-                <div className="h-7 w-7 rounded-lg bg-red-50 flex items-center justify-center">
+                <div className="h-7 w-7 rounded-lg bg-red-50 flex items-center justify-center shadow-sm">
                   <LogOut className="h-4 w-4 text-red-500" />
                 </div>
                 <span className="ml-2.5">Sair</span>
@@ -382,24 +400,27 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
           </div>
         )}
 
-        {/* Barra de Progresso de Lojas moderna */}
+        {/* Barra de Progresso de Lojas com design premium */}
         {!isCollapsed ? (
-          <div className="border-t bg-gradient-to-br from-white to-gray-50 p-4">
+          <div className="border-t bg-gradient-to-br from-white via-slate-50 to-blue-50/10 p-4">
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="h-7 w-7 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <StoreIcon className="h-4 w-4 text-blue-600" />
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center shadow-sm">
+                    <StoreIcon className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700">Limite de Lojas</span>
+                  <div>
+                    <span className="text-sm font-medium text-slate-700">Limite de Lojas</span>
+                    <p className="text-xs text-slate-500 mt-0.5">{storesCount} de {maxStores} utilizadas</p>
+                  </div>
                 </div>
                 <Badge 
                   variant={storePercentage >= 100 ? "destructive" : "secondary"}
                   className={cn(
                     "px-2.5 py-0.5 text-xs font-medium rounded-full shadow-sm",
-                    storePercentage >= 100 ? "bg-red-100 text-red-700 hover:bg-red-100" : 
-                    storePercentage >= 75 ? "bg-amber-100 text-amber-700 hover:bg-amber-100" :
-                    "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                    storePercentage >= 100 ? "bg-gradient-to-br from-red-100 to-red-200 text-red-700 border-red-200/50" : 
+                    storePercentage >= 75 ? "bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 border-amber-200/50" :
+                    "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700 border-emerald-200/50"
                   )}
                 >
                   {storesCount}/{maxStores}
@@ -407,7 +428,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
               </div>
               
               <div className="space-y-2">
-                <div className="h-2.5 relative rounded-full overflow-hidden bg-gray-100 shadow-inner">
+                <div className="h-2.5 relative rounded-full overflow-hidden bg-slate-100 shadow-inner">
                   <div 
                     className={cn(
                       "absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out",
@@ -429,12 +450,16 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 )}>
                   {remaining > 0 
                     ? <>
-                        <PlusCircle className="h-3 w-3 mr-1.5 inline" />
-                        Você pode adicionar mais {remaining} {remaining === 1 ? 'loja' : 'lojas'}
+                        <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mr-1.5 shadow-sm">
+                          <PlusCircle className="h-3 w-3" />
+                        </div>
+                        <span>Você pode adicionar mais {remaining} {remaining === 1 ? 'loja' : 'lojas'}</span>
                       </> 
                     : <>
-                        <AlertCircle className="h-3 w-3 mr-1.5 inline" />
-                        Limite máximo atingido
+                        <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mr-1.5 shadow-sm">
+                          <AlertCircle className="h-3 w-3" />
+                        </div>
+                        <span>Limite máximo atingido</span>
                       </>
                   }
                 </p>
@@ -450,33 +475,36 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                     <Badge 
                       variant={storePercentage >= 100 ? "destructive" : "secondary"}
                       className={cn(
-                        "w-9 h-9 rounded-full flex items-center justify-center p-0 shadow-sm hover:shadow-md transition-all duration-200",
+                        "w-10 h-10 rounded-xl flex items-center justify-center p-0 shadow-sm hover:shadow-md transition-all duration-200",
                         storePercentage >= 100 
-                          ? "bg-red-100 text-red-700 hover:bg-red-200" 
+                          ? "bg-gradient-to-br from-red-100 to-red-200 text-red-600 hover:from-red-200 hover:to-red-300" 
                           : storePercentage >= 75
-                          ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                          : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                          ? "bg-gradient-to-br from-amber-100 to-amber-200 text-amber-600 hover:from-amber-200 hover:to-amber-300"
+                          : "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-600 hover:from-emerald-200 hover:to-emerald-300"
                       )}
                     >
                       <div className="flex flex-col items-center justify-center leading-none">
                         <span className="text-xs font-bold">{storesCount}</span>
-                        <span className="text-[9px]">/ {maxStores}</span>
+                        <div className="my-0.5 h-px w-4 bg-current opacity-40" />
+                        <span className="text-[9px]">{maxStores}</span>
                       </div>
                     </Badge>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" className={cn(
-                  "border-0 text-white shadow-md", 
-                  storePercentage >= 100 ? "bg-red-600" : 
-                  storePercentage >= 75 ? "bg-amber-600" :
-                  "bg-emerald-600"
+                  "border-none text-white shadow-md", 
+                  storePercentage >= 100 ? "bg-gradient-to-br from-red-600 to-red-700" : 
+                  storePercentage >= 75 ? "bg-gradient-to-br from-amber-600 to-amber-700" :
+                  "bg-gradient-to-br from-emerald-600 to-emerald-700"
                 )}>
-                  <p className="text-sm">
-                    {remaining > 0 
-                      ? `Você pode adicionar mais ${remaining} ${remaining === 1 ? 'loja' : 'lojas'}`
-                      : 'Limite máximo atingido'
-                    }
-                  </p>
+                  <div className="px-1 py-1">
+                    <p className="text-sm">
+                      {remaining > 0 
+                        ? `Você pode adicionar mais ${remaining} ${remaining === 1 ? 'loja' : 'lojas'}`
+                        : 'Limite máximo atingido'
+                      }
+                    </p>
+                  </div>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
