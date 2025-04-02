@@ -335,31 +335,48 @@ export function TranslationDialog({
         targetLanguage
       });
       
-      // Salvar automaticamente sem mostrar prévia
+      // Salvamento direto sem usar a função handleSave
+      // Isso evita conflitos entre o salvamento no handleSave e na função de tradução
+      console.log('TRADUÇÃO: Salvando diretamente sem usar handleSave');
+      
+      // Garantir que o idioma de destino seja incluído nos dados salvos
+      const saveData = {
+        title: translatedTitle,
+        description: translatedDesc,
+        language: targetLanguage // Incluir o idioma de destino explicitamente
+      };
+      
       try {
-        await handleSave({
-          title: translatedTitle,
-          description: translatedDesc
-        });
-        console.log('TRADUÇÃO: handleSave concluído com sucesso');
+        await onSaveTranslation(saveData);
+        console.log('TRADUÇÃO: onSaveTranslation retornou com sucesso');
+        
+        // Continue apenas se o salvamento foi bem-sucedido
+        clearInterval(progressInterval);
+        setTranslationProgress(100);
+        setTranslationStatus('completed');
+        
+        console.log('TRADUÇÃO: Processo finalizado com sucesso');
+        toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
+        
+        // Pequeno atraso para o usuário ver o progresso concluído
+        console.log('TRADUÇÃO: Programando fechamento e reload da página em 1000ms');
+        window.setTimeout(() => {
+          console.log('TRADUÇÃO: Executando timeout para fechamento e reload');
+          
+          // Fechar o diálogo imediatamente
+          console.log('TRADUÇÃO: Fechando diálogo');
+          onClose();
+          
+          // Recarregar a página para garantir que todos os dados estejam atualizados
+          console.log('TRADUÇÃO: Recarregando página');
+          window.location.href = window.location.href; // Forma mais robusta de recarregar mantendo a URL exata
+        }, 1000);
+        
       } catch (saveError) {
-        console.error('TRADUÇÃO: Erro no handleSave:', saveError);
-        throw saveError;
+        console.error('TRADUÇÃO: Erro ao salvar tradução:', saveError);
+        throw new Error('Falha ao salvar a tradução no banco de dados');
       }
       
-      clearInterval(progressInterval);
-      setTranslationProgress(100);
-      setTranslationStatus('completed');
-      
-      console.log('TRADUÇÃO: Processo finalizado com sucesso');
-      toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
-      
-      // Pequeno atraso para o usuário ver o progresso concluído
-      setTimeout(() => {
-        console.log('TRADUÇÃO: Fechando diálogo após sucesso');
-        // Fechar o diálogo automaticamente após salvar
-        onClose();
-      }, 800);
     } catch (error) {
       clearInterval(progressInterval);
       setTranslationStatus('error');
