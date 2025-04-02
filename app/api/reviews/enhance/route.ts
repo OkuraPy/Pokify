@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { getProduct } from '@/lib/supabase';
 
 // Constante para definir o tamanho máximo do lote
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 10;
 
 export async function POST(request: Request) {
   try {
@@ -69,13 +69,16 @@ export async function POST(request: Request) {
     
     // Array para armazenar todos os resultados
     const allEnhancements = [];
+    const statsPerBatch = [];
 
     // Configuração dos prompts
     const systemPrompt = `Você é um copywriter especializado em avaliações curtas e persuasivas para e-commerce.
 
 Seu trabalho é melhorar reviews existentes para serem mais persuasivos, autênticos e concisos (em torno de 50 palavras).
 Mantenha apenas o texto da avaliação, sem incluir metadados como ID ou AUTOR.
-Retorne exclusivamente o texto melhorado, sem introduções ou prefixos.`;
+Retorne exclusivamente o texto melhorado, sem introduções ou prefixos.
+
+IMPORTANTE: Responda SEMPRE de maneira direta apenas com o texto melhorado, sem explicações adicionais.`;
     
     // Processar reviews em lotes
     for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
@@ -120,33 +123,55 @@ RETORNE APENAS O TEXTO DA AVALIAÇÃO MELHORADA. NÃO inclua "ID:", "AUTOR:", ou
               { role: "user", content: userPrompt }
             ],
             temperature: 0.7,
-            max_tokens: 1000
+            max_tokens: 1500 // Aumentado para garantir resposta completa
           });
 
           const enhancedContent = completion.choices[0]?.message?.content || '';
           
           if (!enhancedContent) {
+            console.error(`Review ${review.id}: Sem conteúdo gerado`);
             throw new Error('Falha ao gerar conteúdo melhorado');
           }
           
+          // Remover prefixos comuns que a IA pode adicionar erroneamente
+          const cleanedContent = enhancedContent
+            .replace(/^(AVALIAÇÃO MELHORADA|AVALIAÇÃO:|REVIEW:|CONTEÚDO:)\s*/i, '')
+            .trim();
+            
           console.log(`Review ${review.id} melhorado com sucesso`);
           
           return {
             id: review.id,
-            enhancedContent: enhancedContent
+            enhancedContent: cleanedContent,
+            success: true
           };
         } catch (error) {
           console.error(`Erro ao melhorar review ${review.id}:`, error);
           return {
             id: review.id,
-            error: 'Falha na melhoria'
+            error: 'Falha na melhoria',
+            success: false
           };
         }
       });
 
-      // Aguardar o processamento do lote atual
-      const batchResults = await Promise.all(batchPromises);
-      allEnhancements.push(...batchResults);
+      try {
+        // Aguardar o processamento do lote atual
+        const batchResults = await Promise.all(batchPromises);
+        
+        // Contar sucessos e erros no lote
+        const successCount = batchResults.filter(r => r.success).length;
+        const errorCount = batchResults.filter(r => !r.success).length;
+        
+        statsPerBatch.push({ success: successCount, error: errorCount });
+        allEnhancements.push(...batchResults);
+        
+        console.log(`Lote ${batchIndex + 1}: ${successCount} melhorias com sucesso, ${errorCount} falhas`);
+      } catch (batchError) {
+        console.error(`Erro no processamento do lote ${batchIndex + 1}:`, batchError);
+        // Adicionar estatísticas de falha para este lote inteiro
+        statsPerBatch.push({ success: 0, error: currentBatch.length });
+      }
       
       // Adicionar um pequeno atraso entre os lotes para evitar limitações de taxa da API
       if (batchIndex < batches - 1) {
@@ -155,11 +180,20 @@ RETORNE APENAS O TEXTO DA AVALIAÇÃO MELHORADA. NÃO inclua "ID:", "AUTOR:", ou
       }
     }
     
-    console.log(`Melhorias concluídas: ${allEnhancements.length} reviews processados`);
+    // Calcular estatísticas finais
+    const totalSuccess = statsPerBatch.reduce((sum, stat) => sum + stat.success, 0);
+    const totalErrors = statsPerBatch.reduce((sum, stat) => sum + stat.error, 0);
+    
+    console.log(`Melhorias concluídas: ${totalSuccess} com sucesso, ${totalErrors} falhas de ${totalReviews} total`);
     
     return NextResponse.json({
       enhancements: allEnhancements,
-      success: true
+      success: true,
+      stats: {
+        total: totalReviews,
+        success: totalSuccess,
+        errors: totalErrors
+      }
     });
     
   } catch (error) {

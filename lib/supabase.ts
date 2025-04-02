@@ -866,7 +866,16 @@ export async function generateAIReviews(
   count: number,
   averageRating: number,
   language: string = 'portuguese'
-): Promise<{ success: boolean; count: number; error?: string }> {
+): Promise<{ 
+  success: boolean; 
+  count: number; 
+  error?: string;
+  stats?: {
+    total: number;
+    success: number;
+    errors: number;
+  }
+}> {
   try {
     // Primeiro, obtemos os dados do produto
     const { data: product, error: productError } = await getProduct(productId);
@@ -893,10 +902,11 @@ export async function generateAIReviews(
     
     // Dividir em lotes se a quantidade for grande
     // Isso evita erros na API quando solicitamos muitos reviews de uma vez
-    const BATCH_SIZE = 20;
+    const BATCH_SIZE = 10;
     const batches = Math.ceil(totalReviewCount / BATCH_SIZE);
     let totalGeneratedReviews = 0;
     let allReviewsToInsert: any[] = [];
+    let statsPerBatch: { success: number; error: number }[] = [];
     
     console.log(`Gerando ${totalReviewCount} reviews em ${batches} lotes de até ${BATCH_SIZE}`);
     
@@ -968,6 +978,8 @@ export async function generateAIReviews(
     - Os emails podem ser de qualquer provedor comum (gmail, hotmail, outlook, etc)
     - Mantenha um tom natural, não exagere em adjetivos positivos
     
+    IMPORTANTE: Retorne APENAS um objeto JSON válido, sem texto adicional ou formatação.
+    
     Por fim, retorne os dados no formato JSON EXATO a seguir:
     {
       "reviews": [
@@ -979,9 +991,7 @@ export async function generateAIReviews(
         },
         ... mais reviews
       ]
-    }
-    
-    Mantenha sua resposta apenas neste formato JSON, sem introdução ou conclusão.`;
+    }`;
     
     // Processar cada lote
     for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
@@ -1011,7 +1021,9 @@ export async function generateAIReviews(
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
-          temperature: 0.8
+          temperature: 0.8,
+          max_tokens: 2000, // Aumentado para permitir reviews mais detalhados
+          response_format: { type: "json_object" } // Forçar JSON válido
         });
         
         // Extrair o JSON gerado
@@ -1019,74 +1031,99 @@ export async function generateAIReviews(
         
         if (!generatedContent) {
           console.error(`Lote ${batchIndex + 1}: Sem conteúdo gerado`);
+          statsPerBatch.push({ success: 0, error: batchCount });
           continue;
         }
         
-        // Tentar extrair o JSON da resposta
-        let jsonContent = generatedContent;
-        
-        // Se o conteúdo tiver blocos de código markdown, extrair apenas o JSON
-        if (generatedContent.includes("```json")) {
-          const jsonMatch = generatedContent.match(/```json\n([\s\S]*?)\n```/);
-          if (jsonMatch && jsonMatch[1]) {
-            jsonContent = jsonMatch[1];
+        // Tentar extrair o JSON da resposta, mesmo se vier com formatação extra
+        try {
+          let jsonContent = generatedContent;
+          
+          // Se o conteúdo tiver blocos de código markdown, extrair apenas o JSON
+          if (generatedContent.includes("```json")) {
+            const jsonMatch = generatedContent.match(/```json\n([\s\S]*?)\n```/);
+            if (jsonMatch && jsonMatch[1]) {
+              jsonContent = jsonMatch[1];
+            }
+          } else if (generatedContent.includes("```")) {
+            const codeMatch = generatedContent.match(/```\n([\s\S]*?)\n```/);
+            if (codeMatch && codeMatch[1]) {
+              jsonContent = codeMatch[1];
+            }
           }
-        } else if (generatedContent.includes("```")) {
-          const codeMatch = generatedContent.match(/```\n([\s\S]*?)\n```/);
-          if (codeMatch && codeMatch[1]) {
-            jsonContent = codeMatch[1];
+          
+          // Extrair qualquer objeto JSON da resposta
+          const jsonMatch = jsonContent.match(/(\{[\s\S]*\})/);
+          const cleanedJson = jsonMatch ? jsonMatch[0] : jsonContent;
+          
+          // O modelo pode retornar o JSON em diferentes formatos, tentamos normalizar
+          const parsedResponse = JSON.parse(cleanedJson);
+          
+          // O modelo pode retornar um array diretamente ou um objeto com uma propriedade contendo o array
+          let batchReviews: any[] = [];
+          
+          if (Array.isArray(parsedResponse)) {
+            batchReviews = parsedResponse;
+          } else if (parsedResponse.reviews && Array.isArray(parsedResponse.reviews)) {
+            batchReviews = parsedResponse.reviews;
+          } else {
+            // Tentar encontrar qualquer array no objeto retornado
+            const possibleArrays = Object.values(parsedResponse).filter(value => Array.isArray(value));
+            if (possibleArrays.length > 0) {
+              // Usar o primeiro array encontrado
+              batchReviews = possibleArrays[0] as any[];
+            }
           }
-        }
-        
-        // O modelo pode retornar o JSON em diferentes formatos, tentamos normalizar
-        const parsedResponse = JSON.parse(jsonContent);
-        
-        // O modelo pode retornar um array diretamente ou um objeto com uma propriedade contendo o array
-        let batchReviews: any[] = [];
-        
-        if (Array.isArray(parsedResponse)) {
-          batchReviews = parsedResponse;
-        } else if (parsedResponse.reviews && Array.isArray(parsedResponse.reviews)) {
-          batchReviews = parsedResponse.reviews;
-        } else {
-          // Tentar encontrar qualquer array no objeto retornado
-          const possibleArrays = Object.values(parsedResponse).filter(value => Array.isArray(value));
-          if (possibleArrays.length > 0) {
-            // Usar o primeiro array encontrado
-            batchReviews = possibleArrays[0] as any[];
+          
+          if (batchReviews.length === 0) {
+            console.error(`Lote ${batchIndex + 1}: Formato de resposta inválido`, parsedResponse);
+            statsPerBatch.push({ success: 0, error: batchCount });
+            continue;
           }
-        }
-        
-        if (batchReviews.length === 0) {
-          console.error(`Lote ${batchIndex + 1}: Formato de resposta inválido`);
-          continue;
-        }
-        
-        // Processar e normalizar os reviews
-        const processedDate = new Date().toISOString();
-        const processReview = (review: any) => {
-          return {
-            product_id: productId,
-            author: review.author || 'Cliente Anônimo',
-            rating: parseInt(review.rating) || 5,
-            content: review.content || '',
-            date: typeof review.date === 'string' 
-              ? review.date 
-              : (review.date instanceof Date 
-                ? review.date.toISOString() 
-                : new Date().toISOString()),
-            images: [],
-            is_selected: true,
-            is_published: true,
-            created_at: new Date().toISOString()
+          
+          // Processar e normalizar os reviews
+          const processedDate = new Date().toISOString();
+          const processReview = (review: any) => {
+            // Verificar se o review tem todos os campos necessários
+            if (!review.author || !review.content || !review.rating) {
+              console.warn('Review com campos incompletos:', review);
+              return null;
+            }
+            
+            return {
+              product_id: productId,
+              author: review.author || 'Cliente Anônimo',
+              rating: parseInt(review.rating) || 5,
+              content: review.content || '',
+              date: typeof review.date === 'string' 
+                ? review.date 
+                : (review.date instanceof Date 
+                  ? review.date.toISOString() 
+                  : new Date().toISOString()),
+              images: [],
+              is_selected: true,
+              is_published: true,
+              created_at: new Date().toISOString()
+            };
           };
-        };
-        
-        const normalizedReviews = batchReviews.map(processReview);
-        allReviewsToInsert = [...allReviewsToInsert, ...normalizedReviews];
-        totalGeneratedReviews += normalizedReviews.length;
-        
-        console.log(`Lote ${batchIndex + 1}: Gerados ${normalizedReviews.length} reviews com sucesso`);
+          
+          const normalizedReviews = batchReviews.map(processReview).filter(review => review !== null);
+          
+          // Registrar estatísticas deste lote
+          statsPerBatch.push({ 
+            success: normalizedReviews.length, 
+            error: batchCount - normalizedReviews.length 
+          });
+          
+          allReviewsToInsert = [...allReviewsToInsert, ...normalizedReviews];
+          totalGeneratedReviews += normalizedReviews.length;
+          
+          console.log(`Lote ${batchIndex + 1}: Gerados ${normalizedReviews.length} de ${batchCount} reviews com sucesso`);
+          
+        } catch (parseError) {
+          console.error(`Lote ${batchIndex + 1}: Erro ao processar JSON`, parseError, generatedContent.substring(0, 200));
+          statsPerBatch.push({ success: 0, error: batchCount });
+        }
         
         // Adicionar um pequeno atraso para evitar rate limiting
         if (batchIndex < batches - 1) {
@@ -1094,6 +1131,7 @@ export async function generateAIReviews(
         }
       } catch (batchError) {
         console.error(`Erro no lote ${batchIndex + 1}:`, batchError);
+        statsPerBatch.push({ success: 0, error: batchCount });
         // Continuar para o próximo lote
       }
     }
@@ -1106,6 +1144,12 @@ export async function generateAIReviews(
         error: 'Não foi possível gerar nenhuma avaliação após tentativas em lotes'
       };
     }
+    
+    // Calcular estatísticas finais
+    const totalSuccess = statsPerBatch.reduce((sum, stat) => sum + stat.success, 0);
+    const totalErrors = statsPerBatch.reduce((sum, stat) => sum + stat.error, 0);
+    
+    console.log(`Geração concluída: ${totalSuccess} reviews gerados com sucesso, ${totalErrors} falharam`);
     
     // Inserir todas as avaliações no banco de dados
     const { error: insertError } = await supabase
@@ -1129,7 +1173,12 @@ export async function generateAIReviews(
     
     return { 
       success: true, 
-      count: allReviewsToInsert.length 
+      count: allReviewsToInsert.length,
+      stats: {
+        total: totalReviewCount,
+        success: totalSuccess,
+        errors: totalErrors
+      }
     };
     
   } catch (error) {

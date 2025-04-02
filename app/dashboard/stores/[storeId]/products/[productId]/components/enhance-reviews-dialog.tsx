@@ -10,10 +10,11 @@ import {
   DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Wand2 } from 'lucide-react';
+import { Loader2, Wand2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateReview } from '@/lib/supabase';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Review {
   id: string;
@@ -48,6 +49,19 @@ export function EnhanceReviewsDialog({
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
   const [progressValue, setProgressValue] = useState(0);
+  const [enhancementStats, setEnhancementStats] = useState<{
+    success: number;
+    errors: number;
+    total: number;
+  } | null>(null);
+
+  const handleCloseDialog = () => {
+    // Limpar o estado antes de fechar
+    setEnhancementStats(null);
+    setProgressValue(0);
+    setProgressMessage('');
+    onClose();
+  };
 
   const handleEnhance = async () => {
     if (reviews.length === 0) {
@@ -58,6 +72,7 @@ export function EnhanceReviewsDialog({
     setIsEnhancing(true);
     setProgressMessage('Iniciando o processo de melhoria...');
     setProgressValue(0);
+    setEnhancementStats(null);
 
     try {
       console.log('Iniciando melhoria para reviews:', reviews);
@@ -71,9 +86,10 @@ export function EnhanceReviewsDialog({
       
       console.log('Enviando para API:', reviewsToSubmit);
       
-      // Estimar tempo com base no número de reviews (20 segundos por lote de 20 reviews)
-      const estimatedTime = Math.ceil(reviews.length / 20) * 20;
+      // Estimar tempo com base no número de reviews (15 segundos por lote de 10 reviews)
+      const estimatedTime = Math.ceil(reviews.length / 10) * 15;
       setProgressMessage(`Melhorando ${reviews.length} avaliações (estimado: ~${estimatedTime}s)...`);
+      setProgressValue(10);
 
       const response = await fetch('/api/reviews/enhance', {
         method: 'POST',
@@ -87,6 +103,9 @@ export function EnhanceReviewsDialog({
       console.log('Status da resposta:', response.status);
       const data = await response.json();
       console.log('Resposta da API:', data);
+      
+      setProgressValue(50);
+      setProgressMessage(`Processando resultados...`);
 
       if (!response.ok) {
         throw new Error(data.error || 'Falha na melhoria');
@@ -96,20 +115,33 @@ export function EnhanceReviewsDialog({
         throw new Error('Resposta inválida do servidor');
       }
 
-      // Calcular quantos reviews foram melhorados com sucesso
-      const successfulEnhancements = data.enhancements.filter((e: any) => !e.error).length;
-      setProgressMessage(`Salvando ${successfulEnhancements} avaliações melhoradas...`);
+      // Armazenar estatísticas se fornecidas
+      if (data.stats) {
+        setEnhancementStats(data.stats);
+      } else {
+        // Calcular estatísticas manualmente se não fornecidas pelo servidor
+        const successCount = data.enhancements.filter((e: any) => !e.error && e.success).length;
+        const errorCount = data.enhancements.filter((e: any) => e.error || !e.success).length;
+        setEnhancementStats({
+          success: successCount,
+          errors: errorCount,
+          total: data.enhancements.length
+        });
+      }
+
+      // Filtrar apenas os reviews melhorados com sucesso
+      const successfulEnhancements = data.enhancements.filter((e: any) => !e.error && e.success);
+      setProgressMessage(`Salvando ${successfulEnhancements.length} avaliações melhoradas...`);
       setProgressValue(75);
+      
+      if (successfulEnhancements.length === 0) {
+        throw new Error('Nenhuma melhoria foi concluída com sucesso');
+      }
 
       // Salvar cada review melhorado
-      const updatePromises = data.enhancements.map(async (enhancement: any, index: number) => {
-        if (enhancement.error) {
-          console.error(`Erro ao melhorar review ${enhancement.id}: ${enhancement.error}`);
-          return { success: false, id: enhancement.id };
-        }
-        
+      const updatePromises = successfulEnhancements.map(async (enhancement: any, index: number) => {
         // Atualizar o progresso à medida que salvamos
-        const saveProgress = 75 + Math.round((index / data.enhancements.length) * 25);
+        const saveProgress = 75 + Math.round((index / successfulEnhancements.length) * 25);
         setProgressValue(saveProgress);
         
         console.log(`Atualizando review ${enhancement.id} com novo conteúdo`, enhancement.enhancedContent);
@@ -122,31 +154,38 @@ export function EnhanceReviewsDialog({
       console.log('Resultados da atualização:', results);
       
       setProgressValue(100);
-      setProgressMessage('Melhoria concluída com sucesso!');
+      setProgressMessage('Melhorias concluídas com sucesso!');
       
       // Notificar o componente pai
       onReviewsUpdated();
       
-      // Pequeno atraso para o usuário ver que foi concluído
-      setTimeout(() => {
-        // Fechar o diálogo e mostrar mensagem de sucesso
-        onClose();
-        toast.success(
-          reviews.length === 1 
-            ? 'Avaliação melhorada com sucesso' 
-            : `${data.enhancements.length} avaliações melhoradas com sucesso`
-        );
-      }, 500);
+      // Se todas as melhorias foram bem-sucedidas, fechar o diálogo automaticamente
+      if (!enhancementStats || enhancementStats.errors === 0) {
+        // Pequeno atraso para o usuário ver que foi concluído
+        setTimeout(() => {
+          // Fechar o diálogo e mostrar mensagem de sucesso
+          handleCloseDialog();
+          toast.success(
+            reviews.length === 1 
+              ? 'Avaliação melhorada com sucesso' 
+              : `${successfulEnhancements.length} avaliações melhoradas com sucesso`
+          );
+        }, 1000);
+      } else {
+        // Se houver erros, deixar o diálogo aberto para o usuário ver as estatísticas
+        toast.success(`${successfulEnhancements.length} de ${data.enhancements.length} avaliações melhoradas com sucesso`);
+      }
     } catch (error) {
       console.error('Erro na melhoria:', error);
       toast.error(error instanceof Error ? error.message : 'Erro ao melhorar o conteúdo');
+      setProgressMessage(`Erro: ${error instanceof Error ? error.message : 'Falha na melhoria'}`);
     } finally {
       setIsEnhancing(false);
     }
   };
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={isEnhancing ? undefined : handleCloseDialog}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
@@ -176,15 +215,35 @@ export function EnhanceReviewsDialog({
               <Progress value={progressValue} className="h-2" />
               <p className="text-sm text-center text-muted-foreground">{progressMessage}</p>
               <p className="text-xs text-center text-muted-foreground">
-                {reviews.length > 20 ? 'Processando em lotes para maior eficiência' : 'Processamento em andamento'}
+                {reviews.length > 10 ? 'Processando em lotes para maior eficiência' : 'Processamento em andamento'}
               </p>
             </div>
+          )}
+          
+          {enhancementStats && enhancementStats.errors > 0 && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Atenção</AlertTitle>
+              <AlertDescription>
+                {enhancementStats.errors === 1 ? (
+                  'Uma avaliação não pôde ser melhorada.'
+                ) : (
+                  `${enhancementStats.errors} avaliações não puderam ser melhoradas.`
+                )}
+                <p className="text-sm mt-2">
+                  As demais {enhancementStats.success} avaliações foram melhoradas e salvas com sucesso.
+                </p>
+                <p className="text-xs mt-1">
+                  Tente novamente com as avaliações restantes ou reduza o número de avaliações selecionadas.
+                </p>
+              </AlertDescription>
+            </Alert>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isEnhancing}>
-            Cancelar
+          <Button variant="outline" onClick={handleCloseDialog} disabled={isEnhancing}>
+            {enhancementStats ? 'Fechar' : 'Cancelar'}
           </Button>
           <Button 
             onClick={handleEnhance} 
