@@ -96,10 +96,43 @@ Retorne no formato:
         max_tokens: 2000
       });
 
-      const translatedContent = JSON.parse(completion.choices[0]?.message?.content || '{}');
-      
+      // Sanitize a resposta para remover caracteres de controle que podem causar erros no JSON.parse
+      let contentText = completion.choices[0]?.message?.content || '{}';
+      console.log('Resposta bruta da OpenAI:', contentText);
+
+      // Remover caracteres de controle que podem afetar o parsing do JSON
+      contentText = contentText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+
+      // Tentar extrair o JSON, se estiver embutido em explicações de texto
+      const jsonMatch = contentText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        contentText = jsonMatch[0];
+        console.log('JSON extraído:', contentText);
+      }
+
+      let translatedContent;
+      try {
+        translatedContent = JSON.parse(contentText);
+        console.log('Parsing JSON bem-sucedido');
+      } catch (jsonError) {
+        console.error('Erro ao fazer parse do JSON:', jsonError);
+        console.error('JSON com problema:', contentText);
+        
+        // Fallback - criar um objeto manualmente
+        // Extrair título e descrição de uma maneira mais tolerante a erros
+        const titleMatch = contentText.match(/"title"\s*:\s*"([^"]*)"/);
+        const descMatch = contentText.match(/"description"\s*:\s*"([^"]*)"/);
+        
+        translatedContent = {
+          title: titleMatch ? titleMatch[1] : '',
+          description: descMatch ? descMatch[1] : ''
+        };
+        
+        console.log('Usando fallback manual para extrair conteúdo:', translatedContent);
+      }
+
       // Log da resposta da OpenAI para debug
-      console.log('API Translate/batch - Resposta OpenAI:', { 
+      console.log('API Translate/batch - Resposta OpenAI processada:', { 
         title: translatedContent.title?.substring(0, 30) + '...',
         description: translatedContent.description?.substring(0, 30) + '...'
       });
