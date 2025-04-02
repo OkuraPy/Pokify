@@ -36,11 +36,20 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { url } = body;
     
+    // Verificar se o modo pro_copy está ativado
+    const mode = request.nextUrl.searchParams.get('mode');
+    const isProCopyMode = mode === 'pro_copy';
+    
+    if (isProCopyMode) {
+      logger.info('🚀 Iniciando extração Pro com Copy AIDA');
+    } else {
+      logger.info('🚀 Iniciando extração padrão do produto');
+    }
+    
     if (!url) {
       return NextResponse.json({ error: 'URL é obrigatória' }, { status: 400 });
     }
     
-    logger.info('🚀 Iniciando extração do produto');
     logger.info(`🔗 URL do produto: ${url}`);
     
     // ----- FASE 1: EXTRAÇÃO DO MARKDOWN -----
@@ -84,8 +93,13 @@ export async function POST(request: NextRequest) {
     
     logger.info(`📊 Enviando para OpenAI: ${Math.round(linkfyResult.data.markdown.length / 1024)} KB de markdown`);
     
-    // Extrair dados usando OpenAI
-    const openaiResult = await extractProductDataWithOpenAI(url, linkfyResult.data.markdown);
+    // Extrair dados usando OpenAI - com modo específico se for Pro Copy
+    const openaiResult = await extractProductDataWithOpenAI(
+      url, 
+      linkfyResult.data.markdown, 
+      undefined, // screenshot não usado
+      isProCopyMode ? 'pro_copy' : undefined // passar o modo
+    );
     
     if (!openaiResult.success) {
       console.error('[OpenAI Extractor API] ❌ Falha na extração OpenAI:', openaiResult.error);

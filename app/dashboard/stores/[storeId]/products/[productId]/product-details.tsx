@@ -15,6 +15,7 @@ import { ReviewsList } from './components/reviews-list';
 import { ProductAnalytics } from './components/product-analytics';
 import { TranslationDialog } from './components/translation-dialog';
 import { ImproveDescriptionDialog } from './components/improve-description-dialog';
+import { DescriptionImages } from './components/description-images';
 import { getProduct, updateProduct } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -34,6 +35,7 @@ interface Product {
   stock: number;
   status: string;
   images: string[];
+  description_images?: string[];
   tags?: string[];
   reviews_count: number;
   average_rating?: number;
@@ -796,7 +798,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                       dangerouslySetInnerHTML={{ 
                         __html: formatProductDescription(product.description) 
                       }} 
-                      className="description-content p-1 rounded-md"
+                      className="description-content p-1 rounded-md prose prose-img:my-4 prose-img:rounded-md"
                     />
                   ) : (
                     <p className="text-muted-foreground italic">
@@ -804,6 +806,14 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                     </p>
                   )}
                 </div>
+                
+                {/* Componente de imagens da descrição - APENAS imagens que estavam na descrição */}
+                {product.description_images && product.description_images.length > 0 && (
+                  <DescriptionImages
+                    images={product.description_images}
+                    title={product.title}
+                  />
+                )}
                 
                 {product.tags && product.tags.length > 0 && (
                   <div className="mt-6 pt-6 border-t">

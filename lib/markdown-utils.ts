@@ -82,8 +82,10 @@ export function preserveImagesInDescription(
     // Se não há imagens no HTML e temos descriptionImages, adicionar essas imagens
     const imageCount = $('img').length;
     
+    // Não adicionar imagens da descrição automaticamente, apenas usar as especificadas
+    // descriptionImages deve conter APENAS imagens encontradas na descrição original
     if (imageCount === 0 && descriptionImages && descriptionImages.length > 0) {
-      // Adicionar um contêiner para as imagens
+      // Adicionar um contêiner para as imagens especificadas
       const $gallery = $('<div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;"></div>');
       
       // Adicionar cada imagem ao contêiner
