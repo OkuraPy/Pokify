@@ -911,4 +911,128 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "media" ? "text-blue-600" : "text-gray-600"}`
+            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "media" ? "text-blue-600" : "text-gray-600"}`}
+            onClick={() => setActiveTab("media")}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+              <path d="M5 19L8.5 15.5L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M12 19L16 15L19 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-xs mt-1">Mídia</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "info" ? "text-blue-600" : "text-gray-600"}`}
+            onClick={() => setActiveTab("info")}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" />
+              <path d="M12 16V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M12 8V8.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <span className="text-xs mt-1">Info</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "description" ? "text-blue-600" : "text-gray-600"}`}
+            onClick={() => setActiveTab("description")}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 7H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M4 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <path d="M4 17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            <span className="text-xs mt-1">Descrição</span>
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "reviews" ? "text-blue-600" : "text-gray-600"}`}
+            onClick={() => setActiveTab("reviews")}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-xs mt-1">Reviews</span>
+          </Button>
+        </div>
+      </div>
+      
+      {/* Dialogs */}
+      <TranslationDialog 
+        open={isTranslationDialogOpen} 
+        onOpenChange={setIsTranslationDialogOpen}
+        title={product?.title || ""}
+        description={product?.description || ""}
+        onSave={handleSaveTranslation}
+        language={product?.language || "pt-BR"}
+      />
+      
+      <ImproveDescriptionDialog
+        open={isImproveDescriptionDialogOpen}
+        onOpenChange={setIsImproveDescriptionDialogOpen}
+        productId={product?.id || ""}
+        title={product?.title || ""}
+        description={product?.description || ""}
+        setIsLoading={setIsImprovingDescription}
+      />
+      
+      {/* Dialog para o recurso de Fornecedores */}
+      <Dialog open={isSupplierFeatureDialogOpen} onOpenChange={setIsSupplierFeatureDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>Recurso em Desenvolvimento</DialogTitle>
+          <div className="space-y-4 py-4">
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <Lock className="h-5 w-5 text-amber-500" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-amber-800">Recurso Premium</h3>
+                  <div className="mt-2 text-sm text-amber-700">
+                    <p>O recurso de gerenciamento de fornecedores estará disponível em breve!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-500">
+              Esta funcionalidade permitirá encontrar e comparar fornecedores alternativos para seus produtos, ajudando a melhorar suas margens.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Dialog para IA Imagens */}
+      <Dialog open={isImageTranslationDialogOpen} onOpenChange={setIsImageTranslationDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>IA para Imagens</DialogTitle>
+          <div className="space-y-4 py-4">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <Lock className="h-5 w-5 text-blue-500" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">Recurso Premium</h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>O recurso de tradução e aprimoramento de imagens com IA estará disponível em breve!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-500">
+              Com esta funcionalidade você poderá traduzir textos em imagens e aprimorar a qualidade visual das suas fotos de produto automaticamente.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
