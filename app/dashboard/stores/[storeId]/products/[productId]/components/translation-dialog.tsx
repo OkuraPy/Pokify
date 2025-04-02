@@ -86,6 +86,7 @@ export function TranslationDialog({
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationProgress, setTranslationProgress] = useState(0);
   const [translationStatus, setTranslationStatus] = useState<'idle' | 'preparing' | 'translating' | 'saving' | 'completed' | 'error'>('idle');
+  const [shouldReloadAfterClose, setShouldReloadAfterClose] = useState(false);
 
   // Detecta o idioma do texto baseado nas palavras comuns
   const detectLanguage = (text: string): string => {
@@ -227,6 +228,15 @@ export function TranslationDialog({
     }
   }, [isOpen]);
 
+  // Adicionar um useEffect para recarregar a página quando o diálogo for fechado após tradução bem-sucedida
+  useEffect(() => {
+    if (!isOpen && shouldReloadAfterClose) {
+      console.log('TRADUÇÃO: Diálogo fechado após tradução bem-sucedida, recarregando página');
+      setShouldReloadAfterClose(false);
+      window.location.reload();
+    }
+  }, [isOpen, shouldReloadAfterClose]);
+
   const handleTranslate = async () => {
     console.log('===== INICIANDO PROCESSO DE TRADUÇÃO =====');
     console.log('Dados do produto:', {
@@ -335,42 +345,33 @@ export function TranslationDialog({
         targetLanguage
       });
       
-      // Salvamento direto sem usar a função handleSave
-      // Isso evita conflitos entre o salvamento no handleSave e na função de tradução
-      console.log('TRADUÇÃO: Salvando diretamente sem usar handleSave');
-      
-      // Garantir que o idioma de destino seja incluído nos dados salvos
-      const saveData = {
-        title: translatedTitle,
-        description: translatedDesc,
-        language: targetLanguage // Incluir o idioma de destino explicitamente
-      };
-      
+      // Salvamento simplificado
       try {
-        await onSaveTranslation(saveData);
-        console.log('TRADUÇÃO: onSaveTranslation retornou com sucesso');
+        console.log('TRADUÇÃO: Salvando dados no banco de dados');
+        const saveData = {
+          title: translatedTitle,
+          description: translatedDesc,
+          language: targetLanguage
+        };
         
-        // Continue apenas se o salvamento foi bem-sucedido
+        await onSaveTranslation(saveData);
+        console.log('TRADUÇÃO: Dados salvos com sucesso');
+        
+        // Processo de fechamento simplificado
         clearInterval(progressInterval);
         setTranslationProgress(100);
         setTranslationStatus('completed');
         
-        console.log('TRADUÇÃO: Processo finalizado com sucesso');
+        console.log('TRADUÇÃO: Configurando flag para recarregar após fechamento');
+        setShouldReloadAfterClose(true);
+        
         toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
         
-        // Pequeno atraso para o usuário ver o progresso concluído
-        console.log('TRADUÇÃO: Programando fechamento e reload da página em 1000ms');
-        window.setTimeout(() => {
-          console.log('TRADUÇÃO: Executando timeout para fechamento e reload');
-          
-          // Fechar o diálogo imediatamente
-          console.log('TRADUÇÃO: Fechando diálogo');
+        // Fechar o diálogo após um curto intervalo
+        setTimeout(() => {
+          console.log('TRADUÇÃO: Fechando diálogo...');
           onClose();
-          
-          // Recarregar a página para garantir que todos os dados estejam atualizados
-          console.log('TRADUÇÃO: Recarregando página');
-          window.location.href = window.location.href; // Forma mais robusta de recarregar mantendo a URL exata
-        }, 1000);
+        }, 1500);
         
       } catch (saveError) {
         console.error('TRADUÇÃO: Erro ao salvar tradução:', saveError);
@@ -512,7 +513,17 @@ export function TranslationDialog({
   const sourceLanguage = getLanguageInfo(detectedSourceLanguage);
   
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        // Permitir o fechamento apenas se não estiver traduzindo
+        if (!isTranslating) {
+          onClose();
+        } else {
+          console.log('TRADUÇÃO: Tentativa de fechar diálogo durante tradução ignorada');
+        }
+      }}
+    >
       <DialogContent className="max-w-3xl bg-gradient-to-b from-background to-muted/20 shadow-lg border-muted">
         <DialogHeader className="space-y-4">
           <div className="flex items-center justify-start space-x-2">

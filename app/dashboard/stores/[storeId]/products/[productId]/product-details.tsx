@@ -358,6 +358,12 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         dataKeys: Object.keys(data)
       });
       
+      // Incluir todas as propriedades que queremos atualizar explicitamente
+      if (!data.language) {
+        console.warn('Aviso: campo language não definido na tradução, usando valor padrão');
+        data.language = 'en'; // Garantir que sempre tenhamos um valor para language
+      }
+      
       const { error } = await updateProduct(product.id, data);
       
       if (error) {
@@ -374,15 +380,21 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           console.warn('Estado anterior do produto é nulo');
           return null;
         }
+        
+        // Criamos um objeto completo para garantir a atualização correta
         const updatedProduct = {
           ...prev,
-          ...data
+          title: data.title || prev.title,
+          description: data.description || prev.description,
+          language: data.language
         };
+        
         console.log('Estado do produto atualizado:', {
           id: updatedProduct.id,
-          title: updatedProduct.title,
-          language: updatedProduct.language
+          title: updatedProduct.title?.substring(0, 30) + '...',
+          hasLanguage: !!updatedProduct.language
         });
+        
         return updatedProduct;
       });
       
