@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 // Constante para definir o tamanho máximo do lote
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 10;
 
 export async function POST(request: Request) {
   try {
@@ -42,7 +42,9 @@ export async function POST(request: Request) {
     // Configuração dos prompts
     const systemPrompt = `Você é um tradutor profissional especializado em avaliações de produtos. 
 Sua tarefa é traduzir avaliações de clientes para ${targetLanguage} mantendo o tom, sentimento e estilo original.
-Preserve qualquer menção específica a características do produto, experiência do cliente ou problemas relatados.`;
+Preserve qualquer menção específica a características do produto, experiência do cliente ou problemas relatados.
+
+IMPORTANTE: Responda SEMPRE com um objeto JSON válido no formato exato especificado, sem texto adicional.`;
 
     // Processar reviews em lotes
     for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
@@ -65,11 +67,13 @@ CONTEÚDO: ${review.content}
 
 Mantenha o mesmo tom e sentimento da avaliação original. Se a avaliação já estiver em ${targetLanguage}, apenas melhore a fluência e naturalidade do texto.
 
-Retorne no formato:
+Retorne APENAS um objeto JSON válido no formato:
 {
   "id": "${review.id}",
-  "translatedContent": "texto da avaliação traduzida"
-}`;
+  "translatedContent": "texto da avaliação traduzida completa"
+}
+
+NÃO inclua nenhum texto explicativo, comentários, ou aspas triplas. Retorne APENAS o objeto JSON.`;
 
         try {
           const completion = await openai.chat.completions.create({
@@ -82,12 +86,33 @@ Retorne no formato:
               { role: "user", content: userPrompt }
             ],
             temperature: 0.3,
-            max_tokens: 1000
+            max_tokens: 2000,
+            response_format: { type: "json_object" }
           });
 
-          const translatedContent = JSON.parse(completion.choices[0]?.message?.content || '{}');
-          console.log(`Review ${review.id} traduzido com sucesso`);
-          return translatedContent;
+          const responseContent = completion.choices[0]?.message?.content || '{}';
+          
+          try {
+            const jsonMatch = responseContent.match(/(\{[\s\S]*\})/);
+            const jsonContent = jsonMatch ? jsonMatch[0] : responseContent;
+            
+            const translatedContent = JSON.parse(jsonContent);
+            
+            if (!translatedContent.id || !translatedContent.translatedContent) {
+              console.error(`Review ${review.id}: formato de resposta inválido`, responseContent);
+              throw new Error('Formato de resposta inválido');
+            }
+            
+            console.log(`Review ${review.id} traduzido com sucesso`);
+            return translatedContent;
+          } catch (parseError) {
+            console.error(`Erro ao parsear resposta para review ${review.id}:`, parseError, responseContent);
+            return {
+              id: review.id,
+              error: 'Falha ao processar tradução',
+              rawResponse: responseContent.substring(0, 100)
+            };
+          }
         } catch (error) {
           console.error(`Erro ao traduzir review ${review.id}:`, error);
           return {
@@ -108,11 +133,20 @@ Retorne no formato:
       }
     }
     
-    console.log(`Traduções concluídas: ${allTranslations.length} reviews processados`);
+    // Verificar resultados
+    const successCount = allTranslations.filter(t => !t.error).length;
+    const errorCount = allTranslations.filter(t => t.error).length;
+    
+    console.log(`Traduções concluídas: ${successCount} com sucesso, ${errorCount} com erros de ${allTranslations.length} total`);
     
     return NextResponse.json({
       translations: allTranslations,
-      success: true
+      success: true,
+      stats: {
+        total: allTranslations.length,
+        success: successCount,
+        errors: errorCount
+      }
     });
     
   } catch (error) {
