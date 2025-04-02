@@ -16,6 +16,8 @@ export interface ExtractionResponse {
   error?: string;
 }
 
+export type ExtractionMode = 'standard' | 'pro_copy';
+
 export class OpenAIExtractor {
   private originalUrl: string;
   
@@ -28,11 +30,13 @@ export class OpenAIExtractor {
    * @param url URL original do produto
    * @param markdown Conteúdo markdown da página
    * @param screenshot Base64 da imagem da página (opcional)
+   * @param mode Modo de extração ('standard' ou 'pro_copy')
    */
   async extractProductData(
     url: string, 
     markdown: string, 
-    screenshot?: string
+    screenshot?: string,
+    mode: ExtractionMode = 'standard'
   ): Promise<ExtractionResponse> {
     // Armazenar a URL original para referência
     this.originalUrl = url;
@@ -44,14 +48,18 @@ export class OpenAIExtractor {
         throw new Error('Chave API da OpenAI não configurada');
       }
 
-      console.log('[OpenAI Extractor] Iniciando extração de dados do produto com OpenAI');
+      console.log(`[OpenAI Extractor] Iniciando extração de dados do produto com OpenAI (Modo: ${mode})`);
       console.log(`[OpenAI Extractor] Tamanho do markdown: ${markdown.length} caracteres`);
       
       // Se o markdown for muito grande, truncá-lo para economizar tokens
       const truncatedMarkdown = markdown.slice(0, 8000);
       
-      // Usar sempre o método de extração com markdown, ignorando screenshot
-      return await this.extractWithMarkdown(url, truncatedMarkdown);
+      // Usar o método de extração apropriado com base no modo
+      if (mode === 'pro_copy') {
+        return await this.extractWithProCopy(url, truncatedMarkdown);
+      } else {
+        return await this.extractWithMarkdown(url, truncatedMarkdown);
+      }
     } catch (error: any) {
       console.error('[OpenAI Extractor] Erro na extração com OpenAI:', error);
       return {
@@ -610,20 +618,27 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
 
   private parseResponseContent(content: string): any {
     try {
-      // Tentar parsear o JSON normalmente
-      console.log('[OpenAI Extractor] Resposta bruta da OpenAI:', content);
-      const data = JSON.parse(content);
-      console.log('[OpenAI Extractor] JSON parseado:', JSON.stringify(data, null, 2));
-      console.log('[OpenAI Extractor] Resposta parseada com sucesso');
+      // Tentar encontrar e extrair JSON válido da resposta
+      const jsonRegex = /\{[\s\S]*\}/g;
+      const jsonMatch = content.match(jsonRegex);
+      
+      let jsonContent = content;
+      if (jsonMatch && jsonMatch[0] !== content) {
+        console.log('[OpenAI Extractor] Encontrado JSON incorporado na resposta, tentando extrair');
+        jsonContent = jsonMatch[0];
+      }
+      
+      // Tentar parsear o JSON extraído/corrigido
+      console.log('[OpenAI Extractor] Tentando parsear JSON:', jsonContent.substring(0, 200) + '...');
+      const data = JSON.parse(jsonContent);
+      console.log('[OpenAI Extractor] JSON parseado com sucesso');
       
       // Validar e normalizar as URLs das imagens
       console.log('[OpenAI Extractor] Imagens principais antes da normalização:', data.mainImages?.length || 0);
-      console.log('[OpenAI Extractor] Primeiras 3 URLs principais:', data.mainImages?.slice(0, 3));
       
       if (data.mainImages && Array.isArray(data.mainImages)) {
         data.mainImages = this.removeDuplicateUrls(data.mainImages);
         console.log('[OpenAI Extractor] Imagens principais após normalização:', data.mainImages.length);
-        console.log('[OpenAI Extractor] Primeiras 3 URLs normalizadas:', data.mainImages.slice(0, 3));
       } else {
         console.log('[OpenAI Extractor] Nenhuma imagem principal encontrada no JSON');
         data.mainImages = [];
@@ -631,7 +646,6 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
       
       if (data.descriptionImages && Array.isArray(data.descriptionImages)) {
         console.log('[OpenAI Extractor] Imagens de descrição antes da normalização:', data.descriptionImages.length);
-        console.log('[OpenAI Extractor] URLs de descrição:', data.descriptionImages);
         data.descriptionImages = this.removeDuplicateUrls(data.descriptionImages);
         console.log('[OpenAI Extractor] Imagens de descrição após normalização:', data.descriptionImages.length);
       } else {
@@ -642,37 +656,94 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
       return data;
     } catch (error) {
       console.error('[OpenAI Extractor] Erro ao parsear resposta JSON:', error);
-      console.error('[OpenAI Extractor] Conteúdo que causou erro:', content);
+      console.error('[OpenAI Extractor] Conteúdo que causou erro (primeiros 500 caracteres):', content.substring(0, 500));
       
-      // Tentar recuperar JSON parcial
+      // Tentar recuperação mais agressiva
       try {
-        // Se o conteúdo for truncado, tentar consertá-lo
-        const fixedContent = this.tryToFixTruncatedJson(content);
-        if (fixedContent !== content) {
-          console.log('[OpenAI Extractor] Tentando recuperar JSON truncado');
-          const fixedData = JSON.parse(fixedContent);
+        console.log('[OpenAI Extractor] Tentando recuperação de emergência do JSON...');
+        
+        // 1. Tentar encontrar o objeto JSON usando expressão regular mais agressiva
+        const jsonMatch = content.match(/\{[\s\S]*?\}/);
+        if (jsonMatch) {
+          console.log('[OpenAI Extractor] Encontrado possível JSON com regex:', jsonMatch[0].substring(0, 100) + '...');
           
-          // Validar e normalizar as URLs das imagens
-          if (fixedData.mainImages && Array.isArray(fixedData.mainImages)) {
-            fixedData.mainImages = this.removeDuplicateUrls(fixedData.mainImages);
-          } else {
-            fixedData.mainImages = [];
+          try {
+            const extractedData = JSON.parse(jsonMatch[0]);
+            console.log('[OpenAI Extractor] Recuperação bem-sucedida!');
+            return this.validateAndNormalizeData(extractedData);
+          } catch (e) {
+            console.log('[OpenAI Extractor] Falha ao parsear JSON extraído por regex');
           }
-          
-          if (fixedData.descriptionImages && Array.isArray(fixedData.descriptionImages)) {
-            fixedData.descriptionImages = this.removeDuplicateUrls(fixedData.descriptionImages);
-          } else {
-            fixedData.descriptionImages = [];
-          }
-          
-          return fixedData;
         }
+        
+        // 2. Tentar construir um objeto JSON mínimo a partir do conteúdo
+        console.log('[OpenAI Extractor] Tentando criar JSON mínimo a partir da resposta...');
+        
+        // Buscar o título com regex
+        const titleMatch = content.match(/"title"\s*:\s*"([^"]+)"/);
+        // Buscar o preço com regex
+        const priceMatch = content.match(/"price"\s*:\s*"([^"]+)"/);
+        // Buscar a descrição (pode ser muito longa, então pegamos só o início)
+        const descMatch = content.match(/"description"\s*:\s*"([\s\S]+?)"/);
+        
+        // Construir objeto mínimo
+        const minimalData: any = {};
+        
+        if (titleMatch) minimalData.title = titleMatch[1];
+        if (priceMatch) minimalData.price = priceMatch[1];
+        if (descMatch) {
+          // Limpar a descrição e garantir que é HTML válido
+          let desc = descMatch[1].replace(/\\"/g, '"').replace(/\\n/g, ' ');
+          if (!desc.includes('<')) {
+            desc = `<p>${desc}</p>`;
+          }
+          minimalData.description = desc;
+        } else {
+          // Se não encontrarmos a descrição, criar uma genérica
+          minimalData.description = '<p>Descrição não disponível. Por favor, entre em contato para mais informações sobre este produto.</p>';
+        }
+        
+        // Inicializar arrays vazios para imagens
+        minimalData.mainImages = [];
+        minimalData.descriptionImages = [];
+        
+        console.log('[OpenAI Extractor] Objeto mínimo criado:', minimalData);
+        return minimalData;
       } catch (e) {
-        console.error('[OpenAI Extractor] Falha na recuperação do JSON truncado:', e);
+        console.error('[OpenAI Extractor] Todas as tentativas de recuperação falharam:', e);
+        // Retornar um objeto vazio mas válido em último caso
+        return {
+          title: '',
+          price: '',
+          description: '<p>Não foi possível extrair a descrição deste produto.</p>',
+          mainImages: [],
+          descriptionImages: []
+        };
       }
-      
-      throw new Error('Formato de resposta inválido');
     }
+  }
+  
+  /**
+   * Valida e normaliza os dados extraídos
+   */
+  private validateAndNormalizeData(data: any): any {
+    // Garantir que temos um objeto válido
+    const validatedData: any = typeof data === 'object' ? data : {};
+    
+    // Validar e normalizar URLs de imagens
+    if (validatedData.mainImages && Array.isArray(validatedData.mainImages)) {
+      validatedData.mainImages = this.removeDuplicateUrls(validatedData.mainImages);
+    } else {
+      validatedData.mainImages = [];
+    }
+    
+    if (validatedData.descriptionImages && Array.isArray(validatedData.descriptionImages)) {
+      validatedData.descriptionImages = this.removeDuplicateUrls(validatedData.descriptionImages);
+    } else {
+      validatedData.descriptionImages = [];
+    }
+    
+    return validatedData;
   }
 
   /**
@@ -719,6 +790,243 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
       images: uniqueImages || []
     };
   }
+
+  /**
+   * Extrai dados do produto usando o modo Pro Copy com estrutura AIDA
+   */
+  private async extractWithProCopy(url: string, markdown: string): Promise<ExtractionResponse> {
+    try {
+      // Construir o prompt para o sistema - específico para Pro Copy
+      const systemPrompt = `Você é um copywriter profissional de e-commerce especializado em criar descrições de produtos de alta conversão.
+
+Como copywriter especialista, você tem duas tarefas:
+
+TAREFA 1: EXTRAÇÃO DE DADOS
+Extraia com precisão:
+- Título completo e exato do produto
+- Preço atual em formato numérico (com ponto decimal)
+- URLs de imagens do produto (apenas imagens reais)
+
+TAREFA 2: CRIAR UMA COPY PROFISSIONAL
+Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
+- ATENÇÃO: Gancho poderoso com título em <h2>
+- INTERESSE: Solução e benefícios principais
+- DESEJO: Detalhes do produto e prova social
+- AÇÃO: Chamada à ação clara e persuasiva
+
+A descrição deve:
+- Ter formato HTML completo (h2, h3, p, ul, li)
+- Ser extensa (800+ palavras) e muito detalhada
+- Ter tom profissional e persuasivo
+- NÃO incluir links ou imagens (serão adicionados depois)
+- Terminar com seção de "AÇÃO" clara`;
+  
+      const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
+
+1. EXTRAIA as informações básicas do produto:
+   - Título exato
+   - Preço com ponto decimal
+   - URLs das imagens
+
+2. CRIE uma descrição completa usando a estrutura AIDA:
+
+   A) ATENÇÃO:
+      - Título chamativo em <h2>
+      - Gancho poderoso que gere curiosidade
+      - Problema que o cliente enfrenta
+
+   B) INTERESSE:
+      - Solução oferecida pelo produto
+      - 5+ benefícios detalhados
+      - Subtítulos em <h3>
+
+   C) DESEJO:
+      - Características técnicas completas
+      - Listas organizadas <ul><li>
+      - Prova social e exclusividade
+      - Resposta a possíveis objeções
+
+   D) AÇÃO:
+      - Chamada à ação clara "Adquira agora"
+      - Urgência e escassez
+      - Garantia de satisfação
+
+IMPORTANTE:
+- Sua descrição deve ter pelo menos 800 palavras
+- Não inclua links ou URLs na descrição
+- Use HTML completo com h2, h3, p, ul, li, strong, em
+- Seja MUITO detalhado e persuasivo
+
+Estruture sua resposta exatamente assim:
+{
+  "title": "Título extraído",
+  "price": "149.90",
+  "mainImages": ["url1", "url2"],
+  "description": "<h2>Título Persuasivo</h2><p>Seu texto AIDA completo aqui...</p>"
+}
+
+HTML/Markdown para análise:
+${markdown.substring(0, 8000)}`;
+
+      console.log('[OpenAI Extractor] Enviando prompt Pro Copy simplificado para OpenAI');
+      console.log(`[OpenAI Extractor] Tamanho do prompt: ${userPrompt.length} caracteres`);
+      
+      try {
+        // Chamar a API da OpenAI com configurações otimizadas
+        const response = await this.openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: systemPrompt
+            },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 4000,
+          response_format: { type: 'json_object' }
+        });
+
+        const responseContent = response.choices[0]?.message?.content || '';
+
+        if (!responseContent) {
+          console.error('[OpenAI Extractor] Resposta vazia da OpenAI');
+          throw new Error('Resposta vazia da OpenAI');
+        }
+
+        // Registrar a resposta para depuração
+        console.log('[OpenAI Extractor] Resposta recebida da OpenAI (Pro Copy)');
+        console.log(`[OpenAI Extractor] Tamanho da resposta: ${responseContent.length} caracteres`);
+        
+        // Processar o conteúdo da resposta com o método robusto
+        const extractedData = this.parseResponseContent(responseContent);
+        
+        // Verificar se a descrição é longa o suficiente
+        if (extractedData.description) {
+          // Remover todas as tags HTML para contar apenas o texto
+          const textOnly = extractedData.description.replace(/<[^>]*>/g, ' ');
+          const wordCount = textOnly.split(/\s+/).filter((word: string) => word.length > 0).length;
+          
+          console.log(`[OpenAI Extractor] Descrição gerada com ${wordCount} palavras`);
+          
+          // Se a descrição for muito curta, talvez enriquecer (não implementado aqui)
+          if (wordCount < 400) {
+            console.warn(`[OpenAI Extractor] A descrição gerada é curta (${wordCount} palavras).`);
+          }
+        }
+
+        // Combinar imagens principais e de descrição em uma única lista
+        const allImages = [
+          ...(extractedData.mainImages || []),
+          ...(extractedData.descriptionImages || [])
+        ];
+
+        // Adicionar as imagens combinadas ao objeto final
+        const result: ExtractedProduct = {
+          title: extractedData.title || '',
+          price: extractedData.price || '',
+          description: extractedData.description || '',
+          mainImages: extractedData.mainImages || [],
+          descriptionImages: extractedData.descriptionImages || [],
+          images: this.removeDuplicateUrls(allImages),
+          reviews: extractedData.reviews || []
+        };
+
+        console.log(`[OpenAI Extractor] Extração Pro Copy concluída com sucesso.`);
+        return { success: true, data: result };
+      } catch (apiError: any) {
+        console.error('[OpenAI Extractor] Erro na chamada da API OpenAI (Pro Copy):', apiError);
+        
+        // Tentar com uma abordagem diferente se falhar
+        try {
+          console.log('[OpenAI Extractor] Tentando abordagem alternativa para Pro Copy...');
+          
+          // Extrair apenas dados básicos primeiro
+          const basicDataPrompt = `Extraia APENAS as informações básicas deste produto:
+- Título exato
+- Preço com ponto decimal
+- URLs das imagens
+
+Resposta apenas em JSON:
+{
+  "title": "Título do produto",
+  "price": "123.45",
+  "mainImages": ["url1", "url2"]
+}
+
+HTML/Markdown do produto:
+${markdown.substring(0, 5000)}`;
+
+          const basicResponse = await this.openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+              { role: 'system', content: 'Extraia apenas dados básicos do produto em formato JSON.' },
+              { role: 'user', content: basicDataPrompt }
+            ],
+            temperature: 0.3,
+            max_tokens: 1000,
+            response_format: { type: 'json_object' }
+          });
+          
+          const basicData = JSON.parse(basicResponse.choices[0]?.message?.content || '{}');
+          console.log('[OpenAI Extractor] Dados básicos extraídos:', basicData);
+          
+          // Agora gerar apenas a descrição
+          const descriptionPrompt = `Crie uma descrição AIDA profissional para este produto:
+${basicData.title || 'Produto'}
+
+A descrição deve:
+- Seguir a estrutura AIDA (Atenção, Interesse, Desejo, Ação)
+- Ser muito detalhada e persuasiva
+- Ter formato HTML com h2, h3, p, ul, li, strong
+- Terminar com chamada à ação clara
+
+HTML/Markdown original:
+${markdown.substring(0, 3000)}`;
+
+          const descResponse = await this.openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+              { role: 'system', content: 'Crie uma descrição AIDA profissional em HTML.' },
+              { role: 'user', content: descriptionPrompt }
+            ],
+            temperature: 0.7,
+            max_tokens: 3000
+          });
+          
+          // Combinar os resultados
+          const description = descResponse.choices[0]?.message?.content || '';
+          
+          // Formatar a descrição como HTML se não estiver
+          let formattedDescription = description;
+          if (!description.includes('<')) {
+            formattedDescription = `<h2>${basicData.title || 'Produto'}</h2>\n<p>${description.replace(/\n\n/g, '</p><p>')}</p>`;
+          }
+          
+          const combinedResult: ExtractedProduct = {
+            title: basicData.title || '',
+            price: basicData.price || '',
+            description: formattedDescription,
+            mainImages: this.removeDuplicateUrls(basicData.mainImages || []),
+            descriptionImages: [],
+            images: this.removeDuplicateUrls(basicData.mainImages || [])
+          };
+          
+          console.log('[OpenAI Extractor] Recuperação alternativa bem-sucedida');
+          return { success: true, data: combinedResult };
+        } catch (recoveryError) {
+          console.error('[OpenAI Extractor] Tentativa de recuperação alternativa falhou:', recoveryError);
+          throw new Error(`Erro na API OpenAI: ${apiError.message}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('[OpenAI Extractor] Erro na extração Pro Copy com OpenAI:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro ao processar resposta da IA'
+      };
+    }
+  }
 }
 
 /**
@@ -738,8 +1046,14 @@ export function createOpenAIExtractor(): OpenAIExtractor {
 export async function extractProductDataWithOpenAI(
   url: string,
   markdown: string,
-  screenshot?: string
+  screenshot?: string,
+  mode?: string
 ): Promise<ExtractionResponse> {
   const extractor = createOpenAIExtractor();
-  return extractor.extractProductData(url, markdown, screenshot);
+  return extractor.extractProductData(
+    url, 
+    markdown, 
+    screenshot, 
+    mode === 'pro_copy' ? 'pro_copy' : 'standard'
+  );
 } 
