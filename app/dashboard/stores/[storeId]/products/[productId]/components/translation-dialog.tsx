@@ -31,12 +31,36 @@ const languages = [
 
 // Palavras comuns em cada idioma para detecção
 const commonWords: Record<string, string[]> = {
-  en: ['the', 'of', 'and', 'with', 'for', 'your', 'this', 'that', 'body', 'from', 'our', 'you', 'will', 'to', 'is', 'in'],
-  pt: ['de', 'para', 'com', 'seu', 'sua', 'você', 'este', 'esta', 'nosso', 'nossa', 'e', 'ou', 'em', 'um', 'uma', 'na', 'no'],
-  es: ['el', 'la', 'los', 'las', 'de', 'para', 'con', 'tu', 'su', 'este', 'esta', 'nuestro', 'nuestra', 'y', 'o', 'en', 'un', 'una'],
-  fr: ['le', 'la', 'les', 'des', 'avec', 'pour', 'votre', 'ce', 'cette', 'notre', 'nos', 'et', 'ou', 'en', 'un', 'une'],
-  de: ['der', 'die', 'das', 'mit', 'für', 'dein', 'deine', 'dieser', 'diese', 'unser', 'unsere', 'und', 'oder', 'ein', 'eine'],
-  it: ['il', 'la', 'i', 'le', 'di', 'per', 'con', 'tuo', 'tua', 'questo', 'questa', 'nostro', 'nostra', 'e', 'o', 'un', 'una']
+  en: [
+    'the', 'of', 'and', 'with', 'for', 'your', 'this', 'that', 'body', 'from', 'our', 'you', 'will', 'to', 'is', 'in',
+    'it', 'on', 'at', 'by', 'we', 'as', 'an', 'all', 'new', 'more', 'about', 'when', 'product', 'quality', 'features',
+    'can', 'make', 'use', 'high', 'color', 'size', 'are', 'provides', 'design', 'perfect', 'material', 'shipping'
+  ],
+  pt: [
+    'de', 'para', 'com', 'seu', 'sua', 'você', 'este', 'esta', 'nosso', 'nossa', 'e', 'ou', 'em', 'um', 'uma', 'na', 'no',
+    'do', 'da', 'dos', 'das', 'ao', 'aos', 'à', 'às', 'pelo', 'pela', 'são', 'está', 'produto', 'qualidade', 'cor',
+    'tamanho', 'frete', 'envio', 'entre', 'pode', 'podem', 'possui', 'foram', 'será', 'temos', 'novo', 'nova', 'entrega'
+  ],
+  es: [
+    'el', 'la', 'los', 'las', 'de', 'para', 'con', 'tu', 'su', 'este', 'esta', 'nuestro', 'nuestra', 'y', 'o', 'en', 'un', 'una',
+    'del', 'al', 'por', 'como', 'pero', 'más', 'todo', 'que', 'cuando', 'producto', 'calidad', 'color',
+    'tamaño', 'envío', 'entre', 'puede', 'nuevo', 'nueva', 'tiene', 'tienen', 'muy', 'bien', 'mejor'
+  ],
+  fr: [
+    'le', 'la', 'les', 'des', 'avec', 'pour', 'votre', 'ce', 'cette', 'notre', 'nos', 'et', 'ou', 'en', 'un', 'une',
+    'du', 'au', 'aux', 'par', 'sur', 'dans', 'qui', 'que', 'quand', 'produit', 'qualité', 'couleur',
+    'taille', 'livraison', 'entre', 'peut', 'nouveau', 'nouvelle', 'ont', 'sont', 'est', 'plus'
+  ],
+  de: [
+    'der', 'die', 'das', 'mit', 'für', 'dein', 'deine', 'dieser', 'diese', 'unser', 'unsere', 'und', 'oder', 'ein', 'eine',
+    'von', 'zu', 'zur', 'bei', 'aus', 'auf', 'wenn', 'produkt', 'qualität', 'farbe',
+    'größe', 'versand', 'zwischen', 'kann', 'können', 'neue', 'neuer', 'hat', 'haben'
+  ],
+  it: [
+    'il', 'la', 'i', 'le', 'di', 'per', 'con', 'tuo', 'tua', 'questo', 'questa', 'nostro', 'nostra', 'e', 'o', 'un', 'una',
+    'del', 'della', 'dello', 'degli', 'al', 'alla', 'allo', 'agli', 'da', 'prodotto', 'qualità', 'colore',
+    'dimensione', 'spedizione', 'tra', 'può', 'possono', 'nuovo', 'nuova', 'ha', 'hanno'
+  ]
 };
 
 interface TranslationDialogProps {
@@ -82,10 +106,20 @@ export function TranslationDialog({
         const regex = new RegExp(`\\b${word}\\b`, 'gi');
         const matches = lowercaseText.match(regex);
         if (matches) {
-          scores[lang] += matches.length;
+          // Damos mais peso a palavras que são determinantes para o idioma
+          let weight = 1;
+          // Palavras mais curtas podem aparecer em vários idiomas, damos menos peso
+          if (word.length <= 2) weight = 0.5;
+          // Palavras mais longas são mais específicas de um idioma
+          if (word.length >= 5) weight = 1.5;
+          
+          scores[lang] += matches.length * weight;
         }
       });
     });
+    
+    // Imprime as pontuações para depuração
+    console.log('Pontuações de detecção de idioma:', scores);
     
     // Encontra idioma com maior pontuação
     let detectedLang = 'pt';
@@ -98,6 +132,13 @@ export function TranslationDialog({
       }
     });
     
+    // Se a pontuação máxima for muito baixa (menor que 2), retorne o padrão
+    if (maxScore < 2) {
+      console.log('Pontuação muito baixa, usando idioma padrão (pt)');
+      return 'pt';
+    }
+    
+    console.log(`Idioma detectado: ${detectedLang} com pontuação: ${maxScore}`);
     return detectedLang;
   };
 
@@ -112,16 +153,49 @@ export function TranslationDialog({
       
       // Usar setTimeout para garantir que a detecção aconteça após a renderização
       setTimeout(() => {
-        // Se o produto já tem um idioma definido, use-o
-        if (product.language) {
-          console.log('Usando idioma já definido:', product.language);
-          setDetectedSourceLanguage(product.language);
-        } else {
-          // Caso contrário, detecte o idioma a partir do título e descrição
-          const combinedText = `${product.title} ${product.description || ''}`;
-          const detectedLang = detectLanguage(combinedText);
-          console.log('Idioma detectado:', detectedLang, 'do texto:', combinedText.substring(0, 50) + '...');
-          setDetectedSourceLanguage(detectedLang);
+        try {
+          // Se o produto já tem um idioma definido, use-o
+          if (product.language) {
+            console.log('Usando idioma já definido:', product.language);
+            setDetectedSourceLanguage(product.language);
+          } else {
+            // Caso contrário, detecte o idioma a partir do título e descrição
+            const title = product.title || '';
+            const description = product.description || '';
+            
+            console.log('Detectando idioma a partir de:', {
+              titleLength: title.length,
+              descriptionLength: description?.length || 0,
+              titleSample: title.substring(0, 50),
+              descriptionSample: description?.substring(0, 50)
+            });
+            
+            // Se temos título e descrição muito curtos, dificulta a detecção
+            if (title.length < 5 && (!description || description.length < 10)) {
+              console.log('Texto muito curto para detecção confiável, usando padrão (pt)');
+              setDetectedSourceLanguage('pt');
+              return;
+            }
+            
+            // Combina título e descrição para melhor amostra
+            // Removemos caracteres especiais e números para focar no texto
+            const combinedText = `${title} ${description}`.replace(/[0-9.,$%*\-_+()[\]{}:;!?\/\\|~^]/g, ' ');
+            
+            // Verifica se temos texto suficiente após limpeza
+            if (combinedText.trim().length < 15) {
+              console.log('Texto insuficiente após limpeza, usando padrão (pt)');
+              setDetectedSourceLanguage('pt');
+              return;
+            }
+            
+            const detectedLang = detectLanguage(combinedText);
+            console.log('Idioma detectado final:', detectedLang);
+            setDetectedSourceLanguage(detectedLang);
+          }
+        } catch (error) {
+          console.error('Erro na detecção de idioma:', error);
+          // Em caso de erro, use o padrão
+          setDetectedSourceLanguage('pt');
         }
       }, 0);
     }
