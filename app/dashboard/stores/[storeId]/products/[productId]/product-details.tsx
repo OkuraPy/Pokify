@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical, Sparkles, Lock, Store, Search, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical, Sparkles, Lock, Store, Search, Image as ImageIcon, Check } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { ImageGallery } from './components/image-gallery';
 import { ProductInfo } from './components/product-info';
@@ -19,7 +19,7 @@ import { DescriptionImages } from './components/description-images';
 import { getProduct, updateProduct } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 
 interface ProductDetailsProps {
   storeId: string;
@@ -1030,26 +1030,219 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
       
       {/* Dialog para IA Imagens */}
       <Dialog open={isImageTranslationDialogOpen} onOpenChange={setIsImageTranslationDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle>IA para Imagens</DialogTitle>
-          <div className="space-y-4 py-4">
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <div className="flex">
-                <div className="flex-shrink-0">
+        <DialogContent className="sm:max-w-3xl bg-gradient-to-b from-background to-muted/20 shadow-lg border-muted">
+          <DialogHeader className="space-y-4">
+            <div className="flex items-center justify-start space-x-2">
+              <div className="bg-blue-500/10 p-2 rounded-full">
+                <ImageIcon className="h-5 w-5 text-blue-500" />
+              </div>
+              <DialogTitle className="text-xl">IA para Imagens</DialogTitle>
+            </div>
+            <DialogDescription className="text-base opacity-90">
+              Transforme suas imagens com tecnologia avançada de Inteligência Artificial
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Modos de IA para imagens */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white border border-blue-100 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] duration-300">
+                <div className="h-32 bg-gradient-to-r from-blue-100 to-cyan-50 flex items-center justify-center p-6">
+                  <div className="relative">
+                    <Languages className="h-14 w-14 text-blue-500 opacity-80" />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-blue-700 mb-2 flex items-center">
+                    Tradução de Textos
+                    <Badge className="ml-2 bg-blue-100 text-blue-600 border-0">Em breve</Badge>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Identifique e traduza automaticamente qualquer texto presente nas imagens
+                    do seu produto para o idioma que desejar.
+                  </p>
+                  <ul className="text-xs space-y-1 text-gray-500">
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-blue-500" />
+                      <span>Tradução de textos embutidos</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-blue-500" />
+                      <span>Preservação da fonte e estilo</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-blue-500" />
+                      <span>Suporte para 40+ idiomas</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="bg-white border border-purple-100 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] duration-300">
+                <div className="h-32 bg-gradient-to-r from-purple-100 to-indigo-50 flex items-center justify-center p-6">
+                  <div className="relative">
+                    <Sparkles className="h-14 w-14 text-purple-500 opacity-80" />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-purple-700 mb-2 flex items-center">
+                    Aprimoramento de Qualidade
+                    <Badge className="ml-2 bg-purple-100 text-purple-600 border-0">Premium</Badge>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Melhore automaticamente a qualidade, brilho e nitidez das 
+                    fotos do seu produto.
+                  </p>
+                  <ul className="text-xs space-y-1 text-gray-500">
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-purple-500" />
+                      <span>Super-resolução 4x</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-purple-500" />
+                      <span>Remoção de ruído e grãos</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-purple-500" />
+                      <span>Correção automática de cor</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="bg-white border border-amber-100 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] duration-300">
+                <div className="h-32 bg-gradient-to-r from-amber-100 to-yellow-50 flex items-center justify-center p-6">
+                  <div className="relative">
+                    <ImagePlus className="h-14 w-14 text-amber-500 opacity-80" />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-amber-700 mb-2 flex items-center">
+                    Geração de Variações
+                    <Badge className="ml-2 bg-amber-100 text-amber-600 border-0">Avançado</Badge>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Crie variações profissionais das suas imagens com diversos
+                    fundos e estilos.
+                  </p>
+                  <ul className="text-xs space-y-1 text-gray-500">
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-amber-500" />
+                      <span>Remoção de fundo automática</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-amber-500" />
+                      <span>Novos fundos profissionais</span>
+                    </li>
+                    <li className="flex items-center">
+                      <Check className="h-3 w-3 mr-1 text-amber-500" />
+                      <span>Múltiplos ângulos de produto</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Informações sobre o lançamento */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 space-y-3">
+              <div className="flex items-start">
+                <div className="flex-shrink-0 bg-blue-500/10 p-2 rounded-full">
                   <Lock className="h-5 w-5 text-blue-500" />
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">Recurso Premium</h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <p>O recurso de tradução e aprimoramento de imagens com IA estará disponível em breve!</p>
+                <div className="ml-4">
+                  <h3 className="text-sm font-semibold text-blue-800">Recurso Premium — Em Desenvolvimento</h3>
+                  <p className="mt-1 text-sm text-blue-600">
+                    Esta funcionalidade estará disponível em breve! Estamos colocando os toques finais
+                    na nossa tecnologia de processamento de imagens.
+                  </p>
+                  
+                  <div className="mt-4 relative">
+                    <div className="absolute inset-0 bg-blue-100/50 rounded-md flex items-center justify-center z-10">
+                      <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-0 px-3 py-1 text-xs">
+                        Lançamento em Outubro
+                      </Badge>
+                    </div>
+                    <div className="h-8 w-full bg-gray-100 rounded-md overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-blue-400 to-blue-500 flex items-center justify-center text-white text-xs font-medium"
+                        style={{ width: '85%' }}
+                      >
+                        85% concluído
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="mt-4 text-sm text-gray-600">
+                    Será possível processar até <strong>100 imagens por mês</strong> no plano Premium, 
+                    melhorando significativamente a qualidade das suas fotos de produto e 
+                    aumentando as taxas de conversão.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+                <div className="flex items-start">
+                  <div className="bg-indigo-500/10 p-1.5 rounded-full">
+                    <svg className="h-5 w-5 text-indigo-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M9 10C10.1046 10 11 9.10457 11 8C11 6.89543 10.1046 6 9 6C7.89543 6 7 6.89543 7 8C7 9.10457 7.89543 10 9 10Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M2.67 18.95L7.6 15.64C8.39 15.11 9.53 15.17 10.24 15.78L10.57 16.07C11.35 16.74 12.61 16.74 13.39 16.07L17.55 12.5C18.33 11.83 19.59 11.83 20.37 12.5L22 13.9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-indigo-700">Fotografias Profissionais</h4>
+                    <p className="mt-1 text-xs text-indigo-600">
+                      Transforme fotos amadoras em imagens com qualidade profissional 
+                      usando nossa IA de aprimoramento visual.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                <div className="flex items-start">
+                  <div className="bg-green-500/10 p-1.5 rounded-full">
+                    <svg className="h-5 w-5 text-green-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M8 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M16 2V5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M3.5 9.08984H20.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M15.6947 13.7002H15.7037" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M15.6947 16.7002H15.7037" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M11.9955 13.7002H12.0045" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M11.9955 16.7002H12.0045" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M8.29431 13.7002H8.30329" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M8.29431 16.7002H8.30329" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-green-700">Prepare-se</h4>
+                    <p className="mt-1 text-xs text-green-600">
+                      Cadastre-se na nossa lista de espera para ser notificado 
+                      quando este recurso estiver disponível para o seu plano.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
-            <p className="text-sm text-gray-500">
-              Com esta funcionalidade você poderá traduzir textos em imagens e aprimorar a qualidade visual das suas fotos de produto automaticamente.
-            </p>
           </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+            <Button variant="outline" onClick={() => setIsImageTranslationDialogOpen(false)}>
+              Fechar
+            </Button>
+            <Button variant="default" className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsImageTranslationDialogOpen(false)}>
+              <span className="mr-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17 20.5H7C4 20.5 2 19 2 15.5V8.5C2 5 4 3.5 7 3.5H17C20 3.5 22 5 22 8.5V15.5C22 19 20 20.5 17 20.5Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M17 9L13.87 11.5C12.84 12.32 11.15 12.32 10.12 11.5L7 9" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              Inscrever-se para novidades
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
