@@ -382,17 +382,16 @@ export function TranslationDialog({
         
         const saveData = {
           title: translatedTitle,
-          description: translatedDesc,
-          language: targetLanguage
+          description: translatedDesc
         };
         
         logDetail('7-SAVEDATA-PREPARED', { 
           saveData: {
             title: saveData.title?.substring(0, 30) + '...',
-            descriptionLength: saveData.description?.length,
-            language: saveData.language
+            descriptionLength: saveData.description?.length
           },
-          productId: product.id
+          productId: product.id,
+          targetLanguage
         });
         
         logDetail('8-ONSAVETRANSLATION-CALL', 'Chamando callback de salvamento');
@@ -471,8 +470,7 @@ export function TranslationDialog({
       // Garantir que o idioma de destino seja incluído nos dados salvos
       const saveData = {
         title: data.title,
-        description: data.description,
-        language: targetLanguage // Incluir o idioma de destino explicitamente
+        description: data.description
       };
       
       console.log('TranslationDialog: Dados finais a serem salvos:', saveData);

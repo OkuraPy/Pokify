@@ -362,12 +362,6 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         language: data.language
       }));
       
-      // Incluir todas as propriedades que queremos atualizar explicitamente
-      if (!data.language) {
-        console.warn('[TRADUÇÃO:' + Date.now() + '] [ETAPA 20-LANGUAGE-MISSING] Campo language não definido na tradução, usando valor padrão');
-        data.language = 'en'; // Garantir que sempre tenhamos um valor para language
-      }
-      
       // Verificar se title e description não estão vazios
       if (!data.title || !data.description) {
         console.error('[TRADUÇÃO:' + Date.now() + '] [ETAPA 21-MISSING-DATA]', JSON.stringify({
@@ -380,15 +374,13 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
       // Criar cópia dos dados para evitar referência mutável
       const updateData = {
         title: data.title,
-        description: data.description,
-        language: data.language
+        description: data.description
       };
       
       console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 22-BEFORE-SUPABASE-CALL]', JSON.stringify({
         updateData: {
           title: updateData.title?.substring(0, 30) + '...',
-          descriptionLength: updateData.description?.length || 0,
-          language: updateData.language
+          descriptionLength: updateData.description?.length || 0
         }
       }));
       
@@ -421,15 +413,13 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         const updatedProduct = {
           ...prev,
           title: data.title || prev.title,
-          description: data.description || prev.description,
-          language: data.language
+          description: data.description || prev.description
         };
         
         console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 27-LOCAL-STATE-UPDATED]', JSON.stringify({
           updatedProductId: updatedProduct.id,
           hasTitle: !!updatedProduct.title,
-          hasDescription: !!updatedProduct.description,
-          language: updatedProduct.language
+          hasDescription: !!updatedProduct.description
         }));
         
         return updatedProduct;
