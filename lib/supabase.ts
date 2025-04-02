@@ -889,7 +889,16 @@ export async function generateAIReviews(
     }
     
     // Limitar o número de avaliações (segurança)
-    const reviewCount = Math.min(Math.max(count, 1), 100);
+    const totalReviewCount = Math.min(Math.max(count, 1), 100);
+    
+    // Dividir em lotes se a quantidade for grande
+    // Isso evita erros na API quando solicitamos muitos reviews de uma vez
+    const BATCH_SIZE = 20;
+    const batches = Math.ceil(totalReviewCount / BATCH_SIZE);
+    let totalGeneratedReviews = 0;
+    let allReviewsToInsert: any[] = [];
+    
+    console.log(`Gerando ${totalReviewCount} reviews em ${batches} lotes de até ${BATCH_SIZE}`);
     
     // Mapear idiomas para configurações específicas
     const languageConfig: Record<string, { 
@@ -974,150 +983,155 @@ export async function generateAIReviews(
     
     Mantenha sua resposta apenas neste formato JSON, sem introdução ou conclusão.`;
     
-    const userPrompt = `Gere ${reviewCount} reviews persuasivos em ${config.language} para o seguinte produto:
+    // Processar cada lote
+    for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+      // Calcular a quantidade para este lote
+      const remaining = totalReviewCount - totalGeneratedReviews;
+      const batchCount = Math.min(remaining, BATCH_SIZE);
+      
+      // Se já geramos o suficiente, interromper
+      if (batchCount <= 0) break;
+      
+      console.log(`Gerando lote ${batchIndex + 1}/${batches} com ${batchCount} reviews...`);
+      
+      const userPrompt = `Gere ${batchCount} reviews persuasivos em ${config.language} para o seguinte produto:
+      
+      Título: ${product.title}
+      Descrição: ${product.description}
+      
+      A média geral das avaliações deve ser aproximadamente ${averageRating.toFixed(1)}/5.0. Lembre-se de criar reviews com detalhes específicos que mostrem como o produto beneficia os usuários e supera possíveis objeções.
+      
+      ATENÇÃO: Retorne APENAS JSON válido, nenhum texto adicional ou formatação.`;
+      
+      try {
+        // Fazer a chamada para a OpenAI
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-3.5-turbo-1106',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.8
+        });
+        
+        // Extrair o JSON gerado
+        const generatedContent = completion.choices[0].message.content || '';
+        
+        if (!generatedContent) {
+          console.error(`Lote ${batchIndex + 1}: Sem conteúdo gerado`);
+          continue;
+        }
+        
+        // Tentar extrair o JSON da resposta
+        let jsonContent = generatedContent;
+        
+        // Se o conteúdo tiver blocos de código markdown, extrair apenas o JSON
+        if (generatedContent.includes("```json")) {
+          const jsonMatch = generatedContent.match(/```json\n([\s\S]*?)\n```/);
+          if (jsonMatch && jsonMatch[1]) {
+            jsonContent = jsonMatch[1];
+          }
+        } else if (generatedContent.includes("```")) {
+          const codeMatch = generatedContent.match(/```\n([\s\S]*?)\n```/);
+          if (codeMatch && codeMatch[1]) {
+            jsonContent = codeMatch[1];
+          }
+        }
+        
+        // O modelo pode retornar o JSON em diferentes formatos, tentamos normalizar
+        const parsedResponse = JSON.parse(jsonContent);
+        
+        // O modelo pode retornar um array diretamente ou um objeto com uma propriedade contendo o array
+        let batchReviews: any[] = [];
+        
+        if (Array.isArray(parsedResponse)) {
+          batchReviews = parsedResponse;
+        } else if (parsedResponse.reviews && Array.isArray(parsedResponse.reviews)) {
+          batchReviews = parsedResponse.reviews;
+        } else {
+          // Tentar encontrar qualquer array no objeto retornado
+          const possibleArrays = Object.values(parsedResponse).filter(value => Array.isArray(value));
+          if (possibleArrays.length > 0) {
+            // Usar o primeiro array encontrado
+            batchReviews = possibleArrays[0] as any[];
+          }
+        }
+        
+        if (batchReviews.length === 0) {
+          console.error(`Lote ${batchIndex + 1}: Formato de resposta inválido`);
+          continue;
+        }
+        
+        // Processar e normalizar os reviews
+        const processedDate = new Date().toISOString();
+        const processReview = (review: any) => {
+          return {
+            product_id: productId,
+            author: review.author || 'Cliente Anônimo',
+            rating: parseInt(review.rating) || 5,
+            content: review.content || '',
+            date: typeof review.date === 'string' 
+              ? review.date 
+              : (review.date instanceof Date 
+                ? review.date.toISOString() 
+                : new Date().toISOString()),
+            images: [],
+            is_selected: true,
+            is_published: true,
+            created_at: new Date().toISOString()
+          };
+        };
+        
+        const normalizedReviews = batchReviews.map(processReview);
+        allReviewsToInsert = [...allReviewsToInsert, ...normalizedReviews];
+        totalGeneratedReviews += normalizedReviews.length;
+        
+        console.log(`Lote ${batchIndex + 1}: Gerados ${normalizedReviews.length} reviews com sucesso`);
+        
+        // Adicionar um pequeno atraso para evitar rate limiting
+        if (batchIndex < batches - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (batchError) {
+        console.error(`Erro no lote ${batchIndex + 1}:`, batchError);
+        // Continuar para o próximo lote
+      }
+    }
     
-    Título: ${product.title}
-    Descrição: ${product.description}
+    // Se não conseguimos gerar nenhum review
+    if (allReviewsToInsert.length === 0) {
+      return {
+        success: false,
+        count: 0,
+        error: 'Não foi possível gerar nenhuma avaliação após tentativas em lotes'
+      };
+    }
     
-    A média geral das avaliações deve ser aproximadamente ${averageRating.toFixed(1)}/5.0. Lembre-se de criar reviews com detalhes específicos que mostrem como o produto beneficia os usuários e supera possíveis objeções.
+    // Inserir todas as avaliações no banco de dados
+    const { error: insertError } = await supabase
+      .from('reviews')
+      .insert(allReviewsToInsert);
+      
+    if (insertError) {
+      console.error('Erro ao inserir avaliações:', insertError);
+      return { 
+        success: false, 
+        count: 0,
+        error: insertError.message
+      };
+    }
     
-    ATENÇÃO: Retorne APENAS JSON válido, nenhum texto adicional ou formatação.`;
-    
-    // Fazer a chamada para a OpenAI
-    console.log('Gerando avaliações com OpenAI...');
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo-1106',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      temperature: 0.8
+    // Atualizar o contador de avaliações do produto
+    await updateProduct(productId, {
+      reviews_count: (product.reviews_count || 0) + allReviewsToInsert.length,
+      average_rating: averageRating
     });
     
-    // Extrair o JSON gerado
-    const generatedContent = completion.choices[0].message.content || '';
+    return { 
+      success: true, 
+      count: allReviewsToInsert.length 
+    };
     
-    if (!generatedContent) {
-      return {
-        success: false,
-        count: 0,
-        error: 'Não foi possível gerar as avaliações'
-      };
-    }
-    
-    // Parsear o JSON retornado
-    try {
-      // Tentar extrair o JSON da resposta, mesmo que esteja dentro de um bloco de código markdown, extrair apenas o JSON
-      let jsonContent = generatedContent;
-      
-      // Se o conteúdo tiver blocos de código markdown, extrair apenas o JSON
-      if (generatedContent.includes("```json")) {
-        const jsonMatch = generatedContent.match(/```json\n([\s\S]*?)\n```/);
-        if (jsonMatch && jsonMatch[1]) {
-          jsonContent = jsonMatch[1];
-        }
-      } else if (generatedContent.includes("```")) {
-        const codeMatch = generatedContent.match(/```\n([\s\S]*?)\n```/);
-        if (codeMatch && codeMatch[1]) {
-          jsonContent = codeMatch[1];
-        }
-      }
-      
-      // O modelo pode retornar o JSON em diferentes formatos, tentamos normalizar
-      const parsedResponse = JSON.parse(jsonContent);
-      
-      // O modelo pode retornar um array diretamente ou um objeto com uma propriedade contendo o array
-      let reviews: any[] = [];
-      
-      if (Array.isArray(parsedResponse)) {
-        reviews = parsedResponse;
-      } else if (parsedResponse.reviews && Array.isArray(parsedResponse.reviews)) {
-        reviews = parsedResponse.reviews;
-      } else {
-        // Tentar encontrar qualquer array no objeto retornado
-        const possibleArrays = Object.values(parsedResponse).filter(value => Array.isArray(value));
-        if (possibleArrays.length > 0) {
-          // Usar o primeiro array encontrado
-          reviews = possibleArrays[0] as any[];
-        }
-      }
-      
-      if (reviews.length === 0) {
-        return {
-          success: false,
-          count: 0,
-          error: 'Formato de resposta inválido'
-        };
-      }
-      
-      // Processar e normalizar os reviews
-      const processedDate = new Date().toISOString();
-      const processReview = (review: any) => {
-        const processedReview = {
-          productId,
-          author: review.author || 'Cliente Anônimo',
-          rating: parseInt(review.rating) || 5,
-          content: review.content || '',
-          date: typeof review.date === 'string' 
-            ? review.date 
-            : (review.date instanceof Date 
-              ? review.date.toISOString() 
-              : new Date().toISOString()),
-          is_selected: true,
-          is_published: true,
-          created_at: new Date().toISOString()
-        };
-        
-        return processedReview;
-      };
-      
-      const normalizedReviews = reviews.map(processReview);
-      
-      // Inserir avaliações no banco de dados
-      const reviewsToInsert = normalizedReviews.map(review => ({
-        product_id: productId,
-        author: review.author,
-        rating: review.rating,
-        content: review.content,
-        date: review.date,
-        images: [],
-        is_selected: true,
-        is_published: true,
-        created_at: new Date().toISOString()
-      }));
-      
-      const { error: insertError } = await supabase
-        .from('reviews')
-        .insert(reviewsToInsert);
-        
-      if (insertError) {
-        console.error('Erro ao inserir avaliações:', insertError);
-        return { 
-          success: false, 
-          count: 0,
-          error: insertError.message
-        };
-      }
-      
-      // Atualizar o contador de avaliações do produto
-      await updateProduct(productId, {
-        reviews_count: (product.reviews_count || 0) + reviewsToInsert.length,
-        average_rating: averageRating
-      });
-      
-      return { 
-        success: true, 
-        count: reviewsToInsert.length 
-      };
-      
-    } catch (parseError) {
-      console.error('Erro ao processar avaliações geradas:', parseError);
-      return {
-        success: false,
-        count: 0,
-        error: parseError instanceof Error ? parseError.message : 'Erro ao processar resposta'
-      };
-    }
   } catch (error) {
     console.error('Erro ao gerar avaliações:', error);
     return {

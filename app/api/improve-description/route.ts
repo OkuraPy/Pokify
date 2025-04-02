@@ -73,77 +73,120 @@ export async function POST(request: NextRequest) {
     let systemPrompt, userPrompt;
     
     if (isProCopyMode) {
-      // Modo Pro Copy - usar o prompt mais avançado, similar ao da extração
-      systemPrompt = `Você é um copywriter profissional de e-commerce especializado em criar descrições de produtos de alta conversão.
+      // Modo Pro Copy - usar o prompt mais avançado e melhorado para formatação HTML elegante
+      systemPrompt = `Você é um copywriter profissional e designer de conteúdo para e-commerce especializado em criar descrições de produtos de alta conversão com HTML elegante.
 
-Como copywriter especialista, sua tarefa é criar uma copy profissional.
+Como especialista em copywriting e design de conteúdo, sua tarefa é criar uma copy profissional com formatação HTML perfeita.
 
-CRIAR UMA COPY PROFISSIONAL
-Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
-- ATENÇÃO: Gancho poderoso com título em <h2>
-- INTERESSE: Solução e benefícios principais
-- DESEJO: Detalhes do produto e prova social
-- AÇÃO: Chamada à ação clara e persuasiva
+DIRETRIZES DE FORMATAÇÃO HTML:
+- Use tags HTML semânticas e limpas (<h2>, <h3>, <p>, <ul>, <li>)
+- Aplique <strong> apenas em elementos-chave (benefícios, características cruciais, números)
+- Nunca em frases inteiras ou parágrafos
+- Crie espaçamento adequado sem excessos entre elementos
+- Adicione classes para elementos importantes:
+  * <h2 class="product-title">
+  * <h3 class="benefit-heading">
+  * <ul class="features-list">
+  * <div class="cta-container">
+- Mantenha um layout clean com hierarquia visual clara
+- Sem repetições de tags ou espaçamentos desnecessários
+- IMPORTANTE: NÃO inclua marcações de código como \`\`\`html ou \`\`\` no início ou fim do conteúdo
 
-A descrição deve:
-- Ter formato HTML completo (h2, h3, p, ul, li)
-- Ser extensa (800+ palavras) e muito detalhada
-- Ter tom profissional e persuasivo
-- Terminar com seção de "AÇÃO" clara`;
+ESTRUTURA AIDA PERFEITA:
+- ATENÇÃO: Título impactante em <h2> e gancho poderoso
+- INTERESSE: Benefícios em seções com <h3> e ícones descritivos (usando HTML semântico)
+- DESEJO: Características em listas organizadas e provas sociais
+- AÇÃO: Chamada clara com senso de urgência
+
+AVANCADO: Adicione micro-elementos de persuasão:
+- Pequenos destaques para números
+- Frases curtas de impacto
+- Estrutura de parágrafos variados (curto → médio → curto)
+- Destaques para garantias e benefícios principais`;
   
-      userPrompt = `Reescreva completamente a descrição deste produto criando uma copy profissional.
+      userPrompt = `Reescreva completamente a descrição deste produto criando uma copy profissional com HTML perfeito.
 
 Título do produto: ${title}
 
 Descrição atual: 
 ${description}
 
-CRIE uma descrição completa usando a estrutura AIDA:
+INSTRUÇÕES PARA FORMATAÇÃO HTML PERFEITA:
+
+1. ESTRUTURA GERAL:
+   - Evite espaçamentos excessivos (no máximo uma linha entre elementos)
+   - Mantenha consistência no estilo e indentação
+   - Use no máximo 3 níveis hierárquicos (h2 → h3 → p/lists)
+   - NÃO inclua \`\`\`html ou \`\`\` no início ou fim do conteúdo
+
+2. NEGRITO (<strong>):
+   - Use apenas para destacar palavras-chave estratégicas
+   - Nunca coloque parágrafos inteiros em negrito
+   - Destaque números, benefícios chave e características diferenciais
+   - Exemplo: "Experimente <strong>30 dias</strong> de satisfação garantida"
+
+3. LISTAS & ESPAÇAMENTO:
+   - Use <ul class="features-list"> para características
+   - Crie pequenos blocos de conteúdo com margens adequadas
+   - Use <div class="benefit-block"> para agrupar benefícios relacionados
+   - Mantenha consistência entre espaçamentos de elementos similares
+
+4. CALL-TO-ACTION:
+   - Coloque em <div class="cta-section"> com destaque especial
+   - Uso estratégico de <strong> apenas nas partes de ação
+   - Adicione senso de urgência com formatação apropriada
+
+CRIE a descrição seguindo esta estrutura AIDA impecável:
 
    A) ATENÇÃO:
-      - Título chamativo em <h2>
-      - Gancho poderoso que gere curiosidade
-      - Problema que o cliente enfrenta
+      - Título chamativo único em <h2 class="main-title">
+      - Subtítulo em <p class="subtitle"> que complementa o título
+      - Problema que o cliente enfrenta apresentado claramente
 
    B) INTERESSE:
-      - Solução oferecida pelo produto
-      - 5+ benefícios detalhados
-      - Subtítulos em <h3>
+      - 3-5 benefícios em seções com títulos <h3 class="benefit-title">
+      - Cada benefício com explicação persuasiva (max 2 parágrafos)
+      - Destaque de números e resultados com <strong>
 
    C) DESEJO:
-      - Características técnicas completas
-      - Listas organizadas <ul><li>
-      - Prova social e exclusividade
-      - Resposta a possíveis objeções
+      - Lista organizada de características técnicas
+      - Seção de "Por que escolher" com diferenciais
+      - Prova social ou testemunho embutido (se aplicável)
 
    D) AÇÃO:
-      - Chamada à ação clara "Adquira agora"
-      - Urgência e escassez
-      - Garantia de satisfação
+      - Chamada direta e irresistível
+      - Eliminação de objeções finais
+      - Garantia ou política de devolução como segurança
 
-IMPORTANTE:
-- Sua descrição deve ter pelo menos 800 palavras
-- Use HTML completo com h2, h3, p, ul, li, strong, em
-- Seja MUITO detalhado e persuasivo
-- Mantenha qualquer informação técnica importante que estava na descrição original
-- Mencione o nome do produto várias vezes para SEO`;
+Crie uma copy que seja extensa (800+ palavras), perfeita em HTML, extremamente persuasiva, e esteticamente elegante na formatação.`;
     } else {
-      // Modo padrão - usar o prompt original mais simples
-      systemPrompt = `Você é um copywriter especializado em produtos físicos.`;
+      // Modo padrão - usar o prompt aprimorado para formatação HTML mais elegante
+      systemPrompt = `Você é um copywriter especializado em produtos físicos e formatação HTML elegante.
 
-      userPrompt = `Você é um copywriter especializado em produtos físicos e quero criar uma copy de alta conversão para um ${title}.
-Aqui está a descrição breve do produto: ${description}
+IMPORTANTE: NÃO inclua marcações de código como \`\`\`html ou \`\`\` no início ou fim do conteúdo.`;
 
-Gere uma copy validada utilizando a estrutura AIDA (Atenção, Interesse, Desejo, Ação), com:
+      userPrompt = `Você é um copywriter especializado em produtos físicos e quero criar uma copy de alta conversão com HTML bem formatado para um ${title}.
 
-Um gancho forte na introdução para capturar a atenção.
-Uma promessa persuasiva clara e impactante.
-Benefícios destacados de forma emocional e lógica.
-Provas sociais ou diferenciais que gerem desejo.
-Uma chamada para ação direta e irresistível com urgência e escassez.
-A copy deve ser persuasiva, direta e voltada para conversão, utilizando gatilhos mentais como autoridade, reciprocidade e prova social.
+Aqui está a descrição atual do produto: ${description}
 
-Agora, gere a copy!`;
+Gere uma copy validada utilizando a estrutura AIDA (Atenção, Interesse, Desejo, Ação), com formatação HTML elegante:
+
+1. FORMATAÇÃO HTML:
+   - Use <h2> e <h3> para títulos e subtítulos
+   - Parágrafos em <p> com espaçamento adequado (sem excesso)
+   - Listas em <ul><li> para características
+   - Use <strong> apenas para destacar palavras-chave importantes, nunca parágrafos inteiros
+   - Mantenha consistência visual com espaçamento adequado
+   - NÃO inclua \`\`\`html ou \`\`\` no início ou fim do conteúdo
+
+2. CONTEÚDO PERSUASIVO:
+   - Um gancho forte na introdução para capturar a atenção
+   - Uma promessa persuasiva clara e impactante
+   - Benefícios destacados de forma emocional e lógica
+   - Provas sociais ou diferenciais que gerem desejo
+   - Uma chamada para ação direta e irresistível
+
+A copy deve ter formatação HTML limpa, usar negrito apenas nas palavras estratégicas, e estrutura visualmente agradável sem espaçamentos excessivos.`;
     }
 
     console.log('Enviando prompt para OpenAI', isProCopyMode ? '(modo pro_copy)' : '(modo padrão)');
@@ -166,7 +209,7 @@ Agora, gere a copy!`;
         max_tokens: isProCopyMode ? 4000 : 2000
       });
 
-      const improvedDescription = completion.choices[0]?.message?.content || '';
+      let improvedDescription = completion.choices[0]?.message?.content || '';
 
       if (!improvedDescription) {
         console.error('OpenAI não retornou conteúdo válido');
@@ -175,6 +218,9 @@ Agora, gere a copy!`;
           { status: 500 }
         );
       }
+      
+      // Pós-processamento do HTML para garantir formatação perfeita
+      improvedDescription = processHtml(improvedDescription);
       
       // Verificar a qualidade da descrição gerada
       const descriptionQuality = analyzeDescriptionQuality(improvedDescription);
@@ -224,6 +270,140 @@ Agora, gere a copy!`;
 }
 
 /**
+ * Processa o HTML para garantir formatação excelente
+ */
+function processHtml(html: string): string {
+  let processed = html;
+  
+  // Remover marcações Markdown de blocos de código
+  processed = processed.replace(/```html/g, '');
+  processed = processed.replace(/```(\w+)?/g, '');
+  processed = processed.replace(/```[\s\S]+?```/g, '');
+  
+  // Remover especificamente marcações no início do texto
+  processed = processed.replace(/^```html\s*/, '');
+  processed = processed.replace(/^```(\w+)?\s*/, '');
+  processed = processed.replace(/\s*```\s*$/, '');
+  
+  // Remover caracteres de citação ou backticks soltos
+  processed = processed.replace(/^['"`]{3,}/, '');
+  processed = processed.replace(/['"`]{3,}$/, '');
+  
+  // Remover espaços em branco excessivos entre tags
+  processed = processed.replace(/>\s{2,}</g, '>\n<');
+  
+  // Remover múltiplas quebras de linha
+  processed = processed.replace(/(\r\n|\n){3,}/g, '\n\n');
+  
+  // Adicionar classes para elementos principais se não existirem
+  if (!processed.includes('class="main-title"') && !processed.includes('class="product-title"')) {
+    processed = processed.replace(/<h2>/i, '<h2 class="product-title">');
+  }
+  
+  // Adicionar classes para listas se não existirem
+  if (!processed.includes('class="features-list"')) {
+    processed = processed.replace(/<ul>/i, '<ul class="features-list">');
+  }
+  
+  // Adicionar classes para chamaodas para ação se identificadas
+  const ctaMatch = processed.match(/<p>([^<]*?\b(compre|adquira|garanta|obtenha|comprar)\b[^<]*?)<\/p>/i);
+  if (ctaMatch && !processed.includes('class="cta"')) {
+    processed = processed.replace(
+      ctaMatch[0], 
+      `<p class="cta">${ctaMatch[1]}</p>`
+    );
+  }
+  
+  // Adicionar uma div de container para CTA no final se tiver "compre", "adquira", etc
+  if (!processed.includes('class="cta-container"') && 
+      /\b(compre|adquira|garanta|obtenha|comprar)\b/i.test(processed.slice(-200))) {
+    
+    // Encontrar o último parágrafo que tenha CTA
+    const paragraphs = processed.split('</p>');
+    let lastIndex = paragraphs.length - 1;
+    
+    while (lastIndex >= 0) {
+      if (/\b(compre|adquira|garanta|obtenha|comprar)\b/i.test(paragraphs[lastIndex])) {
+        break;
+      }
+      lastIndex--;
+    }
+    
+    if (lastIndex >= 0) {
+      const beforeCta = paragraphs.slice(0, lastIndex).join('</p>') + '</p>';
+      const ctaParagraph = paragraphs[lastIndex] + '</p>';
+      const afterCta = paragraphs.slice(lastIndex + 1).join('</p>');
+      
+      processed = `${beforeCta}<div class="cta-container">${ctaParagraph}</div>${afterCta}`;
+    }
+  }
+  
+  // Corrigir tags mal formadas
+  processed = processed.replace(/<\/strong<\/p>/g, '</strong></p>');
+  processed = processed.replace(/<p><strong>(.*?)<\/p>/g, '<p><strong>$1</strong></p>');
+  
+  // Evitar negrito em parágrafos completos
+  processed = processed.replace(/<p><strong>([^<]{60,})<\/strong><\/p>/g, '<p>$1</p>');
+  
+  // Adicionar estilos customizados para melhorar a apresentação
+  const customStyles = `
+<style>
+  .product-title {
+    font-size: 1.75rem;
+    color: #333;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  h3 {
+    font-size: 1.25rem;
+    color: #444;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .features-list {
+    padding-left: 1.25rem;
+    margin: 1rem 0;
+  }
+  .features-list li {
+    margin-bottom: 0.5rem;
+    position: relative;
+  }
+  .cta-container {
+    background-color: #f8f9fa;
+    border-left: 4px solid #4a90e2;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    border-radius: 4px;
+  }
+  .cta {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+  }
+  strong {
+    color: #222;
+  }
+</style>
+`;
+  
+  // Adicionar os estilos ao início, mas após qualquer tag doctype ou html existente
+  if (!processed.includes('<style>')) {
+    // Se já começar com uma tag html ou doctype, inserir após
+    if (processed.match(/^<!DOCTYPE|^<html/i)) {
+      const match = processed.match(/^(<!DOCTYPE[^>]*>|<html[^>]*>)/i);
+      if (match) {
+        const openingTag = match[0];
+        processed = processed.replace(openingTag, openingTag + customStyles);
+      }
+    } else {
+      processed = customStyles + processed;
+    }
+  }
+  
+  return processed;
+}
+
+/**
  * Analisa a qualidade da descrição gerada
  */
 function analyzeDescriptionQuality(description: string) {
@@ -248,6 +428,16 @@ function analyzeDescriptionQuality(description: string) {
   // Verificar se contém chamada para ação
   const hasCTA = /compre|adquira|garanta|peça agora|comprar|adicione ao carrinho/i.test(description);
   
+  // Verificar se contém classes CSS
+  const hasCustomClasses = /class=["'][^"']+["']/i.test(description);
+  
+  // Verificar se usa negrito de forma adequada
+  const boldUsage = description.match(/<strong>[^<]+<\/strong>/g);
+  const appropriateBold = boldUsage ? 
+    boldUsage.every(bold => bold.length < 80) && 
+    boldUsage.length < description.length / 100 : 
+    false;
+  
   return {
     wordCount,
     hasHtmlTags,
@@ -255,6 +445,9 @@ function analyzeDescriptionQuality(description: string) {
     hasHeadings,
     hasEmphasis,
     hasCTA,
-    quality: wordCount > 800 ? 'excelente' : wordCount > 400 ? 'boa' : 'básica'
+    hasCustomClasses,
+    appropriateBold,
+    quality: wordCount > 800 ? 'excelente' : wordCount > 400 ? 'boa' : 'básica',
+    formattingQuality: (hasHtmlTags && hasHeadings && hasCustomClasses && appropriateBold) ? 'excelente' : 'básica'
   };
 } 
