@@ -198,9 +198,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   <>
                     <span>TrendHunter IA</span>
                     <div className="absolute right-2 flex items-center">
-                      <Badge className="text-xs bg-amber-100 text-amber-600 border-0 p-0 h-4 px-1">
-                        EM BREVE
-                      </Badge>
+                      <Lock className="h-3.5 w-3.5 text-amber-500" />
                     </div>
                   </>
                 )}
