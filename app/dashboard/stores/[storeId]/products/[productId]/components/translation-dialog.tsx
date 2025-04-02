@@ -88,6 +88,11 @@ export function TranslationDialog({
   const [translationStatus, setTranslationStatus] = useState<'idle' | 'preparing' | 'translating' | 'saving' | 'completed' | 'error'>('idle');
   const [shouldReloadAfterClose, setShouldReloadAfterClose] = useState(false);
 
+  // Função auxiliar para logs detalhados
+  const logDetail = (step: string, data?: any) => {
+    console.log(`[TRADUÇÃO:${Date.now()}] [ETAPA ${step}] ${data ? JSON.stringify(data) : ''}`);
+  };
+
   // Detecta o idioma do texto baseado nas palavras comuns
   const detectLanguage = (text: string): string => {
     if (!text) return 'pt'; // Padrão se não houver texto
@@ -228,16 +233,38 @@ export function TranslationDialog({
     }
   }, [isOpen]);
 
-  // Adicionar um useEffect para recarregar a página quando o diálogo for fechado após tradução bem-sucedida
+  // Modificar useEffect para atualização da página com logs detalhados
   useEffect(() => {
+    logDetail('1-DIALOG-STATE', { isOpen, shouldReloadAfterClose });
+    
     if (!isOpen && shouldReloadAfterClose) {
-      console.log('TRADUÇÃO: Diálogo fechado após tradução bem-sucedida, recarregando página');
+      logDetail('2-RELOAD-TRIGGER', 'Diálogo fechado após tradução bem-sucedida, preparando para recarregar');
+      
+      // Evitar problemas de corrida definindo shouldReloadAfterClose para false antes de recarregar
       setShouldReloadAfterClose(false);
-      window.location.reload();
+      
+      // Adiar o reload para garantir que o estado seja atualizado
+      setTimeout(() => {
+        logDetail('3-RELOAD-EXECUTE', 'Executando recarregamento da página');
+        try {
+          window.location.reload();
+          logDetail('4-RELOAD-COMPLETE', 'Comando de recarregamento enviado');
+        } catch (reloadError) {
+          console.error('Erro ao recarregar página:', reloadError);
+          logDetail('4-RELOAD-ERROR', { error: reloadError?.toString() });
+        }
+      }, 100);
     }
   }, [isOpen, shouldReloadAfterClose]);
 
   const handleTranslate = async () => {
+    logDetail('5-TRANSLATE-START', {
+      productId: product.id, 
+      sourceLanguage: detectedSourceLanguage,
+      targetLanguage,
+      timestamp: new Date().toISOString()
+    });
+    
     console.log('===== INICIANDO PROCESSO DE TRADUÇÃO =====');
     console.log('Dados do produto:', {
       id: product.id,
@@ -345,37 +372,68 @@ export function TranslationDialog({
         targetLanguage
       });
       
-      // Salvamento simplificado
+      // Modificar a parte de salvamento para adicionar mais logs
       try {
-        console.log('TRADUÇÃO: Salvando dados no banco de dados');
+        logDetail('6-SAVING-START', {
+          translatedTitleLength: translatedTitle?.length,
+          translatedDescLength: translatedDesc?.length,
+          targetLanguage
+        });
+        
         const saveData = {
           title: translatedTitle,
           description: translatedDesc,
           language: targetLanguage
         };
         
-        await onSaveTranslation(saveData);
-        console.log('TRADUÇÃO: Dados salvos com sucesso');
+        logDetail('7-SAVEDATA-PREPARED', { 
+          saveData: {
+            title: saveData.title?.substring(0, 30) + '...',
+            descriptionLength: saveData.description?.length,
+            language: saveData.language
+          },
+          productId: product.id
+        });
         
-        // Processo de fechamento simplificado
+        logDetail('8-ONSAVETRANSLATION-CALL', 'Chamando callback de salvamento');
+        await onSaveTranslation(saveData);
+        logDetail('9-ONSAVETRANSLATION-SUCCESS', 'Callback de salvamento executado com sucesso');
+        
         clearInterval(progressInterval);
         setTranslationProgress(100);
         setTranslationStatus('completed');
         
-        console.log('TRADUÇÃO: Configurando flag para recarregar após fechamento');
+        logDetail('10-SET-RELOAD-FLAG', 'Configurando flag para recarregar após fechamento');
         setShouldReloadAfterClose(true);
         
         toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
         
-        // Fechar o diálogo após um curto intervalo
+        // Adicionar mais logs e ajustar o fechamento do diálogo
+        logDetail('11-SCHEDULING-CLOSE', { closeDelay: 1500 });
         setTimeout(() => {
-          console.log('TRADUÇÃO: Fechando diálogo...');
-          onClose();
+          logDetail('12-EXECUTING-CLOSE', 'Fechando diálogo...');
+          try {
+            onClose();
+            logDetail('13-CLOSE-EXECUTED', 'Função onClose chamada com sucesso');
+          } catch (closeError) {
+            console.error('Erro ao fechar diálogo:', closeError);
+            logDetail('13-CLOSE-ERROR', { error: closeError?.toString() });
+            
+            // Tentar forçar recarregamento se houver erro no fechamento
+            logDetail('14-FORCE-RELOAD', 'Forçando recarregamento após erro de fechamento');
+            window.location.reload();
+          }
         }, 1500);
         
       } catch (saveError) {
         console.error('TRADUÇÃO: Erro ao salvar tradução:', saveError);
-        throw new Error('Falha ao salvar a tradução no banco de dados');
+        logDetail('9-ONSAVETRANSLATION-ERROR', { 
+          error: saveError?.toString(),
+          stack: saveError instanceof Error ? saveError.stack : 'Sem stack disponível',
+          productId: product.id,
+          targetLanguage
+        });
+        throw new Error('Falha ao salvar a tradução no banco de dados: ' + (saveError instanceof Error ? saveError.message : 'Erro desconhecido'));
       }
       
     } catch (error) {
@@ -516,11 +574,14 @@ export function TranslationDialog({
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
+        logDetail('15-DIALOG-OPENCHANGE', { currentOpen: isOpen, newOpen: open, isTranslating });
+        
         // Permitir o fechamento apenas se não estiver traduzindo
         if (!isTranslating) {
+          logDetail('16-DIALOG-CLOSE-ALLOWED', 'Fechamento permitido, chamando onClose');
           onClose();
         } else {
-          console.log('TRADUÇÃO: Tentativa de fechar diálogo durante tradução ignorada');
+          logDetail('16-DIALOG-CLOSE-BLOCKED', 'Tentativa de fechar diálogo durante tradução ignorada');
         }
       }}
     >

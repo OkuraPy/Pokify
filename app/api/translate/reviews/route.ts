@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
 // Constante para definir o tamanho máximo do lote
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 5;
+const MAX_RETRIES = 2;
+const MAX_REVIEWS_TOTAL = 300;
 
 export async function POST(request: Request) {
   try {
@@ -29,15 +31,20 @@ export async function POST(request: Request) {
       );
     }
     
-    console.log(`Iniciando tradução de ${reviews.length} reviews para ${targetLanguage}`);
+    // Limitar o número máximo de reviews que serão processados
+    const reviewsToProcess = reviews.slice(0, MAX_REVIEWS_TOTAL);
+    
+    console.log(`Iniciando tradução de ${reviewsToProcess.length} reviews para ${targetLanguage} (limitados de ${reviews.length} originais)`);
     
     // Dividir em lotes se tivermos muitos reviews
-    const totalReviews = reviews.length;
+    const totalReviews = reviewsToProcess.length;
     const batches = Math.ceil(totalReviews / BATCH_SIZE);
     console.log(`Processando em ${batches} lotes de até ${BATCH_SIZE} reviews cada`);
     
     // Array para armazenar todos os resultados
     const allTranslations = [];
+    // Array para rastrear estatísticas
+    const statsPerBatch = [];
 
     // Configuração dos prompts
     const systemPrompt = `Você é um tradutor profissional especializado em avaliações de produtos. 
@@ -46,20 +53,18 @@ Preserve qualquer menção específica a características do produto, experiênc
 
 IMPORTANTE: Responda SEMPRE com um objeto JSON válido no formato exato especificado, sem texto adicional.`;
 
-    // Processar reviews em lotes
-    for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
-      console.log(`Processando lote ${batchIndex + 1} de ${batches}`);
+    // Função para tentar traduzir um review com retries
+    const translateReviewWithRetry = async (review: any, batchIndex: number, reviewIndex: number) => {
+      const reviewInfo = `[Lote ${batchIndex + 1}/${batches}, Review ${reviewIndex + 1}/${reviewsToProcess.length}] ID: ${review.id}`;
+      console.log(`Iniciando tradução para ${reviewInfo}`);
       
-      // Obter o lote atual
-      const startIndex = batchIndex * BATCH_SIZE;
-      const endIndex = Math.min(startIndex + BATCH_SIZE, totalReviews);
-      const currentBatch = reviews.slice(startIndex, endIndex);
-      
-      // Processar cada review no lote atual
-      const batchPromises = currentBatch.map(async (review: any) => {
-        console.log(`Traduzindo review ${review.id}`);
-        
-        const userPrompt = `Traduza a seguinte avaliação de produto para ${targetLanguage}:
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+          // Após a primeira tentativa, adicionar instruções específicas para o retry
+          const retryPrompt = attempt > 0 ? 
+            `\nEsta é uma nova tentativa de tradução. Por favor, certifique-se de retornar APENAS o objeto JSON válido com os campos 'id' e 'translatedContent'.` : '';
+            
+          const userPrompt = `Traduza a seguinte avaliação de produto para ${targetLanguage}:
 
 ID: ${review.id}
 AUTOR: ${review.author}
@@ -73,11 +78,12 @@ Retorne APENAS um objeto JSON válido no formato:
   "translatedContent": "texto da avaliação traduzida completa"
 }
 
-NÃO inclua nenhum texto explicativo, comentários, ou aspas triplas. Retorne APENAS o objeto JSON.`;
+NÃO inclua nenhum texto explicativo, comentários, ou aspas triplas. Retorne APENAS o objeto JSON.${retryPrompt}`;
 
-        try {
+          console.log(`${reviewInfo}: Tentativa ${attempt + 1} de ${MAX_RETRIES}`);
+          
           const completion = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: "gpt-3.5-turbo",
             messages: [
               {
                 role: "system",
@@ -86,7 +92,7 @@ NÃO inclua nenhum texto explicativo, comentários, ou aspas triplas. Retorne AP
               { role: "user", content: userPrompt }
             ],
             temperature: 0.3,
-            max_tokens: 2000,
+            max_tokens: 1500,
             response_format: { type: "json_object" }
           });
 
@@ -99,53 +105,120 @@ NÃO inclua nenhum texto explicativo, comentários, ou aspas triplas. Retorne AP
             const translatedContent = JSON.parse(jsonContent);
             
             if (!translatedContent.id || !translatedContent.translatedContent) {
-              console.error(`Review ${review.id}: formato de resposta inválido`, responseContent);
+              console.error(`${reviewInfo}: Formato de resposta inválido na tentativa ${attempt + 1}`, responseContent);
+              
+              if (attempt < MAX_RETRIES - 1) continue;
+              
               throw new Error('Formato de resposta inválido');
             }
             
-            console.log(`Review ${review.id} traduzido com sucesso`);
-            return translatedContent;
+            console.log(`${reviewInfo}: Tradução bem-sucedida na tentativa ${attempt + 1}`);
+            return {
+              id: review.id,
+              translatedContent: translatedContent.translatedContent,
+              success: true
+            };
           } catch (parseError) {
-            console.error(`Erro ao parsear resposta para review ${review.id}:`, parseError, responseContent);
+            console.error(`${reviewInfo}: Erro ao parsear resposta na tentativa ${attempt + 1}:`, parseError, responseContent.substring(0, 100));
+            
+            if (attempt < MAX_RETRIES - 1) continue;
+            
             return {
               id: review.id,
               error: 'Falha ao processar tradução',
-              rawResponse: responseContent.substring(0, 100)
+              rawResponse: responseContent.substring(0, 100),
+              success: false
             };
           }
-        } catch (error) {
-          console.error(`Erro ao traduzir review ${review.id}:`, error);
+        } catch (apiError) {
+          console.error(`${reviewInfo}: Erro na API na tentativa ${attempt + 1}:`, apiError);
+          
+          if (attempt < MAX_RETRIES - 1) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            continue;
+          }
+          
           return {
             id: review.id,
-            error: 'Falha na tradução'
+            error: 'Falha na tradução após múltiplas tentativas',
+            success: false
           };
         }
-      });
-
-      // Aguardar o processamento do lote atual
-      const batchResults = await Promise.all(batchPromises);
-      allTranslations.push(...batchResults);
+      }
       
-      // Adicionar um pequeno atraso entre os lotes para evitar limitações de taxa da API
+      return {
+        id: review.id,
+        error: 'Falha em todas as tentativas de tradução',
+        success: false
+      };
+    };
+
+    // Processar reviews em lotes
+    for (let batchIndex = 0; batchIndex < batches; batchIndex++) {
+      console.log(`Processando lote ${batchIndex + 1} de ${batches}`);
+      
+      const startIndex = batchIndex * BATCH_SIZE;
+      const endIndex = Math.min(startIndex + BATCH_SIZE, totalReviews);
+      const currentBatch = reviewsToProcess.slice(startIndex, endIndex);
+      
+      try {
+        const batchPromises = currentBatch.map((review, reviewIndex) => 
+          translateReviewWithRetry(review, batchIndex, startIndex + reviewIndex)
+        );
+
+        const batchResults = await Promise.all(batchPromises);
+        
+        const successCount = batchResults.filter(r => r.success).length;
+        const errorCount = batchResults.filter(r => !r.success).length;
+        
+        console.log(`Lote ${batchIndex + 1}: ${successCount} traduções bem-sucedidas, ${errorCount} falhas`);
+        statsPerBatch.push({ success: successCount, error: errorCount });
+        
+        allTranslations.push(...batchResults);
+      } catch (batchError) {
+        console.error(`Erro ao processar lote ${batchIndex + 1}:`, batchError);
+        statsPerBatch.push({ success: 0, error: currentBatch.length });
+        
+        allTranslations.push(...currentBatch.map(review => ({
+          id: review.id,
+          error: 'Falha no processamento do lote',
+          success: false
+        })));
+      }
+      
       if (batchIndex < batches - 1) {
-        console.log('Aguardando 1 segundo antes do próximo lote...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const delayMs = 2000;
+        console.log(`Aguardando ${delayMs/1000} segundos antes do próximo lote...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
     
-    // Verificar resultados
-    const successCount = allTranslations.filter(t => !t.error).length;
-    const errorCount = allTranslations.filter(t => t.error).length;
+    const successCount = allTranslations.filter(t => t.success).length;
+    const errorCount = allTranslations.filter(t => !t.success).length;
     
     console.log(`Traduções concluídas: ${successCount} com sucesso, ${errorCount} com erros de ${allTranslations.length} total`);
+    
+    if (successCount === 0) {
+      return NextResponse.json({
+        error: 'Nenhuma tradução foi concluída com sucesso',
+        translations: allTranslations,
+        success: false,
+        stats: {
+          total: totalReviews,
+          success: successCount,
+          errors: errorCount
+        }
+      }, { status: 422 });
+    }
     
     return NextResponse.json({
       translations: allTranslations,
       success: true,
       stats: {
-        total: allTranslations.length,
+        total: totalReviews,
         success: successCount,
-        errors: errorCount
+        errors: errorCount,
+        batchStats: statsPerBatch
       }
     });
     

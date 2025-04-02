@@ -339,45 +339,81 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
     product.status === 'editing' ? 'Em edição' : 'Arquivado';
 
   const handleSaveTranslation = async (data: { title?: string; description?: string; language?: string }) => {
-    console.log('===== INICIANDO FUNÇÃO handleSaveTranslation =====');
-    console.log('Dados recebidos para salvar tradução:', {
-      title: data.title?.substring(0, 50) + '...',
-      descriptionLength: data.description?.length || 0,
-      language: data.language,
-      productId: product?.id
-    });
+    console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 17-HANDLE-SAVE-TRANSLATION-START]', JSON.stringify({
+      dataRecebido: {
+        title: data.title?.substring(0, 50) + '...',
+        descriptionLength: data.description?.length || 0,
+        language: data.language
+      },
+      productId: product?.id,
+      temProduct: !!product,
+      timestamp: new Date().toISOString()
+    }));
     
     if (!product) {
-      console.error('Erro: Produto não encontrado/indefinido');
+      console.error('[TRADUÇÃO:' + Date.now() + '] [ETAPA 18-PRODUCT-NOT-FOUND] Produto não encontrado/indefinido');
       return Promise.reject(new Error('Produto não encontrado'));
     }
     
     try {
-      console.log('Chamando updateProduct com:', {
+      console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 19-UPDATE-PRODUCT-CALL]', JSON.stringify({
         productId: product.id,
-        dataKeys: Object.keys(data)
-      });
+        dataKeys: Object.keys(data),
+        language: data.language
+      }));
       
       // Incluir todas as propriedades que queremos atualizar explicitamente
       if (!data.language) {
-        console.warn('Aviso: campo language não definido na tradução, usando valor padrão');
+        console.warn('[TRADUÇÃO:' + Date.now() + '] [ETAPA 20-LANGUAGE-MISSING] Campo language não definido na tradução, usando valor padrão');
         data.language = 'en'; // Garantir que sempre tenhamos um valor para language
       }
       
-      const { error } = await updateProduct(product.id, data);
-      
-      if (error) {
-        console.error('Erro retornado por updateProduct:', error);
-        throw new Error('Falha ao atualizar o produto');
+      // Verificar se title e description não estão vazios
+      if (!data.title || !data.description) {
+        console.error('[TRADUÇÃO:' + Date.now() + '] [ETAPA 21-MISSING-DATA]', JSON.stringify({
+          hasTitle: !!data.title,
+          hasDescription: !!data.description
+        }));
+        return Promise.reject(new Error('Dados de tradução incompletos'));
       }
       
-      console.log('updateProduct executado com sucesso, sem erros');
+      // Criar cópia dos dados para evitar referência mutável
+      const updateData = {
+        title: data.title,
+        description: data.description,
+        language: data.language
+      };
       
-      // Update local product state with the new translated data
-      console.log('Atualizando estado local do produto');
+      console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 22-BEFORE-SUPABASE-CALL]', JSON.stringify({
+        updateData: {
+          title: updateData.title?.substring(0, 30) + '...',
+          descriptionLength: updateData.description?.length || 0,
+          language: updateData.language
+        }
+      }));
+      
+      const { data: responseData, error } = await updateProduct(product.id, updateData);
+      
+      console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 23-AFTER-SUPABASE-CALL]', JSON.stringify({
+        success: !error,
+        errorMessage: error?.message,
+        errorDetails: error ? 'Erro ao salvar no banco de dados' : undefined,
+        responseDataExists: !!responseData
+      }));
+      
+      if (error) {
+        console.error('[TRADUÇÃO:' + Date.now() + '] [ETAPA 24-SUPABASE-ERROR]', JSON.stringify({
+          errorMessage: error.message,
+          errorType: error.constructor.name,
+          errorStack: error.stack
+        }));
+        throw error;
+      }
+      
+      console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 25-UPDATE-LOCAL-STATE]');
       setProduct(prev => {
         if (!prev) {
-          console.warn('Estado anterior do produto é nulo');
+          console.warn('[TRADUÇÃO:' + Date.now() + '] [ETAPA 26-LOCAL-STATE-NULL] Estado anterior do produto é nulo');
           return null;
         }
         
@@ -389,27 +425,32 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           language: data.language
         };
         
-        console.log('Estado do produto atualizado:', {
-          id: updatedProduct.id,
-          title: updatedProduct.title?.substring(0, 30) + '...',
-          hasLanguage: !!updatedProduct.language
-        });
+        console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 27-LOCAL-STATE-UPDATED]', JSON.stringify({
+          updatedProductId: updatedProduct.id,
+          hasTitle: !!updatedProduct.title,
+          hasDescription: !!updatedProduct.description,
+          language: updatedProduct.language
+        }));
         
         return updatedProduct;
       });
       
-      console.log('Exibindo mensagem de sucesso');
+      console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 28-SUCCESS-TOAST] Exibindo mensagem de sucesso');
       toast.success('Tradução salva com sucesso');
-      console.log('Retornando Promise.resolve()');
+      
+      console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 29-PROMISE-RESOLVE] Retornando Promise.resolve()');
       return Promise.resolve();
     } catch (error) {
-      console.error('Erro ao salvar tradução - detalhado:', error);
-      console.error('Erro stack trace:', error instanceof Error ? error.stack : 'Sem stack');
-      toast.error('Erro ao salvar tradução');
-      console.log('Retornando Promise.reject()');
+      console.error('[TRADUÇÃO:' + Date.now() + '] [ETAPA 30-SAVE-TRANSLATION-ERROR]', JSON.stringify({
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorStack: error instanceof Error ? error.stack : 'No stack available'
+      }));
+      
+      toast.error('Erro ao salvar tradução. Por favor, tente novamente.');
+      
+      console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 31-PROMISE-REJECT] Retornando Promise.reject()');
       return Promise.reject(error);
-    } finally {
-      console.log('===== FIM DA FUNÇÃO handleSaveTranslation =====');
     }
   };
 
