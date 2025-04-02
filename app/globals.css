@@ -61,3 +61,109 @@
 .transition-soft {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Estilos para a descrição do produto e imagens */
+.product-description img,
+.product-gallery img,
+.description-content img,
+.product-detail-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 0.75rem auto;
+  display: block;
+  object-fit: contain;
+}
+
+.product-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.product-image-container {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid #f0f0f0;
+}
+
+.product-detail-image {
+  transition: transform 0.3s ease;
+  width: 100%;
+  height: auto;
+  min-height: 150px;
+  background-color: #f9f9f9;
+}
+
+.product-detail-image:hover {
+  transform: scale(1.03);
+}
+
+/* Estilos específicos para imagens na descrição do produto */
+.description-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1rem auto;
+  border-radius: 0.5rem;
+  border: 1px solid #eee;
+}
+
+.description-content h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Garantir que o conteúdo HTML na descrição seja renderizado corretamente */
+.description-content div,
+.description-content p {
+  margin-bottom: 0.75rem;
+}
+
+/* Melhorar a visualização de imagens na galeria */
+.product-gallery {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+/* Evitar que imagens quebradas apareçam */
+img[src=""],
+img:not([src]),
+img[src*="undefined"] {
+  display: none !important;
+}
+
+/* Corrigir espaçamento em listas na descrição */
+.product-description ul,
+.description-content ul {
+  padding-left: 1.5rem;
+  margin: 0.75rem 0;
+}
+
+.product-description li,
+.description-content li {
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+/* Estilo para items com marcador de check */
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.feature-item::before {
+  content: "✓";
+  display: inline-block;
+  color: var(--success);
+  margin-right: 0.5rem;
+  font-weight: bold;
+}

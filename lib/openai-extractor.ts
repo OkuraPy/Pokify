@@ -79,17 +79,25 @@ SUA MISSÃO É EXTRAIR TODAS AS INFORMAÇÕES IMPORTANTES DO PRODUTO:
    - Imagens principais (carrossel/galeria)
    - Imagens da descrição (incorporadas no texto)
 
-PARA EXTRAÇÃO DE IMAGENS, PROCURE POR:
-- <img src="URL">
-- <img data-src="URL">
-- <source srcset="URL">
+PARA EXTRAÇÃO DE IMAGENS, PROCURE APENAS POR ARQUIVOS DE IMAGEM REAIS:
+- URLs que terminam com .jpg, .jpeg, .png, .webp, .gif
+- <img src="URL"> onde URL é um arquivo de imagem
+- <source srcset="URL"> onde URL é um arquivo de imagem
 - <meta property="og:image" content="URL">
-- data-gallery-items contendo URLs
-- data-product-images contendo URLs
+- data-gallery-items contendo URLs de imagens
+- data-product-images contendo URLs de imagens
 - data-zoom-image="URL"
-- qualquer atributo contendo URL de imagem
-- image URLs em scripts JSON
-- arrays de imagens em qualquer formato
+
+NÃO CONSIDERE COMO IMAGENS:
+- Arquivos JavaScript (.js)
+- Arquivos CSS (.css)
+- Arquivos PHP (.php)
+- Outros recursos que não são imagens
+
+USE ESTAS REGRAS PARA VALIDAR IMAGENS:
+1. A URL deve aparentar ser de uma imagem (terminando em .jpg, .jpeg, .png, .webp, etc)
+2. OU estar em um contexto claramente de imagem, como src de uma tag <img>
+3. NUNCA incluir arquivos JavaScript, CSS ou outros recursos
 
 OBSERVE QUE É FUNDAMENTAL IDENTIFICAR CORRETAMENTE:
 - As imagens da descrição: que aparecem dentro de <div> ou <p> no texto de descrição
@@ -101,13 +109,20 @@ NÃO IGNORE NENHUMA INFORMAÇÃO. EXTRAIA ABSOLUTAMENTE TUDO.`;
 EXTRAIA TODAS AS INFORMAÇÕES DO PRODUTO, incluindo:
 
 1. TÍTULO: O título exato e completo do produto
-2. PREÇO: O preço atual do produto (em formato numérico)
+2. PREÇO: O preço atual do produto (em formato numérico COM PONTO como separador decimal, exemplo correto: 143.65, exemplo incorreto: 143,65)
 3. DESCRIÇÃO: A descrição completa em formato HTML válido (não apenas texto plano)
 4. IMAGENS: Todas as imagens do produto, com atenção especial às IMAGENS DA DESCRIÇÃO
 
 PARA IMAGENS, SEPARE EM:
 - mainImages: imagens principais do carrossel do produto (grandes, mostram o produto em diferentes ângulos)
 - descriptionImages: imagens menores que aparecem DENTRO da descrição, entre os parágrafos, mostrando detalhes específicos
+
+ATENÇÃO ESPECIAL PARA IMAGENS:
+- APENAS inclua URLs que são REALMENTE imagens (.jpg, .jpeg, .png, .webp, .gif, .svg)
+- NUNCA inclua arquivos JavaScript (.js), CSS (.css), PHP ou outros recursos
+- VERIFIQUE se a URL é de uma imagem legítima, geralmente contendo termos como "image", "img", "photo", "product", "produto"
+- EXCLUA qualquer URL que contenha termos como "vendor.js", "theme.js", "custom.js"
+- CONSIDERE o contexto onde a URL foi encontrada (dentro de tag <img>, atributo src, etc)
 
 REQUISITOS PARA A DESCRIÇÃO:
 - DEVE ser em formato HTML válido com tags apropriadas (<p>, <br>, <ul>, <li>)
@@ -116,20 +131,24 @@ REQUISITOS PARA A DESCRIÇÃO:
 - MANTENHA a formatação original (negrito, itálico, listas, etc.)
 - PRESERVE emojis e símbolos especiais
 
-Dê ATENÇÃO EXTRA às imagens da descrição, pois elas são essenciais para ilustrar os detalhes do produto.
+FORMATAÇÃO ESPECÍFICA DO PREÇO:
+- SEMPRE use PONTO como separador decimal (correto: 149.90, incorreto: 149,90)
+- NUNCA use VÍRGULA para separar decimais
+- Não inclua o símbolo de moeda (R$)
+- Retorne apenas o valor numérico
 
 REGRAS OBRIGATÓRIAS:
 1. NUNCA deixe campos vazios (título, preço e descrição são OBRIGATÓRIOS)
 2. IDENTIFIQUE CUIDADOSAMENTE quais imagens aparecem na descrição do produto
 3. Inclua TODOS os detalhes do produto na descrição
-4. NÃO IGNORE nenhuma URL de imagem
-5. NÃO LIMITE o número de URLs retornadas
+4. NÃO IGNORE nenhuma URL de imagem real
+5. EXCLUA URLs que não são imagens (JavaScript, CSS, PHP, etc)
 6. RETORNE EXATAMENTE no formato JSON abaixo:
 
 {
   "title": "Título exato do produto",
-  "price": "99.90",
-  "comparePrice": "129.90",
+  "price": "149.90",
+  "comparePrice": "199.90",
   "description": "<p>Descrição completa em <strong>HTML</strong> com todas as formatações</p><p><img src='url_imagem_descricao' alt='Detalhe do produto'></p>",
   "mainImages": ["url1", "url2", "url3", ...],
   "descriptionImages": ["url1", "url2", ...]
@@ -528,13 +547,30 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
     // Verificar se a URL parece válida
     if (!url || typeof url !== 'string') return false;
     
-    // Verificar se termina com uma extensão de imagem comum
-    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-    const hasValidExtension = validExtensions.some(ext => 
+    // Rejeitar URLs de recursos que definitivamente não são imagens
+    const invalidExtensions = ['.js', '.css', '.php', '.aspx', '.jsp'];
+    const hasInvalidExtension = invalidExtensions.some(ext => 
       url.toLowerCase().includes(ext)
     );
+    if (hasInvalidExtension) return false;
     
-    return hasValidExtension;
+    // Verificar se termina com uma extensão de imagem comum
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+    const hasValidExtension = validExtensions.some(ext => 
+      url.toLowerCase().endsWith(ext) || url.toLowerCase().includes(`${ext}?`)
+    );
+    
+    // Se não tem extensão válida, verificar se contém padrões comuns de URLs de imagem
+    if (!hasValidExtension) {
+      const validImagePatterns = ['image', 'img', 'photo', 'picture', 'produto', 'product'];
+      const containsImagePattern = validImagePatterns.some(pattern => 
+        url.toLowerCase().includes(pattern)
+      );
+      // Se não tiver extensão válida e nem padrões conhecidos, rejeitar
+      if (!containsImagePattern) return false;
+    }
+    
+    return true;
   }
 
   /**

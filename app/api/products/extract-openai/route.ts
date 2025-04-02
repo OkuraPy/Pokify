@@ -187,69 +187,129 @@ export async function POST(request: NextRequest) {
 
       // Processamento para incluir as imagens da descrição no HTML
       if (openaiResult.data.description && openaiResult.data.descriptionImages && openaiResult.data.descriptionImages.length > 0) {
-        logger.info(`🖼️ Inserindo ${openaiResult.data.descriptionImages.length} imagens na descrição HTML`);
+        logger.info(`🖼️ Tentando processar ${openaiResult.data.descriptionImages.length} possíveis imagens de descrição`);
         
         try {
-          // Verificar e ajustar URLs das imagens da descrição
-          const validatedImages = openaiResult.data.descriptionImages.map(imgUrl => {
-            if (!imgUrl) return null;
-            
-            try {
-              // Validar se a URL é absoluta e válida
-              let fullUrl = imgUrl;
-              if (!imgUrl.startsWith('http')) {
-                // Tentar consertar URLs relativas
-                if (imgUrl.startsWith('//')) {
-                  fullUrl = `https:${imgUrl}`;
-                } else if (imgUrl.startsWith('/')) {
-                  // Extrair o domínio da URL original do produto
-                  try {
-                    const urlObj = new URL(url);
-                    fullUrl = `${urlObj.origin}${imgUrl}`;
-                  } catch (e: any) {
-                    logger.error(`❌ URL inválida: ${imgUrl}`);
-                    return null; // Pular esta imagem
-                  }
-                } else {
-                  // URL relativa sem barra inicial
-                  try {
-                    const urlObj = new URL(url);
-                    const basePathMatch = urlObj.pathname.match(/(.*\/)/);
-                    const basePath = basePathMatch ? basePathMatch[1] : '/';
-                    fullUrl = `${urlObj.origin}${basePath}${imgUrl}`;
-                  } catch (e: any) {
-                    logger.error(`❌ URL inválida: ${imgUrl}`);
-                    return null; // Pular esta imagem
-                  }
-                }
+          // Verificar e ajustar URLs das imagens da descrição com validação rigorosa
+          const validatedImages = openaiResult.data.descriptionImages
+            .map(imgUrl => {
+              if (!imgUrl || typeof imgUrl !== 'string') return null;
+              
+              // Verificar se a URL tem extensão de imagem válida
+              const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+              const invalidExtensions = ['.js', '.css', '.php', '.aspx', '.jsp'];
+              
+              // Padrões comuns em URLs de imagens
+              const validImagePatterns = [
+                'image', 'img', 'photo', 'picture', 'produto', 'product',
+                '/uploads/', '/images/', '/produtos/', '/gallery/'
+              ];
+              
+              // Verificar se é uma URL de arquivo JavaScript ou CSS (rejeitar)
+              const hasInvalidExtension = invalidExtensions.some(ext => 
+                imgUrl.toLowerCase().includes(ext)
+              );
+              
+              // Verificar se a URL parece ser uma imagem (pela extensão ou por padrões comuns)
+              const hasValidExtension = validExtensions.some(ext => 
+                imgUrl.toLowerCase().endsWith(ext) || imgUrl.toLowerCase().includes(`${ext}?`)
+              );
+              
+              const containsImagePattern = validImagePatterns.some(pattern => 
+                imgUrl.toLowerCase().includes(pattern)
+              );
+              
+              // Rejeitar URLs que não parecem imagens ou são arquivos inválidos
+              if (hasInvalidExtension || (!hasValidExtension && !containsImagePattern)) {
+                logger.warn(`⚠️ URL ignorada (não parece ser imagem): ${imgUrl}`);
+                return null;
               }
               
-              // Verificar se a URL é válida
-              new URL(fullUrl);
-              return fullUrl;
-            } catch (e: any) {
-              logger.error(`❌ Erro ao processar URL da imagem: ${e.message}`);
-              return null;
-            }
-          }).filter(Boolean) as string[];
+              try {
+                // Validar se a URL é absoluta e válida
+                let fullUrl = imgUrl;
+                if (!imgUrl.startsWith('http')) {
+                  // Tentar consertar URLs relativas
+                  if (imgUrl.startsWith('//')) {
+                    fullUrl = `https:${imgUrl}`;
+                  } else if (imgUrl.startsWith('/')) {
+                    // Extrair o domínio da URL original do produto
+                    try {
+                      const urlObj = new URL(url);
+                      fullUrl = `${urlObj.origin}${imgUrl}`;
+                    } catch (e: any) {
+                      logger.error(`❌ URL inválida: ${imgUrl}`);
+                      return null; // Pular esta imagem
+                    }
+                  } else {
+                    // URL relativa sem barra inicial
+                    try {
+                      const urlObj = new URL(url);
+                      const basePathMatch = urlObj.pathname.match(/(.*\/)/);
+                      const basePath = basePathMatch ? basePathMatch[1] : '/';
+                      fullUrl = `${urlObj.origin}${basePath}${imgUrl}`;
+                    } catch (e: any) {
+                      logger.error(`❌ URL inválida: ${imgUrl}`);
+                      return null; // Pular esta imagem
+                    }
+                  }
+                }
+                
+                // Verificar se a URL é válida
+                new URL(fullUrl);
+                
+                // Verificação adicional para evitar que scripts sejam tratados como imagens
+                if (invalidExtensions.some(ext => fullUrl.toLowerCase().includes(ext))) {
+                  logger.warn(`⚠️ URL de script/recurso rejeitada após correção: ${fullUrl}`);
+                  return null;
+                }
+                
+                // Verificação positiva - deve ter extensão válida ou padrão reconhecível de imagem
+                const hasValidExt = validExtensions.some(ext => 
+                  fullUrl.toLowerCase().endsWith(ext) || fullUrl.toLowerCase().includes(`${ext}?`)
+                );
+                
+                const hasImagePattern = validImagePatterns.some(pattern => 
+                  fullUrl.toLowerCase().includes(pattern)
+                );
+                
+                if (!hasValidExt && !hasImagePattern) {
+                  logger.warn(`⚠️ URL rejeitada (não identificada como imagem): ${fullUrl}`);
+                  return null;
+                }
+                
+                logger.info(`✅ Imagem considerada válida: ${fullUrl}`);
+                return fullUrl;
+              } catch (e: any) {
+                logger.error(`❌ Erro ao processar URL da imagem: ${e.message}`);
+                return null;
+              }
+            })
+            .filter(Boolean) as string[];
+          
+          logger.info(`✅ Encontradas ${validatedImages.length} imagens válidas de ${openaiResult.data.descriptionImages.length} possíveis`);
           
           // Atualizar o array de imagens com URLs validadas
           openaiResult.data.descriptionImages = validatedImages;
           
           // Usar a função de utilidade para preservar imagens na descrição
-          const enhancedDescription = preserveImagesInDescription(
-            openaiResult.data.description,
-            linkfyResult.data.markdown || '',  // Passando o markdown original
-            url,  // URL base para resolver caminhos relativos
-            validatedImages  // Imagens da descrição validadas
-          );
-          
-          // Verificar se o processo de enriquecimento modificou a descrição
-          const descriptionChanged = enhancedDescription !== openaiResult.data.description;
-          logger.info(`✅ Descrição enriquecida com imagens: ${descriptionChanged ? 'Sim' : 'Não'}`);
-          
-          // Atualizar a descrição com as imagens inseridas
-          openaiResult.data.description = enhancedDescription;
+          if (validatedImages.length > 0) {
+            const enhancedDescription = preserveImagesInDescription(
+              openaiResult.data.description,
+              linkfyResult.data.markdown || '',  // Passando o markdown original
+              url,  // URL base para resolver caminhos relativos
+              validatedImages  // Imagens da descrição validadas
+            );
+            
+            // Verificar se o processo de enriquecimento modificou a descrição
+            const descriptionChanged = enhancedDescription !== openaiResult.data.description;
+            logger.info(`✅ Descrição enriquecida com imagens: ${descriptionChanged ? 'Sim' : 'Não'}`);
+            
+            // Atualizar a descrição com as imagens inseridas
+            openaiResult.data.description = enhancedDescription;
+          } else {
+            logger.warn('⚠️ Nenhuma imagem válida encontrada para enriquecer a descrição');
+          }
         } catch (error: any) {
           logger.error(`❌ Erro ao processar imagens da descrição: ${error.message}`);
           // Continuar mesmo com erro, usando a descrição original
@@ -287,6 +347,30 @@ export async function POST(request: NextRequest) {
               // Verificar se é uma URL válida (deve ser absoluta)
               if (!imgUrl || typeof imgUrl !== 'string') continue;
               
+              // Verificar se é um script ou recurso indesejado
+              const invalidExtensions = ['.js', '.css', '.php', '.aspx', '.jsp'];
+              if (invalidExtensions.some(ext => imgUrl.toLowerCase().includes(ext))) {
+                logger.warn(`⚠️ URL de script rejeitada: ${imgUrl}`);
+                continue;
+              }
+              
+              // Verificar se tem características de uma URL de imagem
+              const validImageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg'];
+              const validImagePatterns = ['image', 'img', 'photo', 'product', 'produto'];
+              
+              const hasValidExtension = validImageExtensions.some(ext => 
+                imgUrl.toLowerCase().endsWith(ext) || imgUrl.toLowerCase().includes(`${ext}?`)
+              );
+              
+              const hasImagePattern = validImagePatterns.some(pattern => 
+                imgUrl.toLowerCase().includes(pattern)
+              );
+              
+              if (!hasValidExtension && !hasImagePattern) {
+                logger.warn(`⚠️ URL sem padrão de imagem: ${imgUrl}`);
+                continue;
+              }
+              
               // Garantir que a URL seja absoluta
               let validUrl = imgUrl;
               if (!imgUrl.startsWith('http')) {
@@ -304,6 +388,7 @@ export async function POST(request: NextRequest) {
               
               // Adicionar à lista de imagens válidas
               validImages.push(validUrl);
+              logger.info(`✅ Imagem válida para descrição: ${validUrl}`);
             } catch (e: any) {
               logger.error(`❌ URL de imagem inválida: ${imgUrl} - ${e.message}`);
             }
@@ -311,16 +396,17 @@ export async function POST(request: NextRequest) {
           
           // Adicionar imagens diretamente na descrição
           if (validImages.length > 0) {
-            // Construir HTML com imagens diretas
-            let imgHtml = '<div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">';
+            // Construir HTML com imagens diretas - mais proeminente
+            let imgHtml = '<div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; text-align: center;">';
+            imgHtml += '<h3 style="font-size: 1.2em; margin-bottom: 15px; color: #333;">Imagens do Produto</h3>';
             
             for (const imgSrc of validImages) {
               imgHtml += `
-                <div style="margin: 10px 0;">
+                <div style="margin: 15px 0; text-align: center;">
                   <img 
                     src="${imgSrc}" 
                     alt="Imagem do produto" 
-                    style="max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px;"
+                    style="max-width: 100%; width: auto; height: auto; max-height: 400px; display: block; margin: 0 auto; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.1);"
                     loading="lazy"
                     onerror="this.style.display='none'" 
                   />
@@ -333,7 +419,7 @@ export async function POST(request: NextRequest) {
             // Atualizar a descrição adicionando as imagens
             openaiResult.data.description = `${openaiResult.data.description}${imgHtml}`;
             
-            // Atualizar o array de imagens com as URLs validadas
+            // Definir também as imagens artificiais como description_images para exibição no componente separado
             openaiResult.data.descriptionImages = validImages;
             
             logger.info(`✅ Descrição enriquecida com ${validImages.length} imagens válidas (HTML direto)`);
@@ -371,6 +457,7 @@ export async function POST(request: NextRequest) {
       description: openaiResult.data?.description || '',
       mainImages: openaiResult.data?.mainImages || [],
       images: openaiResult.data?.images || [],
+      description_images: openaiResult.data?.descriptionImages || [],
       _source: 'openai',
       _processingTime: Date.now() - startTime,
       _extractionStats: {
@@ -421,4 +508,4 @@ export async function POST(request: NextRequest) {
       }
     );
   }
-}
+} 
