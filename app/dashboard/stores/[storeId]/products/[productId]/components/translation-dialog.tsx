@@ -86,7 +86,6 @@ export function TranslationDialog({
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationProgress, setTranslationProgress] = useState(0);
   const [translationStatus, setTranslationStatus] = useState<'idle' | 'preparing' | 'translating' | 'saving' | 'completed' | 'error'>('idle');
-  const [shouldReloadAfterClose, setShouldReloadAfterClose] = useState(false);
 
   // Função auxiliar para logs detalhados
   const logDetail = (step: string, data?: any) => {
@@ -233,30 +232,6 @@ export function TranslationDialog({
     }
   }, [isOpen]);
 
-  // Modificar useEffect para atualização da página com logs detalhados
-  useEffect(() => {
-    logDetail('1-DIALOG-STATE', { isOpen, shouldReloadAfterClose });
-    
-    if (!isOpen && shouldReloadAfterClose) {
-      logDetail('2-RELOAD-TRIGGER', 'Diálogo fechado após tradução bem-sucedida, preparando para recarregar');
-      
-      // Evitar problemas de corrida definindo shouldReloadAfterClose para false antes de recarregar
-      setShouldReloadAfterClose(false);
-      
-      // Adiar o reload para garantir que o estado seja atualizado
-      setTimeout(() => {
-        logDetail('3-RELOAD-EXECUTE', 'Executando recarregamento da página');
-        try {
-          window.location.reload();
-          logDetail('4-RELOAD-COMPLETE', 'Comando de recarregamento enviado');
-        } catch (reloadError) {
-          console.error('Erro ao recarregar página:', reloadError);
-          logDetail('4-RELOAD-ERROR', { error: reloadError?.toString() });
-        }
-      }, 100);
-    }
-  }, [isOpen, shouldReloadAfterClose]);
-
   const handleTranslate = async () => {
     logDetail('5-TRANSLATE-START', {
       productId: product.id, 
@@ -402,9 +377,6 @@ export function TranslationDialog({
         setTranslationProgress(100);
         setTranslationStatus('completed');
         
-        logDetail('10-SET-RELOAD-FLAG', 'Configurando flag para recarregar após fechamento');
-        setShouldReloadAfterClose(true);
-        
         toast.success(`Produto traduzido para ${getLanguageName(targetLanguage)}`);
         
         // Adicionar mais logs e ajustar o fechamento do diálogo
@@ -417,10 +389,6 @@ export function TranslationDialog({
           } catch (closeError) {
             console.error('Erro ao fechar diálogo:', closeError);
             logDetail('13-CLOSE-ERROR', { error: closeError?.toString() });
-            
-            // Tentar forçar recarregamento se houver erro no fechamento
-            logDetail('14-FORCE-RELOAD', 'Forçando recarregamento após erro de fechamento');
-            window.location.reload();
           }
         }, 1500);
         

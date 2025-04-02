@@ -425,6 +425,9 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
         return updatedProduct;
       });
       
+      // Navegar para a aba de descrição após tradução bem-sucedida
+      setActiveTab("description");
+      
       console.log('[TRADUÇÃO:' + Date.now() + '] [ETAPA 28-SUCCESS-TOAST] Exibindo mensagem de sucesso');
       toast.success('Tradução salva com sucesso');
       
@@ -1046,7 +1049,11 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
       {/* Dialogs */}
       <TranslationDialog 
         isOpen={isTranslationDialogOpen} 
-        onClose={() => setIsTranslationDialogOpen(false)}
+        onClose={() => {
+          setIsTranslationDialogOpen(false);
+          // Não precisamos mais navegar aqui, já que o sistema navegará automaticamente para a aba de descrição
+          // após salvamento bem-sucedido
+        }}
         product={{
           id: product?.id || "",
           title: product?.title || "",
