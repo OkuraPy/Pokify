@@ -967,21 +967,40 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
       
       {/* Dialogs */}
       <TranslationDialog 
-        open={isTranslationDialogOpen} 
-        onOpenChange={setIsTranslationDialogOpen}
-        title={product?.title || ""}
-        description={product?.description || ""}
-        onSave={handleSaveTranslation}
-        language={product?.language || "pt-BR"}
+        isOpen={isTranslationDialogOpen} 
+        onClose={() => setIsTranslationDialogOpen(false)}
+        product={{
+          id: product?.id || "",
+          title: product?.title || "",
+          description: product?.description || "",
+          language: product?.language || "pt-BR"
+        }}
+        onSaveTranslation={handleSaveTranslation}
       />
       
       <ImproveDescriptionDialog
-        open={isImproveDescriptionDialogOpen}
-        onOpenChange={setIsImproveDescriptionDialogOpen}
-        productId={product?.id || ""}
-        title={product?.title || ""}
-        description={product?.description || ""}
-        setIsLoading={setIsImprovingDescription}
+        isOpen={isImproveDescriptionDialogOpen}
+        onClose={() => setIsImproveDescriptionDialogOpen(false)}
+        product={{
+          id: product?.id || "",
+          title: product?.title || "",
+          description: product?.description || ""
+        }}
+        onImproveDescription={(description) => {
+          setIsImprovingDescription(true);
+          return updateProduct(product.id, { description })
+            .then(() => {
+              setProduct(prev => prev ? {...prev, description} : null);
+              toast.success('Descrição melhorada com sucesso');
+              setIsImprovingDescription(false);
+            })
+            .catch(error => {
+              console.error('Erro ao salvar descrição melhorada:', error);
+              toast.error('Erro ao salvar descrição melhorada');
+              setIsImprovingDescription(false);
+              throw error;
+            });
+        }}
       />
       
       {/* Dialog para o recurso de Fornecedores */}
