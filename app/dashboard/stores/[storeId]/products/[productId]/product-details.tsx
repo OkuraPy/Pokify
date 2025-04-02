@@ -606,32 +606,6 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                 </div>
               </div>
             </Button>
-            
-            {/* Nova opção de menu para o TrendHunter IA - Minerador de Produtos */}
-            <Button 
-              variant="ghost" 
-              className={`w-full justify-start text-sm relative text-gray-500`}
-              onClick={() => setIsTrendHunterDialogOpen(true)}
-            >
-              <div className="flex items-center">
-                <svg className="h-5 w-5 mr-3 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.5 14.5L3 21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14.5 9.5L17 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M17 7L21 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14.5 9.5L11 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M17 7L13 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M12.25 12.25L11 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9.5 14.5C9.5 14.5 7.5 13.5 6.75 12.75C6 12 5 10 5 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M5 10C5 10 7 8 9 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M9 6C9 6 10.7107 6.36396 12.25 7.75C13.7893 9.13604 14 11 14 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M14 11C14 11 13.2457 12.1233 12.25 12.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>TrendHunter IA</span>
-                <div className="absolute right-2 flex items-center">
-                  <Lock className="h-3.5 w-3.5 text-amber-500" />
-                </div>
-              </div>
-            </Button>
           </nav>
           
           {/* Ferramentas de IA */}

@@ -21,7 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { getUserStores, getStoreStats, getProducts, getReviews } from '@/lib/supabase';
+import { getUserStores, getStoreStats, getProducts, getReviews, getDashboardStats } from '@/lib/supabase';
 import { StoreCard } from '@/components/stores/store-card';
 
 export default function DashboardPage() {
@@ -69,162 +69,22 @@ export default function DashboardPage() {
     { name: '28', value: 25 }, { name: '29', value: 32 }, { name: '30', value: 20 },
   ];
 
-  // Função para buscar e formatar dados de produtos para o gráfico
-  async function fetchProductsChartData(period: string) {
-    try {
-      // Obter todos os produtos de todas as lojas do usuário
-      const { data: storesData } = await getUserStores();
-      if (!storesData || storesData.length === 0) return [];
-      
-      // Criar um array de promessas para buscar produtos de cada loja
-      const productsPromises = storesData.map(store => getProducts(store.id));
-      const productsResults = await Promise.all(productsPromises);
-      
-      // Juntar todos os produtos em um único array
-      const allProducts = productsResults.flatMap(result => result.data || []);
-      
-      // Definir o intervalo de datas com base no período selecionado
-      const endDate = new Date();
-      let startDate = new Date();
-      
-      switch (period) {
-        case 'week':
-          startDate.setDate(endDate.getDate() - 7);
-          break;
-        case 'month':
-          startDate.setDate(endDate.getDate() - 30);
-          break;
-        case 'quarter':
-          startDate.setMonth(endDate.getMonth() - 3);
-          break;
-        case 'year':
-          startDate.setFullYear(endDate.getFullYear() - 1);
-          break;
-        default:
-          startDate.setDate(endDate.getDate() - 30); // Padrão: último mês
-      }
-      
-      // Filtrar produtos pelo período selecionado
-      const filteredProducts = allProducts.filter(product => {
-        const createdAt = new Date(product.created_at);
-        return createdAt >= startDate && createdAt <= endDate;
-      });
-      
-      // Agrupar produtos por dia
-      const productsByDay: { [key: string]: number } = {};
-      
-      // Inicializar todos os dias no período com zero produtos
-      let currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const dayKey = currentDate.getDate().toString();
-        productsByDay[dayKey] = 0;
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      
-      // Contar produtos por dia
-      filteredProducts.forEach(product => {
-        const createdAt = new Date(product.created_at);
-        const dayKey = createdAt.getDate().toString();
-        productsByDay[dayKey] = (productsByDay[dayKey] || 0) + 1;
-      });
-      
-      // Converter para o formato esperado pelo gráfico
-      return Object.entries(productsByDay).map(([name, value]) => ({ name, value }));
-    } catch (error) {
-      console.error('Erro ao buscar dados de produtos para o gráfico:', error);
-      return [];
-    }
-  }
-
-  // Função para buscar e formatar dados de reviews para o gráfico
-  async function fetchReviewsChartData(period: string) {
-    try {
-      // Obter todos os produtos de todas as lojas do usuário
-      const { data: storesData } = await getUserStores();
-      if (!storesData || storesData.length === 0) return [];
-      
-      // Criar um array de promessas para buscar produtos de cada loja
-      const productsPromises = storesData.map(store => getProducts(store.id));
-      const productsResults = await Promise.all(productsPromises);
-      
-      // Juntar todos os produtos em um único array
-      const allProducts = productsResults.flatMap(result => result.data || []);
-      
-      // Criar um array de promessas para buscar reviews de cada produto
-      const reviewsPromises = allProducts.map(product => getReviews(product.id));
-      const reviewsResults = await Promise.all(reviewsPromises);
-      
-      // Juntar todas as reviews em um único array
-      const allReviews = reviewsResults.flatMap(result => result.data || []);
-      
-      // Definir o intervalo de datas com base no período selecionado
-      const endDate = new Date();
-      let startDate = new Date();
-      
-      switch (period) {
-        case 'week':
-          startDate.setDate(endDate.getDate() - 7);
-          break;
-        case 'month':
-          startDate.setDate(endDate.getDate() - 30);
-          break;
-        case 'quarter':
-          startDate.setMonth(endDate.getMonth() - 3);
-          break;
-        case 'year':
-          startDate.setFullYear(endDate.getFullYear() - 1);
-          break;
-        default:
-          startDate.setDate(endDate.getDate() - 30); // Padrão: último mês
-      }
-      
-      // Filtrar reviews pelo período selecionado
-      const filteredReviews = allReviews.filter(review => {
-        const createdAt = new Date(review.created_at);
-        return createdAt >= startDate && createdAt <= endDate;
-      });
-      
-      // Agrupar reviews por dia
-      const reviewsByDay: { [key: string]: number } = {};
-      
-      // Inicializar todos os dias no período com zero reviews
-      let currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
-        const dayKey = currentDate.getDate().toString();
-        reviewsByDay[dayKey] = 0;
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      
-      // Contar reviews por dia
-      filteredReviews.forEach(review => {
-        const createdAt = new Date(review.created_at);
-        const dayKey = createdAt.getDate().toString();
-        reviewsByDay[dayKey] = (reviewsByDay[dayKey] || 0) + 1;
-      });
-      
-      // Converter para o formato esperado pelo gráfico
-      return Object.entries(reviewsByDay).map(([name, value]) => ({ name, value }));
-    } catch (error) {
-      console.error('Erro ao buscar dados de reviews para o gráfico:', error);
-      return [];
-    }
-  }
-
   useEffect(() => {
     async function loadDashboardData() {
       try {
         setIsLoading(true);
         
-        // Carregar lojas do usuário
-        const { data: storesData, error } = await getUserStores();
+        // Usar a nova função otimizada para buscar todas as estatísticas em uma única operação
+        // Passando o período selecionado para a função
+        const { data: dashboardData, error } = await getDashboardStats(period);
         
         if (error) {
-          toast.error('Erro ao carregar lojas');
-          console.error('Erro ao carregar lojas:', error);
+          toast.error('Erro ao carregar dados do dashboard');
+          console.error('Erro ao carregar dashboard:', error);
           return;
         }
         
-        if (!storesData || storesData.length === 0) {
+        if (!dashboardData) {
           setStores([]);
           setAggregatedStats({
             totalStores: 0,
@@ -239,119 +99,21 @@ export default function DashboardPage() {
           return;
         }
         
-        // Log para depuração
-        console.log("Dados das lojas recebidos:", storesData);
+        // Atualizar estado das lojas
+        setStores(dashboardData.stores || []);
         
-        // Atualizar o número real de produtos em cada loja
-        const updatedStores = await Promise.all(storesData.map(async (store) => {
-          try {
-            // Buscar produtos reais de cada loja
-            const { data: storeProducts, error: productsError } = await getProducts(store.id);
-            
-            if (productsError) {
-              console.error(`Erro ao buscar produtos da loja ${store.id}:`, productsError);
-              return {
-                ...store,
-                products_count: 0,
-                reviews_count: 0
-              };
-            }
-            
-            // Log para depuração de produtos
-            console.log(`Produtos da loja ${store.name}:`, storeProducts);
-            
-            // Garantir que storeProducts seja um array válido
-            const validProducts = Array.isArray(storeProducts) ? storeProducts : [];
-            const productCount = validProducts.length;
-            
-            // Calcular o total de reviews para esta loja
-            let storeReviewsCount = 0;
-            if (validProducts.length > 0) {
-              storeReviewsCount = validProducts.reduce((sum, product) => sum + (product.reviews_count || 0), 0);
-            }
-            
-            // Atualizar o valor de products_count com o número real de produtos
-            // e adicionar o reviews_count para cada loja
-            return {
-              ...store,
-              products_count: productCount,
-              reviews_count: storeReviewsCount
-            };
-          } catch (error) {
-            console.error(`Erro ao buscar produtos da loja ${store.id}:`, error);
-            return {
-              ...store,
-              products_count: 0,
-              reviews_count: 0
-            }; // definir valores padrão em caso de erro
-          }
-        }));
+        // Atualizar estatísticas agregadas
+        setAggregatedStats({
+          totalStores: dashboardData.stats.totalStores,
+          totalProducts: dashboardData.stats.totalProducts,
+          totalReviews: dashboardData.stats.totalReviews,
+          averageRating: dashboardData.stats.averageRating,
+          conversionRate: 0, // Mantido como 0 conforme código original
+          trendsProducts: dashboardData.chartData.products || productChartData,
+          trendsReviews: dashboardData.chartData.reviews || reviewChartData
+        });
         
-        // Log para depuração das lojas atualizadas
-        console.log("Lojas atualizadas com contagem de produtos:", updatedStores);
-        
-        setStores(updatedStores || []);
-        
-        // Calcular estatísticas agregadas
-        if (updatedStores && updatedStores.length > 0) {
-          // Totais iniciais
-          let totalProducts = 0;
-          let totalReviews = 0;
-          let totalRatingsSum = 0;
-          let productsWithRatings = 0;
-          
-          // Recuperar estatísticas de cada loja
-          for (const store of updatedStores) {
-            // Somar produtos de cada loja
-            const storeProductCount = store.products_count || 0;
-            totalProducts += storeProductCount;
-            
-            // Somar reviews de cada loja
-            const storeReviewCount = store.reviews_count || 0;
-            totalReviews += storeReviewCount;
-            
-            try {
-              // Buscar produtos apenas para calcular ratings médios se necessário
-              const { data: storeProducts } = await getProducts(store.id);
-              if (storeProducts && storeProducts.length > 0) {
-                // Calcular a soma dos ratings para média geral
-                storeProducts.forEach(product => {
-                  if (product.average_rating && product.average_rating > 0) {
-                    totalRatingsSum += product.average_rating;
-                    productsWithRatings++;
-                  }
-                });
-              }
-            } catch (productsError) {
-              console.error(`Erro ao buscar produtos para ratings da loja ${store.id}:`, productsError);
-            }
-          }
-          
-          // Log para depuração dos totais
-          console.log("Estatísticas calculadas:", { 
-            totalStores: updatedStores.length,
-            totalProducts,
-            totalReviews,
-            avgRating: productsWithRatings > 0 ? (totalRatingsSum / productsWithRatings) : 0
-          });
-          
-          // Calcular média geral de avaliações
-          const averageRating = productsWithRatings > 0 ? (totalRatingsSum / productsWithRatings) : 0;
-          
-          // Buscar dados reais para os gráficos
-          const productsData = await fetchProductsChartData(period);
-          const reviewsData = await fetchReviewsChartData(period);
-          
-          setAggregatedStats({
-            totalStores: updatedStores.length,
-            totalProducts,
-            totalReviews,
-            averageRating,
-            conversionRate: 0, // Removido cálculo que dependia de totalViews e totalSales
-            trendsProducts: productsData.length > 0 ? productsData : [],
-            trendsReviews: reviewsData.length > 0 ? reviewsData : []
-          });
-        }
+        console.log('Dashboard carregado com sucesso com consulta otimizada');
       } catch (err) {
         console.error('Erro ao carregar dashboard:', err);
         toast.error('Erro ao carregar dados do dashboard');

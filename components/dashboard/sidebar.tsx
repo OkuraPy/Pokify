@@ -134,10 +134,13 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
         <div className="px-4 py-5 flex items-center justify-between border-b bg-gradient-to-r from-white to-blue-50/50">
           <div className={cn("flex items-center", isCollapsed && "justify-center")}>
             <div className="flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl h-9 w-9 shadow-md shadow-blue-100/60 hover:shadow-blue-200/80 transition-all duration-300 hover:scale-105">
-              <ShoppingBag className="h-[18px] w-[18px] text-white drop-shadow-sm" />
+              <svg className="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 3H14C18.4183 3 22 6.58172 22 11C22 15.4183 18.4183 19 14 19H6V3Z" fill="currentColor"/>
+                <path d="M6 3V19" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              </svg>
             </div>
             {!isCollapsed && (
-              <span className="ml-3 text-lg font-semibold text-slate-800 tracking-tight">Pokify</span>
+              <span className="ml-3 text-lg font-semibold text-slate-800 tracking-tight">Dropfy</span>
             )}
           </div>
         </div>
@@ -201,16 +204,16 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   <>
                     <span className="ml-2.5 font-medium text-purple-700">TrendHunter IA</span>
                     <div className="absolute right-3.5 top-1/2 transform -translate-y-1/2 flex items-center transition-all duration-200 group-hover:scale-110">
-                      <div className="bg-amber-50 rounded-full p-0.5">
-                        <Lock className="h-3 w-3 text-amber-500" />
+                      <div className="bg-blue-50 rounded-full p-0.5">
+                        <Lock className="h-3 w-3 text-blue-500" />
                       </div>
                     </div>
                   </>
                 )}
                 {isCollapsed && (
                   <div className="absolute -right-1 -top-1">
-                    <div className="bg-amber-50 rounded-full p-0.5 shadow-sm">
-                      <div className="h-1.5 w-1.5 bg-amber-400 rounded-full" />
+                    <div className="bg-blue-50 rounded-full p-0.5 shadow-sm">
+                      <div className="h-1.5 w-1.5 bg-blue-400 rounded-full" />
                     </div>
                   </div>
                 )}
@@ -419,7 +422,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   className={cn(
                     "px-2.5 py-0.5 text-xs font-medium rounded-full shadow-sm",
                     storePercentage >= 100 ? "bg-gradient-to-br from-red-100 to-red-200 text-red-700 border-red-200/50" : 
-                    storePercentage >= 75 ? "bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 border-amber-200/50" :
+                    storePercentage >= 75 ? "bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 border-blue-200/50" :
                     "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700 border-emerald-200/50"
                   )}
                 >
@@ -435,7 +438,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                       storePercentage >= 100 
                         ? "bg-gradient-to-r from-red-500 to-red-400" 
                         : storePercentage >= 75
-                        ? "bg-gradient-to-r from-amber-500 to-amber-400"
+                        ? "bg-gradient-to-r from-blue-500 to-blue-400"
                         : "bg-gradient-to-r from-emerald-500 to-emerald-400"
                     )}
                     style={{ width: `${storePercentage}%` }}
@@ -445,7 +448,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 <p className={cn(
                   "text-xs flex items-center",
                   storePercentage >= 100 ? "text-red-600" :
-                  storePercentage >= 75 ? "text-amber-600" :
+                  storePercentage >= 75 ? "text-blue-600" :
                   "text-emerald-600"
                 )}>
                   {remaining > 0 
@@ -479,7 +482,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                         storePercentage >= 100 
                           ? "bg-gradient-to-br from-red-100 to-red-200 text-red-600 hover:from-red-200 hover:to-red-300" 
                           : storePercentage >= 75
-                          ? "bg-gradient-to-br from-amber-100 to-amber-200 text-amber-600 hover:from-amber-200 hover:to-amber-300"
+                          ? "bg-gradient-to-br from-blue-100 to-blue-200 text-blue-600 hover:from-blue-200 hover:to-blue-300"
                           : "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-600 hover:from-emerald-200 hover:to-emerald-300"
                       )}
                     >
@@ -494,7 +497,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 <TooltipContent side="right" className={cn(
                   "border-none text-white shadow-md", 
                   storePercentage >= 100 ? "bg-gradient-to-br from-red-600 to-red-700" : 
-                  storePercentage >= 75 ? "bg-gradient-to-br from-amber-600 to-amber-700" :
+                  storePercentage >= 75 ? "bg-gradient-to-br from-blue-600 to-blue-700" :
                   "bg-gradient-to-br from-emerald-600 to-emerald-700"
                 )}>
                   <div className="px-1 py-1">

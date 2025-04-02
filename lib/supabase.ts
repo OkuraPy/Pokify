@@ -1520,3 +1520,236 @@ export async function updateUserProfile(updates: Partial<{
     };
   }
 }
+
+/**
+ * Função otimizada para buscar estatísticas do dashboard
+ * Reduz o número de consultas ao banco de dados usando agregações
+ * @param period - Período para filtrar dados ('week', 'month', 'quarter', 'year')
+ */
+export async function getDashboardStats(period: string = 'month') {
+  try {
+    // Obter o usuário atual
+    const { data: user } = await supabase.auth.getUser();
+    
+    if (!user?.user) {
+      return { 
+        data: null, 
+        error: new Error('Usuário não autenticado') 
+      };
+    }
+    
+    const userId = user.user.id;
+    
+    // 1. Buscar lojas do usuário
+    const { data: stores, error: storesError } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (storesError) {
+      console.error('Erro ao buscar lojas:', storesError);
+      return { 
+        data: null, 
+        error: storesError 
+      };
+    }
+    
+    if (!stores || stores.length === 0) {
+      return { 
+        data: { 
+          stores: [],
+          stats: {
+            totalStores: 0,
+            totalProducts: 0,
+            totalReviews: 0,
+            averageRating: 0
+          },
+          chartData: {
+            products: [],
+            reviews: []
+          }
+        }, 
+        error: null 
+      };
+    }
+    
+    // Extrair IDs das lojas para usar nas consultas
+    const storeIds = stores.map(store => store.id);
+    
+    // 2. Buscar estatísticas agregadas de produtos em uma única consulta
+    const { data: productsStats, error: productsError } = await supabase
+      .from('products')
+      .select(`
+        id, 
+        store_id,
+        title,
+        average_rating,
+        reviews_count,
+        created_at
+      `)
+      .in('store_id', storeIds);
+    
+    if (productsError) {
+      console.error('Erro ao buscar estatísticas de produtos:', productsError);
+      return { 
+        data: null, 
+        error: productsError 
+      };
+    }
+    
+    // 3. Calcular estatísticas com os dados obtidos
+    const productsByStore: Record<string, { count: number; reviewsCount: number }> = {};
+    let totalProducts = 0;
+    let totalReviews = 0;
+    let ratingSum = 0;
+    let productsWithRatings = 0;
+    
+    // Inicializar contadores para cada loja
+    storeIds.forEach(id => {
+      productsByStore[id] = {
+        count: 0,
+        reviewsCount: 0
+      };
+    });
+    
+    // Processar produtos e calcular totais
+    if (productsStats) {
+      totalProducts = productsStats.length;
+      
+      productsStats.forEach(product => {
+        // Incrementar contador para a loja específica
+        if (productsByStore[product.store_id]) {
+          productsByStore[product.store_id].count += 1;
+          productsByStore[product.store_id].reviewsCount += (product.reviews_count || 0);
+        }
+        
+        // Somar avaliações para média geral
+        totalReviews += (product.reviews_count || 0);
+        
+        if (product.average_rating && product.average_rating > 0) {
+          ratingSum += product.average_rating;
+          productsWithRatings += 1;
+        }
+      });
+    }
+    
+    // Calcular média geral de avaliações
+    const averageRating = productsWithRatings > 0 ? (ratingSum / productsWithRatings) : 0;
+    
+    // 4. Atualizar os dados das lojas com as contagens calculadas
+    const updatedStores = stores.map(store => ({
+      ...store,
+      products_count: productsByStore[store.id]?.count || 0,
+      reviews_count: productsByStore[store.id]?.reviewsCount || 0
+    }));
+    
+    // 5. Preparar datas para filtrar dados por período
+    const today = new Date();
+    let startDate = new Date(today);
+    
+    // Definir intervalo com base no período
+    switch (period) {
+      case 'week':
+        startDate.setDate(today.getDate() - 7);
+        break;
+      case 'month':
+        startDate.setDate(today.getDate() - 30);
+        break;
+      case 'quarter':
+        startDate.setMonth(today.getMonth() - 3);
+        break;
+      case 'year':
+        startDate.setFullYear(today.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(today.getDate() - 30); // Padrão: último mês
+    }
+    
+    // Filtrar produtos e reviews pelo período selecionado
+    const recentProducts = productsStats.filter(product => 
+      new Date(product.created_at) >= startDate
+    );
+    
+    // 6. Buscar dados de reviews para cálculos do gráfico
+    const { data: reviewsData, error: reviewsError } = await supabase
+      .from('reviews')
+      .select('id, product_id, created_at')
+      .gte('created_at', startDate.toISOString());
+    
+    if (reviewsError) {
+      console.error('Erro ao buscar dados de reviews:', reviewsError);
+      // Continuamos mesmo com erro nos reviews, apenas logamos
+    }
+    
+    // 7. Preparar dados para os gráficos
+    const productsByDay: Record<string, number> = {};
+    const reviewsByDay: Record<string, number> = {};
+    
+    // Calcular o número de dias no período
+    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Inicializar dias
+    for (let i = 0; i < diffDays; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dayKey = date.getDate().toString();
+      productsByDay[dayKey] = 0;
+      reviewsByDay[dayKey] = 0;
+    }
+    
+    // Contar produtos por dia
+    recentProducts.forEach(product => {
+      const date = new Date(product.created_at);
+      const dayKey = date.getDate().toString();
+      if (productsByDay[dayKey] !== undefined) {
+        productsByDay[dayKey] += 1;
+      }
+    });
+    
+    // Contar reviews por dia
+    if (reviewsData) {
+      reviewsData.forEach(review => {
+        const date = new Date(review.created_at);
+        const dayKey = date.getDate().toString();
+        if (reviewsByDay[dayKey] !== undefined) {
+          reviewsByDay[dayKey] += 1;
+        }
+      });
+    }
+    
+    // Formato para os gráficos
+    const productChartData = Object.entries(productsByDay)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+    
+    const reviewChartData = Object.entries(reviewsByDay)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => parseInt(a.name) - parseInt(b.name));
+    
+    // 8. Retornar todos os dados organizados
+    return {
+      data: {
+        stores: updatedStores,
+        stats: {
+          totalStores: stores.length,
+          totalProducts,
+          totalReviews,
+          averageRating
+        },
+        chartData: {
+          products: productChartData,
+          reviews: reviewChartData
+        }
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Erro ao obter estatísticas do dashboard:', error);
+    return { 
+      data: null, 
+      error: error instanceof Error ? error : new Error('Erro desconhecido') 
+    };
+  }
+}
