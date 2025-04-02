@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical, Sparkles, Lock, Store, Search } from 'lucide-react';
+import { ArrowLeft, Eye, ShoppingCart, Pencil, Loader2, Languages, X, ImagePlus, GripVertical, Sparkles, Lock, Store, Search, Image as ImageIcon } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { ImageGallery } from './components/image-gallery';
 import { ProductInfo } from './components/product-info';
@@ -61,6 +61,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSupplierFeatureDialogOpen, setIsSupplierFeatureDialogOpen] = useState(false);
+  const [isImageTranslationDialogOpen, setIsImageTranslationDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadProductDetails() {
@@ -478,6 +479,22 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
               Avaliações
             </Button>
             
+            {/* Nova opção de menu para Tradução de Imagens */}
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start text-sm relative text-gray-500`}
+              onClick={() => setIsImageTranslationDialogOpen(true)}
+            >
+              <div className="flex items-center">
+                <Languages className="h-5 w-5 mr-3 opacity-70" />
+                <span>IA Imagens</span>
+                <div className="absolute right-2 flex items-center">
+                  <Lock className="h-3.5 w-3.5 text-amber-500" />
+                </div>
+              </div>
+            </Button>
+            
+            {/* Restaurar o botão de variações */}
             {product.variants && Object.keys(product.variants).length > 0 && (
               <Button 
                 variant="ghost" 
@@ -493,7 +510,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
               </Button>
             )}
             
-            {/* Nova opção de menu para Fornecedores */}
+            {/* Opção de menu para Fornecedores */}
             <Button 
               variant="ghost" 
               className={`w-full justify-start text-sm relative ${activeTab === "suppliers" ? "bg-blue-50 text-blue-700" : "text-gray-500"}`}
@@ -678,7 +695,7 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                         </>
                       ) : (
                         <>
-                          <ImagePlus className="h-4 w-4 mr-2" />
+                          <ImageIcon className="h-4 w-4 mr-2" />
                           Adicionar Imagens
                         </>
                       )}
@@ -894,130 +911,4 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "media" ? "text-blue-600" : "text-gray-600"}`}
-            onClick={() => setActiveTab("media")}
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-              <path d="M5 19L8.5 15.5L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M12 19L16 15L19 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="text-xs mt-1">Mídia</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "info" ? "text-blue-600" : "text-gray-600"}`}
-            onClick={() => setActiveTab("info")}
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" />
-              <path d="M12 16V10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <path d="M12 8V8.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <span className="text-xs mt-1">Info</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "description" ? "text-blue-600" : "text-gray-600"}`}
-            onClick={() => setActiveTab("description")}
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M4 7H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <path d="M4 12H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-              <path d="M4 17H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <span className="text-xs mt-1">Desc</span>
-          </Button>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "reviews" ? "text-blue-600" : "text-gray-600"}`}
-            onClick={() => setActiveTab("reviews")}
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="text-xs mt-1">Avaliações</span>
-          </Button>
-        </div>
-      </div>
-      
-      {/* Dialog de Tradução */}
-      <TranslationDialog
-        isOpen={isTranslationDialogOpen}
-        onClose={() => setIsTranslationDialogOpen(false)}
-        product={product!}
-        onSaveTranslation={handleSaveTranslation}
-      />
-
-      {/* Dialog de Melhoria de Descrição */}
-      <ImproveDescriptionDialog
-        isOpen={isImproveDescriptionDialogOpen}
-        onClose={() => setIsImproveDescriptionDialogOpen(false)}
-        product={product!}
-        onImproveDescription={async (improvedDescription) => {
-          try {
-            await updateProduct(productId, { description: improvedDescription });
-            setProduct(prev => prev ? { ...prev, description: improvedDescription } : null);
-            toast.success('Descrição melhorada com sucesso');
-          } catch (error) {
-            console.error('Erro ao salvar descrição melhorada:', error);
-            toast.error('Erro ao salvar descrição melhorada');
-          }
-        }}
-      />
-      
-      {/* Dialog para funcionalidade de fornecedores em breve */}
-      <Dialog open={isSupplierFeatureDialogOpen} onOpenChange={setIsSupplierFeatureDialogOpen}>
-        <DialogContent className="max-w-md">
-          <div className="flex flex-col items-center text-center p-4">
-            <div className="relative mb-4">
-              <div className="absolute inset-0 bg-amber-200 rounded-full blur-md opacity-50"></div>
-              <div className="bg-gradient-to-r from-amber-400 to-amber-500 p-3 rounded-full relative">
-                <Lock className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            
-            <DialogTitle className="text-xl font-bold">Funcionalidade em Breve!</DialogTitle>
-            
-            <div className="mt-3 space-y-3">
-              <p className="text-gray-600">
-                Nossa inteligência artificial está evoluindo para encontrar os melhores fornecedores para o seu produto diretamente no AliExpress.
-              </p>
-              
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                <h3 className="font-medium text-gray-800 mb-2 flex items-center">
-                  <Search className="h-4 w-4 mr-1.5 text-amber-500" />
-                  O que esta funcionalidade fará:
-                </h3>
-                <ul className="text-sm text-gray-600 space-y-2 list-disc pl-5">
-                  <li>Identificar automaticamente fornecedores confiáveis</li>
-                  <li>Comparar preços entre diferentes vendedores</li>
-                  <li>Avaliar reputação e classificação dos fornecedores</li>
-                  <li>Sugerir opções de fornecimento alternativas</li>
-                </ul>
-              </div>
-              
-              <p className="text-amber-600 font-medium">
-                Disponível no próximo lançamento!
-              </p>
-            </div>
-            
-            <Button 
-              className="mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white"
-              onClick={() => setIsSupplierFeatureDialogOpen(false)}
-            >
-              Entendi
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+            className={`flex flex-col items-center py-2 px-0 rounded-none ${activeTab === "media" ? "text-blue-600" : "text-gray-600"}`
