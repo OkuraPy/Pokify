@@ -282,56 +282,58 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   ) : (
                     <div className="text-center py-4">
                       {!isCollapsed && (
-                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-5 transition-all duration-300 hover:shadow-sm">
+                        <div className="rounded-xl bg-slate-50 border border-slate-100 p-5 mb-4 transition-all duration-300 hover:shadow-sm">
                           <div className="bg-white h-12 w-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
                             <ShoppingBag className="h-5 w-5 text-slate-400" />
                           </div>
-                          <p className="text-sm text-slate-500 font-medium">Nenhuma loja encontrada</p>
-                          <p className="text-xs text-slate-400 mt-1">Crie sua primeira loja abaixo</p>
+                          <div className="text-sm text-slate-500 font-medium">Nenhuma loja encontrada</div>
+                          <div className="text-xs text-slate-400 mt-1 mb-2">Crie sua primeira loja abaixo</div>
                         </div>
                       )}
                     </div>
                   )}
-                  
-                  {/* Botão de Nova Loja premium e elegante */}
-                  {storesCount < maxStores ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={isLoading}
-                            className={cn(
-                              'w-full justify-start mt-3 rounded-xl h-10 transition-all duration-300 border shadow-sm',
-                              isCollapsed && 'justify-center p-0',
-                              'bg-gradient-to-r from-blue-50 to-blue-100/50 hover:from-blue-100/80 hover:to-blue-200/50 text-blue-700 border-blue-200/50 hover:shadow-md hover:scale-[1.01]'
-                            )}
-                            onClick={navigateToNewStore}
-                          >
-                            {isLoading ? (
-                              <div className="relative h-6 w-6">
-                                <div className="absolute inset-0 rounded-full border-2 border-blue-100 opacity-40 animate-ping"></div>
-                                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                              </div>
-                            ) : (
-                              <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
-                                <PlusCircle className="h-4 w-4 text-white" />
-                              </div>
-                            )}
-                            {!isCollapsed && <span className="ml-2.5 font-medium">Nova Loja</span>}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="bg-gradient-to-br from-blue-700 to-blue-800 text-white border-none shadow-lg">
-                          <div className="px-1 py-1">
-                            <p>Adicionar nova loja</p>
-                          </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ) : null}
                 </div>
               </ScrollArea>
+              
+              {/* Botão de Nova Loja - MOVIDO PARA FORA DA SCROLLAREA */}
+              {storesCount < maxStores ? (
+                <div className="mt-3">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={isLoading}
+                          className={cn(
+                            'w-full justify-start rounded-xl h-10 min-h-[40px] transition-all duration-300 border shadow-sm whitespace-nowrap overflow-visible',
+                            isCollapsed && 'justify-center p-0',
+                            'bg-gradient-to-r from-blue-50 to-blue-100/50 hover:from-blue-100/80 hover:to-blue-200/50 text-blue-700 border-blue-200/50 hover:shadow-md hover:scale-[1.01]'
+                          )}
+                          onClick={navigateToNewStore}
+                        >
+                          {isLoading ? (
+                            <div className="relative h-6 w-6">
+                              <div className="absolute inset-0 rounded-full border-2 border-blue-100 opacity-40 animate-ping"></div>
+                              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                            </div>
+                          ) : (
+                            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                              <PlusCircle className="h-4 w-4 text-white" />
+                            </div>
+                          )}
+                          {!isCollapsed && <span className="ml-2.5 font-medium">Nova Loja</span>}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="bg-gradient-to-br from-blue-700 to-blue-800 text-white border-none shadow-lg">
+                        <div className="px-1 py-1">
+                          <span>Adicionar nova loja</span>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -414,7 +416,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   </div>
                   <div>
                     <span className="text-sm font-medium text-slate-700">Limite de Lojas</span>
-                    <p className="text-xs text-slate-500 mt-0.5">{storesCount} de {maxStores} utilizadas</p>
+                    <div className="text-xs text-slate-500 mt-0.5">{storesCount} de {maxStores} utilizadas</div>
                   </div>
                 </div>
                 <Badge 
@@ -445,7 +447,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   />
                 </div>
                 
-                <p className={cn(
+                <div className={cn(
                   "text-xs flex items-center",
                   storePercentage >= 100 ? "text-red-600" :
                   storePercentage >= 75 ? "text-blue-600" :
@@ -465,7 +467,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                         <span>Limite máximo atingido</span>
                       </>
                   }
-                </p>
+                </div>
               </div>
             </div>
           </div>
@@ -501,12 +503,12 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   "bg-gradient-to-br from-emerald-600 to-emerald-700"
                 )}>
                   <div className="px-1 py-1">
-                    <p className="text-sm">
+                    <span className="text-sm">
                       {remaining > 0 
                         ? `Você pode adicionar mais ${remaining} ${remaining === 1 ? 'loja' : 'lojas'}`
                         : 'Limite máximo atingido'
                       }
-                    </p>
+                    </span>
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -561,9 +563,9 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                     Mineração de Produtos
                     <Badge className="ml-2 bg-purple-100 text-purple-600 border-0 text-xs py-0">Avançado</Badge>
                   </h3>
-                  <p className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-600 block">
                     Descubra produtos escaláveis com potencial explosivo.
-                  </p>
+                  </span>
                 </div>
               </div>
               
@@ -580,9 +582,9 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                     Análise de Tendências
                     <Badge className="ml-2 bg-blue-100 text-blue-600 border-0 text-xs py-0">Insights</Badge>
                   </h3>
-                  <p className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-600 block">
                     Identifique tendências antes que virem mainstream.
-                  </p>
+                  </span>
                 </div>
               </div>
               
@@ -604,9 +606,9 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                     Filtros Inteligentes
                     <Badge className="ml-2 bg-green-100 text-green-600 border-0 text-xs py-0">Customizável</Badge>
                   </h3>
-                  <p className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-600 block">
                     Configure filtros avançados para produtos específicos.
-                  </p>
+                  </span>
                 </div>
               </div>
             </div>
@@ -623,9 +625,9 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 </div>
                 <div className="ml-3 flex-1">
                   <h3 className="text-sm font-semibold text-purple-800">Como o TrendHunter IA funciona</h3>
-                  <p className="mt-1 text-xs text-purple-700">
+                  <span className="mt-1 text-xs text-purple-700 block">
                     Nossa tecnologia de IA vasculha milhares de produtos na biblioteca de anúncios para identificar itens com alto potencial de vendas.
-                  </p>
+                  </span>
                   
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     <div className="bg-white rounded-lg p-2 border border-purple-100">
@@ -633,9 +635,9 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                         <Check className="h-3 w-3 mt-0.5 text-purple-600 flex-shrink-0" />
                         <div className="ml-2">
                           <h4 className="text-xs font-medium text-purple-800">Identificação de campeões</h4>
-                          <p className="text-[10px] text-purple-700">
+                          <span className="text-[10px] text-purple-700 block">
                             Produtos com histórico de vendas e engajamento
-                          </p>
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -645,9 +647,9 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                         <Check className="h-3 w-3 mt-0.5 text-purple-600 flex-shrink-0" />
                         <div className="ml-2">
                           <h4 className="text-xs font-medium text-purple-800">Análise de mercado</h4>
-                          <p className="text-[10px] text-purple-700">
+                          <span className="text-[10px] text-purple-700 block">
                             Avaliação de saturação e potencial de crescimento
-                          </p>
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -664,8 +666,8 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                           </svg>
                         </div>
                         <div className="p-1">
-                          <p className="font-medium truncate">Pulseira magnética</p>
-                          <p className="text-green-600">+430% vendas em 30 dias</p>
+                          <span className="font-medium truncate">Pulseira magnética</span>
+                          <span className="text-green-600 block">+430% vendas em 30 dias</span>
                         </div>
                       </div>
                       <div className="rounded overflow-hidden border border-gray-100 flex items-center text-[10px]">
@@ -675,8 +677,8 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                           </svg>
                         </div>
                         <div className="p-1">
-                          <p className="font-medium truncate">Mini projetor LED</p>
-                          <p className="text-green-600">Alta margem de lucro</p>
+                          <span className="font-medium truncate">Mini projetor LED</span>
+                          <span className="text-green-600 block">Alta margem de lucro</span>
                         </div>
                       </div>
                     </div>
