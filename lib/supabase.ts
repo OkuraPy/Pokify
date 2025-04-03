@@ -291,22 +291,17 @@ export async function updateStore(id: string, store: Partial<Store>) {
   }
 }
 
-export async function deleteStore(id: string) {
+export async function deleteStore(id: string, options?: { force?: boolean }) {
   try {
-    const query = supabase
-      .from('stores')
-      .delete()
-      .eq('id', id);
+    // Importando diretamente a função avançada de store-service.ts
+    const { deleteStore: deleteStoreAdvanced } = await import('./store-service');
     
-    const selectQuery = query.select();
-    const filteredQuery = selectQuery.single();
+    // Usar a função avançada que lida com todas as dependências (avaliações, produtos, etc.)
+    const result = await deleteStoreAdvanced(id, options);
     
-    // Executar diretamente a query
-    const result = await filteredQuery;
-    
-    return { 
-      data: result.data, 
-      error: result.error 
+    return {
+      data: result.success ? { id } : null,
+      error: result.success ? null : new Error(result.error || 'Erro ao excluir loja')
     };
   } catch (error) {
     console.error('Erro ao excluir loja:', error);

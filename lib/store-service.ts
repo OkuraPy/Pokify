@@ -232,29 +232,112 @@ export async function updateStore(
 }
 
 /**
- * Exclui uma loja e todos os seus produtos
+ * Opções para exclusão de loja
+ */
+interface DeleteStoreOptions {
+  force?: boolean;
+}
+
+/**
+ * Exclui uma loja e todas as suas dependências usando a função SQL cascade_delete_store
  */
 export async function deleteStore(
-  storeId: string
-): Promise<{ success: boolean; error?: string }> {
+  storeId: string,
+  options?: DeleteStoreOptions
+): Promise<{ success: boolean; error?: string; message?: string; data?: any }> {
+  console.log(`[INFO] Iniciando exclusão da loja ${storeId}...`);
+  
   try {
-    // Contornar os problemas de tipagem com o Supabase
-    const { error } = await (supabase
-      .from('stores')
-      .delete()
-      .eq('id', storeId) as any);
+    // Usar a função SQL cascade_delete_store que foi criada especificamente para esta finalidade
+    // Esta função executa todas as exclusões dentro de uma mesma transação, garantindo consistência
+    console.log(`[INFO] Usando função cascade_delete_store para exclusão segura...`);
     
+    // Usando 'as any' para contornar restriu00e7u00f5es de tipagem do Supabase
+    const { data, error } = await (supabase
+      .rpc('cascade_delete_store', { store_id_param: storeId })
+      .single() as any);
+      
     if (error) {
-      console.error('Erro ao excluir loja:', error);
-      return { success: false, error: (error as any).message };
+      console.error(`[ERRO] Falha ao executar cascade_delete_store:`, error);
+      
+      // Se estiver no modo forçado, tentar método alternativo
+      if (options?.force) {
+        console.log(`[INFO] Modo forçado ativado. Tentando exclusão alternativa...`);
+        return await executeFallbackDelete(storeId);
+      }
+      
+      return { 
+        success: false, 
+        error: `Falha na exclusão da loja: ${error.message}`
+      };
     }
     
-    return { success: true };
+    console.log(`[SUCESSO] Loja excluída com sucesso via função SQL!`, data);
+    return { 
+      success: true,
+      message: data?.message || 'Loja excluída com sucesso',
+      data
+    };
   } catch (error) {
-    console.error('Erro ao excluir loja:', error);
+    console.error(`[ERRO] Exceção ao excluir loja:`, error);
+    
+    // Se estiver no modo forçado, tentar método alternativo
+    if (options?.force) {
+      console.log(`[INFO] Modo forçado ativado após exceção. Tentando exclusão alternativa...`);
+      return await executeFallbackDelete(storeId);
+    }
+    
     return { 
       success: false, 
-      error: (error as any).message || 'Erro ao excluir a loja' 
+      error: `Erro ao excluir loja: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+    };
+  }
+}
+
+/**
+ * Método alternativo para exclusão de lojas caso o principal falhe
+ */
+async function executeFallbackDelete(storeId: string): Promise<{ success: boolean; error?: string }> {
+  console.log(`[INFO] Executando método alternativo de exclusão para a loja ${storeId}...`);
+  
+  try {
+    // Esta SQL faz a mesma coisa que a função cascade_delete_store, mas de forma direta
+    const rawQuery = `
+      BEGIN;
+        -- 1. Remover avaliações
+        DELETE FROM reviews WHERE product_id IN (SELECT id FROM products WHERE store_id = '${storeId}');
+        
+        -- 2. Remover histórico de publicação
+        DELETE FROM publication_history WHERE product_id IN (SELECT id FROM products WHERE store_id = '${storeId}');
+        DELETE FROM publication_history WHERE store_id = '${storeId}';
+        
+        -- 3. Remover produtos
+        DELETE FROM products WHERE store_id = '${storeId}';
+        
+        -- 4. Remover a loja
+        DELETE FROM stores WHERE id = '${storeId}';
+      COMMIT;
+    `;
+    
+    // Executar a SQL diretamente
+    // Usando 'as any' para contornar restriu00e7u00f5es de tipagem do Supabase
+    const { data, error } = await (supabase.rpc('exec_sql', { sql_query: rawQuery }) as any);
+    
+    if (error) {
+      console.error(`[ERRO] Falha no método alternativo de exclusão:`, error);
+      return { 
+        success: false, 
+        error: `Falha no método alternativo: ${error.message}`
+      };
+    }
+    
+    console.log(`[SUCESSO] Loja excluída com sucesso via método alternativo!`);
+    return { success: true };
+  } catch (finalError) {
+    console.error(`[ERRO FATAL] Exceção no método alternativo:`, finalError);
+    return { 
+      success: false, 
+      error: `Falha total na exclusão: ${finalError instanceof Error ? finalError.message : 'Erro desconhecido'}`
     };
   }
 }

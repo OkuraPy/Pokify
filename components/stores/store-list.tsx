@@ -28,13 +28,37 @@ import {
   ExternalLink, 
   BarChart,
   RefreshCw,
+  AlertTriangle,
 } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { updateStore, deleteStore } from '@/lib/store-service';
+import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 
 interface Store {
   id: string;
   name: string;
-  platform: string;
+  platform: 'aliexpress' | 'shopify' | 'other';
   url: string;
   products: number;
   reviews: number;
@@ -48,6 +72,14 @@ interface StoreListProps {
 export function StoreList({ stores }: StoreListProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState<Record<string, boolean>>({});
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    platform: 'other' as 'aliexpress' | 'shopify' | 'other',
+    url: '',
+  });
   
   const navigateToStore = (storeId: string) => {
     router.push(`/dashboard/stores/${storeId}`);
@@ -61,7 +93,73 @@ export function StoreList({ stores }: StoreListProps) {
     // Simular uma sincronização
     setTimeout(() => {
       setIsLoading(prev => ({ ...prev, [storeId]: false }));
+      toast.success('Loja sincronizada com sucesso!');
     }, 2000);
+  };
+
+  const handleEditClick = (store: Store) => {
+    setSelectedStore(store);
+    setFormData({
+      name: store.name,
+      platform: store.platform,
+      url: store.url,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (store: Store) => {
+    setSelectedStore(store);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!selectedStore) return;
+    
+    setIsLoading(prev => ({ ...prev, [selectedStore.id]: true }));
+    
+    try {
+      const result = await updateStore(selectedStore.id, {
+        name: formData.name,
+        platform: formData.platform,
+        url: formData.url,
+      });
+      
+      if (result.success) {
+        toast.success('Loja atualizada com sucesso!');
+        router.refresh(); // Atualizar os dados da página
+      } else {
+        toast.error(`Erro ao atualizar loja: ${result.error || 'Falha desconhecida'}`);
+      }
+    } catch (error) {
+      toast.error('Erro ao atualizar loja');
+      console.error('Erro ao atualizar loja:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, [selectedStore.id]: false }));
+      setIsEditDialogOpen(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedStore) return;
+    
+    setIsLoading(prev => ({ ...prev, [selectedStore.id]: true }));
+    
+    try {
+      const result = await deleteStore(selectedStore.id, { force: true });
+      
+      if (result.success) {
+        toast.success('Loja excluída com sucesso!');
+        router.refresh(); // Atualizar os dados da página
+      } else {
+        toast.error(`Erro ao excluir loja: ${result.error || 'Falha desconhecida'}`);
+      }
+    } catch (error) {
+      toast.error('Erro ao excluir loja');
+      console.error('Erro ao excluir loja:', error);
+    } finally {
+      setIsLoading(prev => ({ ...prev, [selectedStore.id]: false }));
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const getPlatformBadgeColor = (platform: string) => {
@@ -209,11 +307,17 @@ export function StoreList({ stores }: StoreListProps) {
                         <span>{isLoading[store.id] ? 'Sincronizando...' : 'Sincronizar'}</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer hover:bg-blue-50 hover:text-blue-600">
+                      <DropdownMenuItem 
+                        onClick={() => handleEditClick(store)}
+                        className="cursor-pointer hover:bg-blue-50 hover:text-blue-600"
+                      >
                         <Edit className="h-4 w-4 mr-2" />
                         <span>Editar</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700">
+                      <DropdownMenuItem 
+                        onClick={() => handleDeleteClick(store)}
+                        className="cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                      >
                         <Trash className="h-4 w-4 mr-2" />
                         <span>Excluir</span>
                       </DropdownMenuItem>
@@ -225,6 +329,114 @@ export function StoreList({ stores }: StoreListProps) {
           ))}
         </TableBody>
       </Table>
+
+      {/* Modal de Edição de Loja */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Loja</DialogTitle>
+            <DialogDescription>
+              Atualize as informações da sua loja
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome da Loja</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Nome da loja"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="platform">Plataforma</Label>
+              <Select
+                value={formData.platform}
+                onValueChange={(value) => setFormData({ ...formData, platform: value as 'aliexpress' | 'shopify' | 'other' })}
+              >
+                <SelectTrigger id="platform">
+                  <SelectValue placeholder="Selecione a plataforma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="shopify">Shopify</SelectItem>
+                  <SelectItem value="aliexpress">AliExpress</SelectItem>
+                  <SelectItem value="other">Outra</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="url">URL da Loja</Label>
+              <Input
+                id="url"
+                value={formData.url}
+                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+                placeholder="https://sualoja.com"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditDialogOpen(false)}
+              disabled={isLoading[selectedStore?.id || '']}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleEditSubmit}
+              disabled={isLoading[selectedStore?.id || '']}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            >
+              {isLoading[selectedStore?.id || ''] ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Alterações'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Confirmação de Exclusão */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Loja</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a loja <strong>{selectedStore?.name}</strong>? Esta ação não pode ser desfeita e todos os produtos e dados associados serão removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLoading[selectedStore?.id || '']}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteConfirm();
+              }}
+              disabled={isLoading[selectedStore?.id || '']}
+              className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600"
+            >
+              {isLoading[selectedStore?.id || ''] ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  Excluir Permanentemente
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 
