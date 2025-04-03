@@ -42,32 +42,8 @@ export default function DashboardPage() {
     trendsReviews: [] as ChartDataItem[]
   });
 
-  // Dados de exemplo para gráficos
-  const productChartData = [
-    { name: '1', value: 40 }, { name: '2', value: 45 }, { name: '3', value: 65 },
-    { name: '4', value: 25 }, { name: '5', value: 32 }, { name: '6', value: 65 },
-    { name: '7', value: 45 }, { name: '8', value: 30 }, { name: '9', value: 35 },
-    { name: '10', value: 55 }, { name: '11', value: 30 }, { name: '12', value: 45 },
-    { name: '13', value: 52 }, { name: '14', value: 60 }, { name: '15', value: 52 },
-    { name: '16', value: 30 }, { name: '17', value: 45 }, { name: '18', value: 25 },
-    { name: '19', value: 20 }, { name: '20', value: 30 }, { name: '21', value: 45 },
-    { name: '22', value: 60 }, { name: '23', value: 65 }, { name: '24', value: 52 },
-    { name: '25', value: 30 }, { name: '26', value: 45 }, { name: '27', value: 30 },
-    { name: '28', value: 45 }, { name: '29', value: 62 }, { name: '30', value: 45 },
-  ];
-
-  const reviewChartData = [
-    { name: '1', value: 15 }, { name: '2', value: 20 }, { name: '3', value: 35 },
-    { name: '4', value: 10 }, { name: '5', value: 12 }, { name: '6', value: 18 },
-    { name: '7', value: 22 }, { name: '8', value: 15 }, { name: '9', value: 10 },
-    { name: '10', value: 20 }, { name: '11', value: 12 }, { name: '12', value: 38 },
-    { name: '13', value: 15 }, { name: '14', value: 25 }, { name: '15', value: 18 },
-    { name: '16', value: 12 }, { name: '17', value: 20 }, { name: '18', value: 15 },
-    { name: '19', value: 10 }, { name: '20', value: 12 }, { name: '21', value: 25 },
-    { name: '22', value: 30 }, { name: '23', value: 35 }, { name: '24', value: 28 },
-    { name: '25', value: 20 }, { name: '26', value: 15 }, { name: '27', value: 10 },
-    { name: '28', value: 25 }, { name: '29', value: 32 }, { name: '30', value: 20 },
-  ];
+  // Os dados dos gráficos agora serão controlados diretamente pelo backend
+  // Removendo dados fictícios que eram mostrados quando não havia lojas
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -84,7 +60,7 @@ export default function DashboardPage() {
           return;
         }
         
-        if (!dashboardData) {
+        if (!dashboardData || !dashboardData.stores || dashboardData.stores.length === 0) {
           setStores([]);
           setAggregatedStats({
             totalStores: 0,
@@ -109,8 +85,8 @@ export default function DashboardPage() {
           totalReviews: dashboardData.stats.totalReviews,
           averageRating: dashboardData.stats.averageRating,
           conversionRate: 0, // Mantido como 0 conforme código original
-          trendsProducts: dashboardData.chartData.products || productChartData,
-          trendsReviews: dashboardData.chartData.reviews || reviewChartData
+          trendsProducts: dashboardData.chartData.products && dashboardData.stores.length > 0 ? dashboardData.chartData.products : [],
+          trendsReviews: dashboardData.chartData.reviews && dashboardData.stores.length > 0 ? dashboardData.chartData.reviews : []
         });
         
         console.log('Dashboard carregado com sucesso com consulta otimizada');
@@ -289,11 +265,19 @@ export default function DashboardPage() {
               <div className="h-[250px] flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
+            ) : aggregatedStats.totalStores === 0 ? (
+              <div className="h-[250px] flex flex-col items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-3">
+                  <Package className="h-5 w-5 text-blue-500" />
+                </div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Sem dados de produtos</p>
+                <p className="text-xs text-muted-foreground text-center">Adicione uma loja para ver suas métricas aqui</p>
+              </div>
             ) : (
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={aggregatedStats.trendsProducts.length > 0 ? aggregatedStats.trendsProducts : productChartData}
+                    data={aggregatedStats.trendsProducts}
                     margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -349,11 +333,19 @@ export default function DashboardPage() {
               <div className="h-[250px] flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
+            ) : aggregatedStats.totalStores === 0 ? (
+              <div className="h-[250px] flex flex-col items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-yellow-50 flex items-center justify-center mb-3">
+                  <Star className="h-5 w-5 text-yellow-500" />
+                </div>
+                <p className="text-sm font-medium text-gray-600 mb-1">Sem dados de avaliações</p>
+                <p className="text-xs text-muted-foreground text-center">Adicione uma loja para ver suas métricas aqui</p>
+              </div>
             ) : (
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={aggregatedStats.trendsReviews.length > 0 ? aggregatedStats.trendsReviews : reviewChartData}
+                    data={aggregatedStats.trendsReviews}
                     margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
@@ -429,17 +421,20 @@ export default function DashboardPage() {
               <Store className="h-6 w-6 text-blue-500" />
             </div>
             <h3 className="text-lg font-medium mb-2">Nenhuma loja encontrada</h3>
-            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">
               Você ainda não possui lojas conectadas à plataforma Pokify.
             </p>
-            <Button 
-              onClick={() => router.push('/dashboard/stores')} 
-              variant="outline"
-              className="mx-auto border-blue-200 text-blue-700 hover:bg-blue-50"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Primeira Loja
-            </Button>
+            <div className="pb-6">
+              <Button 
+                onClick={() => router.push('/dashboard/stores')} 
+                variant="outline"
+                className="mx-auto border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-all whitespace-nowrap px-5 min-h-[44px]"
+                size="lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Primeira Loja
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
