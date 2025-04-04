@@ -9,6 +9,9 @@ import { preserveImagesInDescription } from '@/lib/markdown-utils';
 import { createLogger } from '@/lib/logger';
 import { DirectExtractor, OpenAIExtractor } from '@/lib/extractor-service';
 
+// Configurar a duração máxima para o limite do plano Pro (60 segundos)
+export const maxDuration = 60;
+
 // Criar instância de logger dedicada para esta API
 const logger = createLogger('OpenAI Extractor API');
 

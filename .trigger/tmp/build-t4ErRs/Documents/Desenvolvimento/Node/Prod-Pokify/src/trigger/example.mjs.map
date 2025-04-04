@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../../../../../src/trigger/example.ts"],
+  "sourcesContent": ["import { logger, task, wait } from \"@trigger.dev/sdk/v3\";\n\nexport const helloWorldTask = task({\n  id: \"hello-world\",\n  // Set an optional maxDuration to prevent tasks from running indefinitely\n  maxDuration: 300, // Stop executing after 300 secs (5 mins) of compute\n  run: async (payload: any, { ctx }) => {\n    logger.log(\"Hello, world!\", { payload, ctx });\n\n    await wait.for({ seconds: 5 });\n\n    return {\n      message: \"Hello, world!\",\n    }\n  },\n});"],
+  "mappings": ";;;;;;;;;;AAAA;AAEO,IAAM,iBAAiB,KAAK;AAAA,EACjC,IAAI;AAAA;AAAA,EAEJ,aAAa;AAAA;AAAA,EACb,KAAK,OAAO,SAAc,EAAE,IAAI,MAAM;AACpC,WAAO,IAAI,iBAAiB,EAAE,SAAS,IAAI,CAAC;AAE5C,UAAM,KAAK,IAAI,EAAE,SAAS,EAAE,CAAC;AAE7B,WAAO;AAAA,MACL,SAAS;AAAA,IACX;AAAA,EACF;AACF,CAAC;",
+  "names": []
+}

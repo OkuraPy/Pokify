@@ -1,0 +1,64 @@
+{
+  "contentHash": "63add9b9930f7a9bd961b2c331b2dae8",
+  "runtime": "node",
+  "cliPackageVersion": "3.3.17",
+  "packageVersion": "3.3.17",
+  "environment": "dev",
+  "target": "dev",
+  "files": [
+    {
+      "entry": "src/trigger/example.ts",
+      "out": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-xsinaG/Documents/Desenvolvimento/Node/Prod-Pokify/src/trigger/example.mjs"
+    },
+    {
+      "entry": "src/trigger/product-extractor.ts",
+      "out": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-xsinaG/Documents/Desenvolvimento/Node/Prod-Pokify/src/trigger/product-extractor.mjs"
+    }
+  ],
+  "sources": {
+    "src/trigger/example.ts": {
+      "contents": "eJxdkEFrwzAMhe/+FW85peA1hbJLSscOO+y+wc4mUTJTxwq20iaE/Pdhr7Cxi0A8fU96ssPIQbDCcd9T0BATLxo3YwUbusADihcJNon7lq5VbC/V9ViclKI5ow37KPgi5/iTg2s/TLzgnH3KVQG2rVFk+fGW9EIroKrwTgLjwaNY9sZhMPPrFEzqIIwx0JW8ZJ/4c0iYvLe+h/UtddZbIbco/AVrHA8Hnd2FR9BMzSQJMZ1QSCIiNRHlEwbr4w7coeFhnIQUkn8NExffoBzN4ti0NYxfNFY0MmPb4fyMlAn3d+0d92XxlsJp5HQPRZq+0/qOnVRmTP5qKvuOQ7mmW9i3scbT71AgmYK/bwEGitH0VOP/lqxvCti02nanb9tfkps=",
+      "contentHash": "1334945dbc4e965d389e3f5e297c4ead"
+    },
+    "src/trigger/product-extractor.ts": {
+      "contents": "eJyNU71u2zAQ3vUUB01OoVopCnRw4KJFkyFD0QwFOl/Es01Y5ClHMrER+GGKDEGHTkWfQC8WkKJlN0WDAoIEknfffT+UNh2Lh3toebkkqcCjW8MOFsIGyg9edNyeKrqtnVrXt2/Ls6KoazinhbYIDF53DIqgw23LqKBDQUDwKLTAwm87githFRp/sfGCjddsr3LtHO4LgCDtDJwXbZdnBYBBWSu+s3/ssaLDendEgdIstx7mdsINOYcCFIf1j/1vcoldpODZFbRJehu2zg+7x8S+RqR5ApxEalrNoMxVr2ksK6sCoK7hc/99o02S/+YUjLZxRFzRhprQP/YPnARtzoNgbJzFulfw7rSK7WTA0TJYxa4AkGBngG5rG5hkM2f/tO4E5u+TeZCl3Ecbq9G8KlkGO5jvgzlLxek1RD1teTkpL61uNFrFgKNnD3xsWVmN4Any5AjJyzazSH58YsNgY3/Higw70Ol6oYDSFo1u0JD1VEEn1GiHsaTDFBhDg0bbFQNeO26D5wNuypbB9L9UaBluAkXVvv9hAGER7Mj5oCA3783J2WU7z9HjN+1XXzqyHy+TS0I3QQtNyum0Hp5WX9fckUW9T56lzOKz/EH0Cg3K/xERcqH1MAe8Q+1fZDV5lmewKt13NeTwnMhxpheHHBu2TRv6nwqhYQMuxN+D95GOYY4wQj6IzTyHsx006JsVTEiEZQZotydj6HlsOpqUFyIM9sWLlPsAMlr6TE38aZdUHY6j+nGRLl5e/UXZr4TvBpxMuADYVUUsfALYApyz",
+      "contentHash": "562fbf55f3faf5ce4aa86b1b4a28d3cb"
+    },
+    "trigger.config.ts": {
+      "contents": "eJxlUE2P0zAUvOdXjHICKTSFShy8FxB7qQQn9oIQQt74JX3U9ovs52zUVf87StqiXXHxx4xnxm84jJIUz3DUc6QvEnsecEafJKD+pImHgdLG0dRmd2ynXX1XVTSvIke9LV5fSd88V8CY5A91alAvp99linkuc5pO2s10PKXg57qpgFSiciCDOoqjFfIyfKWJvEHtZVihtsXDgRDsjE7CWJSQqZPoMizU5iM4w3ovT+SgsrhusO+hB7rQqUTQ3BG5DD1whivJKktswIon9h6PhKwyjuQ2l8QfUtDZCJkoJXZ0EUqEjeDoeGJXrF/9r4rvRDiojtm07cvanHS5TSXmNtj53S26wjLQ/fVmsPu43a6VkCambLD0CFC0j57cPt7TZKCpULPi1+pvz1azz6oURs0Gu+aGcnzgQFJ0H79lg/fbS8pV8R/3j+xtp5IMPtyAZKOTwCd6+Yvzsq2L45QNftabNqfuNn79q6nOb++qvxHmxAo=",
+      "contentHash": "6a74931158d578f95259e3a5d04139c7"
+    },
+    "tsconfig.json": {
+      "contents": "eJxdUctqwzAQvPsrFh1Nap968alQemhIKPQaQpGtJVGjF9I6dQn+97KyTeOctJoZjXZ2bwWA6LwN2mD8CKS9S6KBWwEAIEjGE5JoQGB6FpsJNLoVDRyE8lZsgI9KE0bZGuQ7JocDieOslsb4ny17UuxxBtNFh51uX8/YXR4YirqjNeb8m9UPGKa9V73Bd0cYfViTNlNT27mZFf6JyZuek7Ki7Z0yGBdJZPKK2+TdfnG5c9bJG0moJu4h1Xca2DFETBivuFhq10W06EiatT6Y/qTzuA8ZgHnsU2hpc4Lc/wyP+VwmGySd/3cFIF7qMi+mqktxLJYHI8u5CdMrzDxbPqG7VqqixCsry7pclwPXFQtr+g2Y6kWSPxc43Ll5hV92nsexGIs/snOmqg==",
+      "contentHash": "130469b4894d9a3d8783798ab6587893"
+    },
+    "package.json": {
+      "contents": "eJyNVsty2zoM3ecrNF50VdKSLCdOV13c78gMTMIya4rgkJTipNN/v0M9GSe2s5OAQxDE4wB/H7JsZaDB1a9sZfAc/vjVzyjr0HlFJopzXvB8kFqnOggRHFyLvcgLp2zwq1/Z34csy7KVxG4ylsXvn4N43yotZ8Xwl6pYh06g7hG2yZTxAbTOGNNYg3hjFtExidZnP35kn234AC7M5oe/UaWVWTT9z0OW/eudl2jRSDRCYfKC30fUmpgFUyOspendfike+WaMQ48hOh3INWuHnnQMV4/a8CJPUPHOtX8V7BV8wwxJ/NPjig3f8mKGOZDqzFq1dggiMBCCnBzD/1LwMrF4CdXoApMKNNUjurhh2FsUgTkIimb0ddsdBHD3ceKI4rSn8/37BWkN1qu9xm+YJRPwHFiDpu3RJS+vm74IweNVnCMr6dWkZm94fKQOHRPg5P3XadgPBdybLK/B4sX7JK5X7RnoVB1TlTh7sxgs2eju/SBYR7VD7+8nIf4Sqx219v79XjjSmoFDuG/Zo0YR5nBd9dWjBQeBvlGIXis5P/+Wn5rCN6y9qiCO93EB9t8IZCDwYXbtas4D1fV3mmPAfUjMTTTpoBbgUpu+tbAHj+vpgw0E9VLy6jlxM4DSr8pI4f06vFmqHdjjW4/MI5Ut6QvKBrBrPAc0cYQw1UCNU54Lvr1E2uaGsvf/hr5nenTspL5GvVn068i7UVvm/DF5+6Ccbyh2vOTll2omqZkhTxeItlUjOeQ84X5oA1mHB3UeSrLIecWL2bV9eziga4MaGKPiOX+edOKI6GaGznnOnODF7JnQ4D3rwCkwAhm04UhOhSkbT0vahPbnzxwnGnlabE9SCQHZwUxj7HHRYLPXEDmQWo+aLSnZpRMRjSCpTD16UfBiM6v8NIN3saryj/JI9AdVszgrP8/Gg4MGHWsozPMwur2b9MrYNjAKCz1V8+BvhZKY+Jvzqkre9fWFUcrCERv046HkkWTRgBoztksaxJIPYiDUHa/4Zj5hW2sx4EhLZcW3i7WPpfdRzCS8MavEaTy5i4tFcQFJqvLytCP7TmZkkopvlohNg41OLC4wPeKJb6ulM0bqR6/eYa8xbkKo/VxImwUnjuD65W9Vpg/zZMxMxE9LRiYWYQ26mROSjCQsE5UbvlkuS3QMjGqGPXQo4rkl+47sN9Ko28aGnlRtOLAd60ArOR195PnCFUsbf6DSDlo91sHz0qHvJMc+KWPckoWy++/LnVJSQNNNi2S1eKxqQw6ZJphGV54StG+FA4/jZZs0xiNhT2nZ8l3vx8O/h/8BMdsy2g==",
+      "contentHash": "08732acdba2dbdcced4c649025b036d3"
+    }
+  },
+  "externals": [
+    {
+      "name": "import-in-the-middle",
+      "version": "1.11.0"
+    }
+  ],
+  "config": {
+    "project": "proj_uvnsxuxrvztcxekzrmlx",
+    "dirs": [
+      "./src/trigger"
+    ]
+  },
+  "outputPath": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-xsinaG",
+  "runWorkerEntryPoint": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-xsinaG/.npm/_npx/f51a09bd0abf5f10/node_modules/trigger.dev/dist/esm/entryPoints/dev-run-worker.mjs",
+  "indexWorkerEntryPoint": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-xsinaG/.npm/_npx/f51a09bd0abf5f10/node_modules/trigger.dev/dist/esm/entryPoints/dev-index-worker.mjs",
+  "configPath": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-xsinaG/Documents/Desenvolvimento/Node/Prod-Pokify/trigger.config.mjs",
+  "customConditions": [],
+  "deploy": {
+    "env": {}
+  },
+  "build": {},
+  "otelImportHook": {
+    "include": []
+  }
+}

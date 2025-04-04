@@ -1,0 +1,36 @@
+{
+  "configPath": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-t4ErRs/Documents/Desenvolvimento/Node/Prod-Pokify/trigger.config.mjs",
+  "tasks": [
+    {
+      "id": "hello-world",
+      "retry": {
+        "maxAttempts": 3,
+        "factor": 2,
+        "minTimeoutInMs": 1000,
+        "maxTimeoutInMs": 10000,
+        "randomize": true
+      },
+      "maxDuration": 300,
+      "filePath": "src/trigger/example.ts",
+      "exportName": "helloWorldTask",
+      "entryPoint": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-t4ErRs/Documents/Desenvolvimento/Node/Prod-Pokify/src/trigger/example.mjs"
+    },
+    {
+      "id": "product-extraction",
+      "retry": {
+        "maxAttempts": 3,
+        "factor": 2,
+        "minTimeoutInMs": 1000,
+        "maxTimeoutInMs": 10000,
+        "randomize": true
+      },
+      "maxDuration": 600,
+      "filePath": "src/trigger/product-extractor.ts",
+      "exportName": "productExtractionTask",
+      "entryPoint": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-t4ErRs/Documents/Desenvolvimento/Node/Prod-Pokify/src/trigger/product-extractor.mjs"
+    }
+  ],
+  "workerEntryPoint": "/Users/rodrigochagas/Documents/Desenvolvimento/Node/Prod-Pokify/.trigger/tmp/build-t4ErRs/.npm/_npx/f51a09bd0abf5f10/node_modules/trigger.dev/dist/esm/entryPoints/dev-run-worker.mjs",
+  "runtime": "node",
+  "customConditions": []
+}
