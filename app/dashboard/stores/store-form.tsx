@@ -35,6 +35,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Store, Loader2 } from 'lucide-react';
 import { createStore } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
+import { useStores } from '@/hooks/use-stores';
 import { useRouter } from 'next/navigation';
 
 // Schema atualizado - apenas nome e URL são obrigatórios
@@ -53,9 +54,8 @@ interface StoreFormProps {
 
 export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const maxStores = 5;
-  const canAddStore = storesCount < maxStores;
   const { user } = useAuth();
+  const { maxStores, canAddStore, refreshStores } = useStores();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -96,10 +96,12 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
         throw new Error((error as any).message || 'Erro ao cadastrar loja');
       }
       
+      // Atualizar a lista de lojas no contexto compartilhado
+      await refreshStores();
+      
       toast.success('Loja cadastrada com sucesso!');
       form.reset();
       onClose();
-      router.refresh(); // Atualizar a lista de lojas
     } catch (error: any) {
       toast.error(`Erro ao cadastrar loja: ${error.message}`);
       console.error('Erro ao cadastrar loja:', error);

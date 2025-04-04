@@ -26,7 +26,7 @@ import { StoreCounter } from '@/components/stores/store-counter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import { getUserStores } from '@/lib/store-service';
+import { useStores } from '@/hooks/use-stores';
 import { toast } from 'sonner';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -48,17 +48,11 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [activeRoute, setActiveRoute] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [stores, setStores] = useState<Store[]>([]);
   const [isTrendHunterDialogOpen, setIsTrendHunterDialogOpen] = useState(false);
   
-  // Importar hook de autenticação
+  // Importar hooks
   const { user, logout } = useAuth();
-  
-  // Manter o contador de lojas atual
-  const storesCount = stores.length;
-  const maxStores = 5; // Definir como 5 conforme solicitado
-  const canAddStore = storesCount < maxStores;
+  const { stores, isLoading, storesCount, maxStores, canAddStore } = useStores();
   
   // Calcular o percentual de progresso
   const storePercentage = Math.round((storesCount / maxStores) * 100);
@@ -69,40 +63,7 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
     setActiveRoute(pathname);
   }, [pathname]);
 
-  // Carregar as lojas do usuário
-  useEffect(() => {
-    const fetchStores = async () => {
-      if (!user) return;
-      
-      try {
-        setIsLoading(true);
-        const { success, stores: userStores, error } = await getUserStores(user.id);
-        
-        if (success && userStores) {
-          // Transformar os dados da API no formato necessário para o componente
-          const formattedStores = userStores.map(store => ({
-            id: store.id,
-            name: store.name,
-            products: store.products_count || 0,
-            status: 'active' as const, // Poderia ser determinado por alguma lógica
-            href: `/dashboard/stores/${store.id}`
-          }));
-          
-          setStores(formattedStores);
-        } else if (error) {
-          console.error("Erro ao carregar lojas:", error);
-          toast.error("Não foi possível carregar suas lojas");
-        }
-      } catch (error) {
-        console.error("Erro ao buscar lojas:", error);
-        toast.error("Erro ao carregar lojas");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchStores();
-  }, [user]);
+  // As lojas são agora carregadas automaticamente pelo hook useStores
 
   const navigateToStore = (storeId: string) => {
     router.push(`/dashboard/stores/${storeId}`);
