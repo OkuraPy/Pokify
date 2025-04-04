@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractMarkdownFromUrl, extractDirectlyFromPage } from '@/lib/linkfy-service';
-import { extractProductDataWithOpenAI } from '@/lib/openai-extractor';
+import logger from '@/lib/logger';
+import { getLinkPreview } from 'link-preview-js';
+import { extractProductDataWithOpenAI } from '@/lib/product-extractor';
+import rateLimit from '@/lib/rate-limit';
+import { tasks } from '@trigger.dev/sdk/v3';
+import { productExtractionTask } from '@/src/trigger/product-extractor';
 import { preserveImagesInDescription } from '@/lib/markdown-utils';
 import { createLogger } from '@/lib/logger';
 import { DirectExtractor, OpenAIExtractor } from '@/lib/extractor-service';
@@ -41,7 +45,7 @@ export async function POST(request: NextRequest) {
     const isProCopyMode = mode === 'pro_copy';
     
     if (isProCopyMode) {
-      logger.info('🚀 Iniciando extração Pro com Copy AIDA');
+      logger.info('🚀 Iniciando extração Pro com Copy AIDA usando Trigger.dev');
     } else {
       logger.info('🚀 Iniciando extração padrão do produto');
     }
@@ -94,12 +98,53 @@ export async function POST(request: NextRequest) {
     logger.info(`📊 Enviando para OpenAI: ${Math.round(linkfyResult.data.markdown.length / 1024)} KB de markdown`);
     
     // Extrair dados usando OpenAI - com modo específico se for Pro Copy
-    const openaiResult = await extractProductDataWithOpenAI(
-      url, 
-      linkfyResult.data.markdown, 
-      undefined, // screenshot não usado
-      isProCopyMode ? 'pro_copy' : undefined // passar o modo
-    );
+    let openaiResult;
+    
+    if (isProCopyMode) {
+      // Usar Trigger.dev para processamento assíncrono no modo pro_copy
+      logger.info('📡 Delegando para Trigger.dev a extração pro_copy');
+      
+      // Importar tasks do Trigger.dev
+      const { tasks } = require('@trigger.dev/sdk/v3');
+      const { productExtractionTask } = require('@/src/trigger/product-extractor');
+
+      // Dados para preencher o formulário enquanto o processamento ocorre
+      const placeholderData = {
+        title: 'Processando detalhes do produto...',
+        description: 'Estamos analisando o produto com nossa IA. Os detalhes completos estarão disponíveis em breve. Por favor, aguarde alguns instantes e atualize a página.',
+        price: '0',
+        images: [],
+        mainImages: [],
+        descriptionImages: []
+      };
+      
+      // Iniciar o processamento assíncrono via Trigger.dev
+      const handle = await tasks.trigger(
+        productExtractionTask.id,
+        {
+          url,
+          markdown: linkfyResult.data.markdown,
+          mode: 'pro_copy'
+        }
+      );
+      
+      logger.info(`✅ Tarefa Trigger.dev iniciada com ID: ${handle.id}`);
+      
+      // Retornar dados parciais para evitar timeout
+      openaiResult = {
+        success: true,
+        data: placeholderData,
+        triggerId: handle.id
+      };
+    } else {
+      // Modo padrão - processamento síncrono direto
+      openaiResult = await extractProductDataWithOpenAI(
+        url, 
+        linkfyResult.data.markdown, 
+        undefined, // screenshot não usado
+        undefined // modo padrão
+      );
+    }
     
     if (!openaiResult.success) {
       console.error('[OpenAI Extractor API] ❌ Falha na extração OpenAI:', openaiResult.error);
