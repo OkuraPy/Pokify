@@ -112,17 +112,53 @@ export async function POST(request: NextRequest) {
         
         logger.info(`✅ Job assu00edncrono iniciado com sucesso: ${jobId}`);
         
-        // Retornar resposta imediata com o ID do job
-        return NextResponse.json({
-          success: true,
-          jobId,
-          status: 'processing',
-          message: 'Extração iniciada. Consulte o status usando o endpoint /api/extractions/status?jobId=' + jobId
-        });
+        // Para compatibilidade com o frontend atual, vamos aguardar o resultado
+        // ao invu00e9s de retornar imediatamente
+        let jobCompleted = false;
+        let jobResult = null;
+        let attempts = 0;
+        const maxAttempts = 60; // 5 minutos (5s * 60)
+        
+        logger.info(`⏳ Aguardando conclusu00e3o do job ${jobId}...`);
+        
+        while (!jobCompleted && attempts < maxAttempts) {
+          attempts++;
+          // Aguardar 5 segundos entre as verificau00e7u00f5es
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Verificar o status do job
+          const job = AsyncExtractor.getJobStatus(jobId);
+          
+          if (job && job.status === 'completed') {
+            jobCompleted = true;
+            jobResult = job.result;
+            logger.info(`✅ Job ${jobId} concluído com sucesso apu00f3s ${attempts} tentativas`);
+          } else if (job && job.status === 'failed') {
+            logger.error(`❌ Job ${jobId} falhou: ${job.error}`);
+            return NextResponse.json({ 
+              error: 'Falha no processamento',
+              message: job.error 
+            }, { status: 500 });
+          } else {
+            logger.info(`⏳ Job ${jobId} ainda em processamento. Tentativa ${attempts}/${maxAttempts}`);
+          }
+        }
+        
+        if (!jobCompleted) {
+          logger.error(`❌ Tempo esgotado aguardando job ${jobId}`);
+          return NextResponse.json({ 
+            error: 'Tempo esgotado',
+            message: 'O processamento da extração demorou mais que o esperado. Tente novamente mais tarde.' 
+          }, { status: 504 });
+        }
+        
+        // Retornar o resultado do job para o frontend
+        logger.info(`✅ Retornando resultados do job ${jobId} para o frontend`);
+        return NextResponse.json(jobResult);
       } catch (error: any) {
-        logger.error(`❌ Erro ao iniciar job assu00edncrono: ${error.message}`);
+        logger.error(`❌ Erro ao processar job assu00edncrono: ${error.message}`);
         return NextResponse.json({ 
-          error: 'Falha ao iniciar processamento assíncrono',
+          error: 'Falha ao processar extração',
           message: error.message 
         }, { status: 500 });
       }
