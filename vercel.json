@@ -30,15 +30,5 @@
     "app/api/products/extract-openai/route.ts": {
       "maxDuration": 60
     }
-  },
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "installCommand": "npm install --legacy-peer-deps",
-        "buildCommand": "npm run build-vercel"
-      }
-    }
-  ]
+  }
 }
