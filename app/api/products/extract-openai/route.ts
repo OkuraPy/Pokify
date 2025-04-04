@@ -4,6 +4,7 @@ import { extractProductDataWithOpenAI } from '@/lib/openai-extractor';
 import { preserveImagesInDescription } from '@/lib/markdown-utils';
 import { createLogger } from '@/lib/logger';
 import { DirectExtractor, OpenAIExtractor } from '@/lib/extractor-service';
+import { AsyncExtractor } from '@/lib/async-extractor';
 
 // Criar instância de logger dedicada para esta API
 const logger = createLogger('OpenAI Extractor API');
@@ -93,13 +94,47 @@ export async function POST(request: NextRequest) {
     
     logger.info(`📊 Enviando para OpenAI: ${Math.round(linkfyResult.data.markdown.length / 1024)} KB de markdown`);
     
-    // Extrair dados usando OpenAI - com modo específico se for Pro Copy
-    const openaiResult = await extractProductDataWithOpenAI(
-      url, 
-      linkfyResult.data.markdown, 
-      undefined, // screenshot não usado
-      isProCopyMode ? 'pro_copy' : undefined // passar o modo
-    );
+    // Checar se devemos usar o Trigger.dev (para modo pro_copy) ou executar diretamente
+    let openaiResult;
+    
+    if (isProCopyMode) {
+      // Usar processamento assu00edncrono para evitar timeout para o modo pro_copy
+      logger.info('🚀 Delegando extração pro_copy para processamento assu00edncrono');
+      
+      try {
+        // Criar um job assu00edncrono para processar a extrau00e7u00e3o
+        const jobId = AsyncExtractor.createJob({
+          url,
+          markdown: linkfyResult.data.markdown,
+          mode: 'pro_copy',
+          extractFn: extractProductDataWithOpenAI
+        });
+        
+        logger.info(`✅ Job assu00edncrono iniciado com sucesso: ${jobId}`);
+        
+        // Retornar resposta imediata com o ID do job
+        return NextResponse.json({
+          success: true,
+          jobId,
+          status: 'processing',
+          message: 'Extração iniciada. Consulte o status usando o endpoint /api/extractions/status?jobId=' + jobId
+        });
+      } catch (error: any) {
+        logger.error(`❌ Erro ao iniciar job assu00edncrono: ${error.message}`);
+        return NextResponse.json({ 
+          error: 'Falha ao iniciar processamento assíncrono',
+          message: error.message 
+        }, { status: 500 });
+      }
+    } else {
+      // Processamento normal para o modo padrão
+      openaiResult = await extractProductDataWithOpenAI(
+        url, 
+        linkfyResult.data.markdown, 
+        undefined, // screenshot não usado
+        undefined // modo padrão
+      );
+    }
     
     if (!openaiResult.success) {
       console.error('[OpenAI Extractor API] ❌ Falha na extração OpenAI:', openaiResult.error);
