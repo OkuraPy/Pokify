@@ -253,48 +253,48 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                       )}
                     </div>
                   )}
+                  
+                  {/* Botão de Nova Loja - MOVIDO PARA DENTRO DA SCROLLAREA */}
+                  {storesCount < maxStores ? (
+                    <div className="mt-3">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoading}
+                              className={cn(
+                                'w-full justify-start rounded-xl h-10 min-h-[40px] transition-all duration-300 border shadow-sm whitespace-nowrap overflow-visible',
+                                isCollapsed && 'justify-center p-0',
+                                'bg-gradient-to-r from-blue-50 to-blue-100/50 hover:from-blue-100/80 hover:to-blue-200/50 text-blue-700 border-blue-200/50 hover:shadow-md hover:scale-[1.01]'
+                              )}
+                              onClick={navigateToNewStore}
+                            >
+                              {isLoading ? (
+                                <div className="relative h-6 w-6">
+                                  <div className="absolute inset-0 rounded-full border-2 border-blue-100 opacity-40 animate-ping"></div>
+                                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                </div>
+                              ) : (
+                                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                                  <PlusCircle className="h-4 w-4 text-white" />
+                                </div>
+                              )}
+                              {!isCollapsed && <span className="ml-2.5 font-medium">Nova Loja</span>}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="bg-gradient-to-br from-blue-700 to-blue-800 text-white border-none shadow-lg">
+                            <div className="px-1 py-1">
+                              <span>Adicionar nova loja</span>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  ) : null}
                 </div>
               </ScrollArea>
-              
-              {/* Botão de Nova Loja - MOVIDO PARA FORA DA SCROLLAREA */}
-              {storesCount < maxStores ? (
-                <div className="mt-3">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isLoading}
-                          className={cn(
-                            'w-full justify-start rounded-xl h-10 min-h-[40px] transition-all duration-300 border shadow-sm whitespace-nowrap overflow-visible',
-                            isCollapsed && 'justify-center p-0',
-                            'bg-gradient-to-r from-blue-50 to-blue-100/50 hover:from-blue-100/80 hover:to-blue-200/50 text-blue-700 border-blue-200/50 hover:shadow-md hover:scale-[1.01]'
-                          )}
-                          onClick={navigateToNewStore}
-                        >
-                          {isLoading ? (
-                            <div className="relative h-6 w-6">
-                              <div className="absolute inset-0 rounded-full border-2 border-blue-100 opacity-40 animate-ping"></div>
-                              <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                            </div>
-                          ) : (
-                            <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
-                              <PlusCircle className="h-4 w-4 text-white" />
-                            </div>
-                          )}
-                          {!isCollapsed && <span className="ml-2.5 font-medium">Nova Loja</span>}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="bg-gradient-to-br from-blue-700 to-blue-800 text-white border-none shadow-lg">
-                        <div className="px-1 py-1">
-                          <span>Adicionar nova loja</span>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              ) : null}
             </div>
           </div>
         </div>
