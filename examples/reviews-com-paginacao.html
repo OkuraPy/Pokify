@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avaliau00e7u00f5es de Clientes com Paginau00e7u00e3o</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --primary-color: #8B5CF6;
+      --primary-light: #F3F0FF;
+      --primary-dark: #6D28D9;
+      --text-dark: #18181B;
+      --text-medium: #52525B;
+      --text-light: #A1A1AA;
+      --success-color: #10B981;
+      --highlight-color: #10B981;
+      --star-color: #fbbf24;
+      --border-color: #E4E4E7;
+      --badge-bg: #F1FFFA;
+      --highlight-badge-bg: #10B981;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: var(--text-dark);
+      background-color: #F5F1FF;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .reviews-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .reviews-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .reviews-header h2 {
+      font-size: 24px;
+      margin-bottom: 5px;
+      color: var(--text-dark);
+    }
+    
+    .reviews-header p {
+      color: var(--text-medium);
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    
+    .review-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      position: relative;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+    
+    .review-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-light);
+      color: var(--primary-color);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 14px;
+    }
+    
+    .reviewer-info {
+      flex: 1;
+    }
+    
+    .reviewer-name {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin: 0;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--badge-bg);
+      color: var(--success-color);
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    
+    .highlight-badge {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--highlight-badge-bg);
+      color: white;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-weight: 500;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+    
+    .review-date {
+      color: var(--text-light);
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .review-stars {
+      color: var(--star-color);
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .review-content {
+      color: var(--text-medium);
+      margin-bottom: 15px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .review-images {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .review-image {
+      width: 60px;
+      height: 60px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+    
+    .product-info {
+      display: flex;
+      align-items: center;
+      color: var(--primary-color);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .product-icon {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+    }
+    
+    .product-count {
+      margin-left: auto;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    /* Paginau00e7u00e3o */
+    .pagination {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .page-button {
+      min-width: 36px;
+      height: 36px;
+      border-radius: 4px;
+      background: white;
+      border: 1px solid var(--border-color);
+      color: var(--text-medium);
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    
+    .page-button:hover {
+      background-color: var(--primary-light);
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .page-button.active {
+      background-color: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+    
+    .page-button.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+  
+    
+    .reviews-page {
+      display: none;
+    }
+    
+    .reviews-page.active {
+      display: grid;
+    }
+    
+    @media (max-width: 767px) {
+      body {
+        padding: 10px;
+      }
+      
+      .pagination {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="reviews-container">
+    <div class="reviews-header">
+      <h2>Depoimentos reais</h2>
+      <p>428 avaliações com média de 4.8 estrelas</p>
+    </div>
+    
+    <!-- Página 1 -->
+    <div class="reviews-page reviews-grid active" id="reviews-page-1">
+      <!-- Review 1 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">MS</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Maria Silva
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">12 de março de 2025</p>
+          </div>
+        </div>
+        
+        <div class="highlight-badge">Em destaque</div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>Comprei essa camiseta e fiquei impressionada com a qualidade! O tecido é muito macio e confortável. Lavei várias vezes e não desbotou nem deformou. Com certeza vou comprar mais cores! A entrega também foi super rápida e o produto veio exatamente como descrito no site.</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400" class="review-image" alt="Camiseta branca">
+          <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400" class="review-image" alt="Camiseta preta">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Camiseta Premium Masculina
+          <span class="product-count">+3</span>
+        </div>
+      </div>
+      
+      <!-- Review 2 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">JP</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              João Paulo
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">2 de março de 2025</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>Quando os modeladores chegaram, provei e foi satisfatório o resultado, porém não sei se quando fui provar o vestido para o casamento do meu filho, não teve um bom resultado, não sei se não vesti direito, mas não apertou nem modelou a barriga só o catinho pra ver se aperta mais um pouco, usando as duas juntas, será se vai dar certo?</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1596609548086-85bbf8ddb6b9?w=400" class="review-image" alt="Modelador">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Modelador Corporal
+          <span class="product-count">+2</span>
+        </div>
+      </div>
+      
+      <!-- Review 3 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">CR</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Carlos Rodrigues
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">25 de fevereiro de 2025</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★☆</div>
+        
+        <div class="review-content">
+          <p>Ótima camiseta, mas cuidado com o tamanho. A qualidade do tecido é incrível, muito macia e confortável. O único problema é que veste um pouco menor do que o esperado. Recomendo pedir um tamanho acima do que normalmente usa. Fora isso, é uma excelente compra.</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400" class="review-image" alt="Camiseta masculina">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Camiseta Premium Masculina
+        </div>
+      </div>
+      
+      <!-- Review 4 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">EM</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Elaine Martins
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">28 de janeiro de 2025</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>Gente juro q ia ficar no prejuízo como d outras compras q fiz pelo Instagram. Mais hoje mim surpreendi ao chegar em casa a encontrar minha compra mim esperando juro to tão feliz e satisfeita com minha compra e sem falar ns qualidades desta loja plena n montar mesmo acabamento e responsabilidade deixa empresa em não nos deixar nó muito bom obrigado loja!</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400" class="review-image" alt="Conjunto fitness">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Conjunto Fitness
+          <span class="product-count">+2</span>
+        </div>
+      </div>
+      
+      <!-- Review 5 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">RF</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Roberto Ferreira
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">15 de janeiro de 2025</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>Adorei a calça jeans! Caimento perfeito, muito confortável e bem acabada. O modelo slim valoriza bastante a silhueta sem ficar desconfortável. Recomendo muito!</p>
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Calça Jeans Slim
+        </div>
+      </div>
+      
+      <!-- Review 6 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">AS</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Amanda Santos
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">5 de janeiro de 2025</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★☆☆</div>
+        
+        <div class="review-content">
+          <p>O vestido é bonito, mas a cor é diferente da foto. Esperava um tom mais vivo de vermelho, mas veio um bordô mais escuro. O material é bom e o tamanho está correto.</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400" class="review-image" alt="Vestido">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Vestido Social
+        </div>
+      </div>
+      
+      <!-- Review 7 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">LB</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Lucas Barros
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">28 de dezembro de 2024</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>Tênis excelente! Muito confortável para corridas longas. Já tinha comprado outro modelo da marca e esse superou minhas expectativas. Design moderno e materiais de primeira qualidade.</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400" class="review-image" alt="Tênis esportivo">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Tênis Runner Pro
+        </div>
+      </div>
+      
+      <!-- Review 8 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">PT</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Paula Teixeira
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">15 de dezembro de 2024</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>A bolsa chegou bem embalada e é exatamente como na foto. O material é resistente e o acabamento é impecável. Estou muito satisfeita com a compra!</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400" class="review-image" alt="Bolsa de couro">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Bolsa Elegance
+          <span class="product-count">+1</span>
+        </div>
+      </div>
+      <!-- Review 5 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">RF</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Roberto Ferreira
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">15 de janeiro de 2025</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>Adorei a calça jeans! Caimento perfeito, muito confortável e bem acabada. O modelo slim valoriza bastante a silhueta sem ficar desconfortável. Recomendo muito!</p>
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Calça Jeans Slim
+        </div>
+      </div>
+      
+      <!-- Review 6 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">AS</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Amanda Santos
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">5 de janeiro de 2025</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★☆☆</div>
+        
+        <div class="review-content">
+          <p>O vestido é bonito, mas a cor é diferente da foto. Esperava um tom mais vivo de vermelho, mas veio um bordô mais escuro. O material é bom e o tamanho está correto.</p>
+        </div>
+        
+        <div class="review-images">
+          <img src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=400" class="review-image" alt="Vestido">
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Vestido Social
+        </div>
+      </div>
+      
+      <!-- Review 7 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">JM</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              José Menezes
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">28 de dezembro de 2024</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★★</div>
+        
+        <div class="review-content">
+          <p>Excelente camisa social! Tecido de qualidade, costura impecável e caimento perfeito. Material não amassa com facilidade. Recomendo!</p>
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Camisa Social Premium
+        </div>
+      </div>
+      
+      <!-- Review 8 -->
+      <div class="review-card">
+        <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">LF</div>
+        <div class="review-header">
+          <div class="reviewer-info">
+            <p class="reviewer-name">
+              Larissa Fernandes
+              <span class="verified-badge">Compra verificada</span>
+            </p>
+            <p class="review-date">20 de dezembro de 2024</p>
+          </div>
+        </div>
+        
+        <div class="review-stars">★★★★☆</div>
+        
+        <div class="review-content">
+          <p>Excelente produto! O sapato é muito confortável e elegante. O couro é macio e o acabamento é de primeira qualidade. Um pouco apertado no começo, mas depois de uns dias ficou perfeito.</p>
+        </div>
+        
+        <div class="product-info">
+          <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+          </svg>
+          Sapato Social Couro
+        </div>
+      </div>
+    </div>
+    
+    <!-- Página 2 (vazia) -->
+    <div class="reviews-page reviews-grid" id="reviews-page-2">
+    </div>
+    
+    <!-- Página 3 (vazia) -->
+    <div class="reviews-page reviews-grid" id="reviews-page-3">
+    </div>
+    
+    <div class="pagination">
+      <button class="page-button nav-button disabled" onclick="prevPage()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+      </button>
+      
+      <button id="page-1-btn" class="page-button active" onclick="goToPage(1)">1</button>
+      <button id="page-2-btn" class="page-button" onclick="goToPage(2)">2</button>
+      <button id="page-3-btn" class="page-button" onclick="goToPage(3)">3</button>
+      
+      <button class="page-button nav-button disabled" onclick="nextPage()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      </button>
+    </div>
+    
+    <script>
+      // Estado atual da página
+      let currentPage = 1;
+      const totalPages = 3;
+      
+      // Funções para navegar entre as páginas
+      function goToPage(page) {
+        if (page < 1 || page > totalPages) return;
+        
+        // Esconde a página atual
+        document.getElementById(`reviews-page-${currentPage}`).classList.remove('active');
+        
+        // Mostra a nova página
+        document.getElementById(`reviews-page-${page}`).classList.add('active');
+        
+        // Atualiza o estado atual
+        currentPage = page;
+        
+        // Atualiza os botões
+        updateButtons();
+        
+        // Scroll para o topo da seção de reviews
+        document.querySelector('.reviews-container').scrollIntoView({ behavior: 'smooth' });
+      }
+      
+      function prevPage() {
+        if (currentPage > 1) {
+          goToPage(currentPage - 1);
+        }
+      }
+      
+      function nextPage() {
+        if (currentPage < totalPages) {
+          goToPage(currentPage + 1);
+        }
+      }
+      
+      function updateButtons() {
+        // Remove a classe active de todos os botões
+        document.querySelectorAll('.page-button').forEach(button => {
+          if (button.id.includes('page-')) {
+            button.classList.remove('active');
+          }
+        });
+        
+        // Adiciona a classe active ao botão da página atual
+        document.getElementById(`page-${currentPage}-btn`).classList.add('active');
+        
+        // Atualiza os botões de navegação
+        const prevButton = document.querySelector('.page-button.nav-button:first-child');
+        const nextButton = document.querySelector('.page-button.nav-button:last-child');
+        
+        if (currentPage === 1) {
+          prevButton.classList.add('disabled');
+        } else {
+          prevButton.classList.remove('disabled');
+        }
+        
+        if (currentPage === totalPages) {
+          nextButton.classList.add('disabled');
+        } else {
+          nextButton.classList.remove('disabled');
+        }
+      }
+      
+      // Inicializa os botões quando a página carrega
+      document.addEventListener('DOMContentLoaded', updateButtons);
+    </script>
+  </body>
+</html>
