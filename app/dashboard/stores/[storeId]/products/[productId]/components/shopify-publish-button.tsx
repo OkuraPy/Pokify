@@ -98,32 +98,38 @@ export function ShopifyPublishButton({ storeId, productId, isPublished = false, 
         }
       }
       
+      // Verificar se o produto já foi publicado anteriormente
+      const isUpdateOperation = isPublished && product.shopify_product_id;
+      
       // Formatar o produto para o Shopify
       const shopifyProductData = formatProductForShopify({
         ...product,
         reviews: includeReviews ? reviews : []
       }, includeReviews);
       
-      // Publicar no Shopify
-      const result = await publishProductToShopify(store, shopifyProductData);
+      // Publicar ou atualizar no Shopify
+      const result = await publishProductToShopify(
+        store, 
+        shopifyProductData,
+        isUpdateOperation && product.shopify_product_id ? product.shopify_product_id : undefined
+      );
       
       if (!result.success) {
         throw new Error(result.error || 'Erro ao publicar no Shopify');
       }
       
-      // Atualizar o produto com os dados do Shopify
-      const { error: updateError } = await updateProduct(productId, {
-        shopify_product_id: result.shopifyProductId,
-        shopify_product_url: result.productUrl,
-        status: 'published'
-      });
-      
-      if (updateError) {
-        console.error('Erro ao atualizar produto:', updateError);
+      // Atualizar o produto com os dados do Shopify se for uma nova publicação
+      if (!isUpdateOperation) {
+        const { error: updateError } = await updateProduct(productId, {
+          shopify_product_id: result.shopifyProductId,
+          shopify_product_url: result.productUrl,
+          status: 'published'
+        });
+        
+        if (updateError) {
+          console.error('Erro ao atualizar produto:', updateError);
+        }
       }
-      
-      // Registrar na tabela de histórico de publicações
-      // Esta parte seria implementada se houvesse uma função para isso
       
       // Definir resultados
       setPublishResult({
@@ -133,7 +139,9 @@ export function ShopifyPublishButton({ storeId, productId, isPublished = false, 
       });
       
       // Notificar sucesso
-      toast.success('Produto publicado com sucesso no Shopify!');
+      toast.success(isUpdateOperation 
+        ? 'Produto atualizado com sucesso no Shopify!' 
+        : 'Produto publicado com sucesso no Shopify!');
       
       // Executar callback de sucesso se fornecido
       if (onSuccess && result.shopifyProductId && result.productUrl) {

@@ -56,15 +56,23 @@ interface ShopifyGraphQLVariables {
 }
 
 /**
- * Publica um produto na loja Shopify usando a API GraphQL
+ * Publica ou atualiza um produto na loja Shopify
  */
 export async function publishProductToShopify(
   store: ShopifyStore,
-  productData: ShopifyProductData
+  productData: ShopifyProductData,
+  shopifyProductId?: string
 ): Promise<{ success: boolean; shopifyProductId?: string; productUrl?: string; error?: string }> {
   try {
+    // Determinar se devemos criar ou atualizar
+    const isUpdate = !!shopifyProductId;
+    
     // Usamos nossa própria API para evitar problemas de CORS
-    const response = await fetch('/api/shopify/publish-product', {
+    const endpoint = isUpdate 
+      ? `/api/shopify/update-product/${shopifyProductId}` 
+      : '/api/shopify/publish-product';
+    
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -91,7 +99,7 @@ export async function publishProductToShopify(
       error: data.error
     };
   } catch (error) {
-    console.error('Erro ao publicar produto no Shopify:', error);
+    console.error(`Erro ao ${shopifyProductId ? 'atualizar' : 'publicar'} produto no Shopify:`, error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro desconhecido',
