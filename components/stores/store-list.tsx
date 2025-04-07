@@ -54,6 +54,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { updateStore, deleteStore } from '@/lib/store-service';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
+import { UpdateStoreDialog } from './update-store-dialog';
 
 interface Store {
   id: string;
@@ -75,11 +76,6 @@ export function StoreList({ stores }: StoreListProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    platform: 'other' as 'aliexpress' | 'shopify' | 'other',
-    url: '',
-  });
   
   const navigateToStore = (storeId: string) => {
     router.push(`/dashboard/stores/${storeId}`);
@@ -99,44 +95,18 @@ export function StoreList({ stores }: StoreListProps) {
 
   const handleEditClick = (store: Store) => {
     setSelectedStore(store);
-    setFormData({
-      name: store.name,
-      platform: store.platform,
-      url: store.url,
-    });
     setIsEditDialogOpen(true);
+  };
+
+  const handleEditDialogClose = () => {
+    setIsEditDialogOpen(false);
+    // Atualizar os dados da página após edição bem-sucedida
+    router.refresh();
   };
 
   const handleDeleteClick = (store: Store) => {
     setSelectedStore(store);
     setIsDeleteDialogOpen(true);
-  };
-
-  const handleEditSubmit = async () => {
-    if (!selectedStore) return;
-    
-    setIsLoading(prev => ({ ...prev, [selectedStore.id]: true }));
-    
-    try {
-      const result = await updateStore(selectedStore.id, {
-        name: formData.name,
-        platform: formData.platform,
-        url: formData.url,
-      });
-      
-      if (result.success) {
-        toast.success('Loja atualizada com sucesso!');
-        router.refresh(); // Atualizar os dados da página
-      } else {
-        toast.error(`Erro ao atualizar loja: ${result.error || 'Falha desconhecida'}`);
-      }
-    } catch (error) {
-      toast.error('Erro ao atualizar loja');
-      console.error('Erro ao atualizar loja:', error);
-    } finally {
-      setIsLoading(prev => ({ ...prev, [selectedStore.id]: false }));
-      setIsEditDialogOpen(false);
-    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -275,50 +245,30 @@ export function StoreList({ stores }: StoreListProps) {
                   </Button>
                   
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 ml-1 bg-gray-100 hover:bg-gray-200">
-                        <MoreHorizontal className="h-4 w-4" />
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
                         <span className="sr-only">Abrir menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
                       <DropdownMenuItem 
-                        onClick={() => navigateToStore(store.id)}
-                        className="cursor-pointer hover:bg-blue-50 hover:text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(store);
+                        }}
                       >
-                        <BarChart className="h-4 w-4 mr-2" />
-                        <span>Ver Detalhes</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => window.open(store.url, '_blank')}
-                        className="cursor-pointer hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        <span>Visitar Loja</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleSyncStore(store.id)}
-                        disabled={isLoading[store.id]}
-                        className="cursor-pointer hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading[store.id] ? 'animate-spin' : ''}`} />
-                        <span>{isLoading[store.id] ? 'Sincronizando...' : 'Sincronizar'}</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        onClick={() => handleEditClick(store)}
-                        className="cursor-pointer hover:bg-blue-50 hover:text-blue-600"
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit className="mr-2 h-4 w-4" />
                         <span>Editar</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => handleDeleteClick(store)}
-                        className="cursor-pointer text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(store);
+                        }}
                       >
-                        <Trash className="h-4 w-4 mr-2" />
+                        <Trash className="mr-2 h-4 w-4" />
                         <span>Excluir</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -330,78 +280,16 @@ export function StoreList({ stores }: StoreListProps) {
         </TableBody>
       </Table>
 
-      {/* Modal de Edição de Loja */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Editar Loja</DialogTitle>
-            <DialogDescription>
-              Atualize as informações da sua loja
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome da Loja</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Nome da loja"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="platform">Plataforma</Label>
-              <Select
-                value={formData.platform}
-                onValueChange={(value) => setFormData({ ...formData, platform: value as 'aliexpress' | 'shopify' | 'other' })}
-              >
-                <SelectTrigger id="platform">
-                  <SelectValue placeholder="Selecione a plataforma" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="shopify">Shopify</SelectItem>
-                  <SelectItem value="aliexpress">AliExpress</SelectItem>
-                  <SelectItem value="other">Outra</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="url">URL da Loja</Label>
-              <Input
-                id="url"
-                value={formData.url}
-                onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                placeholder="https://sualoja.com"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditDialogOpen(false)}
-              disabled={isLoading[selectedStore?.id || '']}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleEditSubmit}
-              disabled={isLoading[selectedStore?.id || '']}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-            >
-              {isLoading[selectedStore?.id || ''] ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                'Salvar Alterações'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Substituir o Dialog antigo pelo novo componente UpdateStoreDialog */}
+      {selectedStore && (
+        <UpdateStoreDialog
+          store={selectedStore}
+          open={isEditDialogOpen}
+          onClose={handleEditDialogClose}
+        />
+      )}
 
-      {/* Diálogo de Confirmação de Exclusão */}
+      {/* Manter o AlertDialog para confirmação de exclusão */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
