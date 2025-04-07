@@ -83,16 +83,7 @@ export async function POST(request: Request) {
         vendor: productData.vendor,
         productType: productData.productType,
         status: productData.status || 'ACTIVE',
-        tags: productData.tags || [],
-        variants: productData.variants && productData.variants.length > 0 ? [{
-          price: productData.variants[0].price,
-          compareAtPrice: productData.variants[0].compareAtPrice,
-          sku: productData.variants[0].sku,
-          inventoryQuantities: {
-            availableQuantity: productData.variants[0].inventoryQuantity || 100,
-            locationId: locationId
-          }
-        }] : undefined
+        tags: productData.tags || []
       }
     };
 
@@ -250,8 +241,50 @@ export async function POST(request: Request) {
           const variantId = variantsData.data.product.variants.edges[0].node.id;
           const inventoryItemId = variantsData.data.product.variants.edges[0].node.inventoryItem?.id;
           
-          // Como já incluímos o preço na criação, não precisamos atualizá-lo novamente
-          // A menos que haja algum problema específico que precise de correção
+          // Atualizar o preço da variante
+          const updateVariantQuery = `
+            mutation productVariantUpdate($input: ProductVariantInput!) {
+              productVariantUpdate(input: $input) {
+                productVariant {
+                  id
+                  price
+                  compareAtPrice
+                }
+                userErrors {
+                  field
+                  message
+                }
+              }
+            }
+          `;
+          
+          const variantUpdateResponse = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              query: updateVariantQuery,
+              variables: {
+                input: {
+                  id: variantId,
+                  price: productData.variants[0].price,
+                  compareAtPrice: productData.variants[0].compareAtPrice,
+                  sku: productData.variants[0].sku || `IMPORT-${productData.id}-${Date.now()}`
+                }
+              }
+            }),
+          });
+          
+          const variantUpdateData = await variantUpdateResponse.json();
+          
+          if (variantUpdateData.errors || 
+              (variantUpdateData.data && 
+               variantUpdateData.data.productVariantUpdate && 
+               variantUpdateData.data.productVariantUpdate.userErrors && 
+               variantUpdateData.data.productVariantUpdate.userErrors.length > 0)) {
+            
+            console.warn('Aviso: Não foi possível atualizar o preço da variante:', 
+                        variantUpdateData.errors || variantUpdateData.data.productVariantUpdate.userErrors);
+          }
           
           // Atualizar o inventário se tiver o ID do item de inventário e se não tivemos sucesso ao configurá-lo inicialmente
           if (inventoryItemId) {
