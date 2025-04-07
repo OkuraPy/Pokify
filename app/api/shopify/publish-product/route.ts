@@ -36,308 +36,70 @@ export async function POST(request: Request) {
       'X-Shopify-Access-Token': store.api_key,
     };
 
-    // Endpoint para a API GraphQL
-    const endpoint = `https://${shopUrl}/admin/api/${apiVersion}/graphql.json`;
+    // Endpoint para a API REST (não GraphQL)
+    const endpoint = `https://${shopUrl}/admin/api/${apiVersion}/products.json`;
 
-    // Obter os locais de inventário disponíveis primeiro
-    let locationId = "gid://shopify/Location/1"; // Valor padrão caso falhe
-    try {
-      const locationsQuery = `
-        query {
-          locations(first: 1) {
-            edges {
-              node {
-                id
-              }
-            }
-          }
-        }
-      `;
-      
-      const locationsResponse = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          query: locationsQuery
-        }),
-      });
-      
-      const locationsData = await locationsResponse.json();
-      
-      if (locationsData.data && 
-          locationsData.data.locations && 
-          locationsData.data.locations.edges && 
-          locationsData.data.locations.edges.length > 0) {
-        locationId = locationsData.data.locations.edges[0].node.id;
-      }
-    } catch (locationError) {
-      console.warn('Aviso: Não foi possível obter os locais de inventário:', locationError);
-      // Continuamos com o valor padrão
-    }
-
-    // Preparar as variáveis para a mutação GraphQL - SEM o campo images
-    const variables = {
-      input: {
+    // Preparar os dados do produto para a API REST, que aceita tudo em uma única chamada
+    const productPayload: any = {
+      product: {
         title: productData.title,
-        descriptionHtml: productData.descriptionHtml,
+        body_html: productData.descriptionHtml,
         vendor: productData.vendor,
-        productType: productData.productType,
-        status: productData.status || 'ACTIVE',
-        tags: productData.tags || []
+        product_type: productData.productType,
+        status: productData.status === 'ACTIVE' ? 'active' : 'draft',
+        tags: productData.tags ? productData.tags.join(', ') : '',
+        variants: [{
+          price: typeof productData.variants[0].price === 'string' 
+            ? productData.variants[0].price 
+            : String(productData.variants[0].price),
+          compare_at_price: productData.variants[0].compareAtPrice 
+            ? (typeof productData.variants[0].compareAtPrice === 'string'
+                ? productData.variants[0].compareAtPrice
+                : String(productData.variants[0].compareAtPrice))
+            : null,
+          sku: productData.variants[0].sku || `IMPORT-${Date.now()}`,
+          inventory_quantity: productData.variants[0].inventoryQuantity || 100,
+          inventory_management: "shopify"
+        }]
       }
     };
 
-    // Mutação GraphQL para criar produto
-    const query = `
-      mutation productCreate($input: ProductInput!) {
-        productCreate(input: $input) {
-          product {
-            id
-            title
-            handle
-            onlineStoreUrl
-          }
-          userErrors {
-            field
-            message
-          }
-        }
-      }
-    `;
+    // Se houver imagens, adicione-as ao payload
+    if (productData.images && productData.images.length > 0) {
+      productPayload.product.images = productData.images.map((url: string) => ({
+        src: url,
+        alt: productData.title
+      }));
+    }
 
-    // Requisição para a API do Shopify
+    console.log('Enviando produto para o Shopify:', JSON.stringify(productPayload));
+
+    // Requisição para a API REST do Shopify
     const response = await fetch(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        query,
-        variables
-      }),
+      body: JSON.stringify(productPayload),
     });
 
+    // Se a resposta não for ok, retornar erro
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Erro da API do Shopify:', errorData);
+      return NextResponse.json({
+        success: false,
+        error: `Erro da API do Shopify: ${JSON.stringify(errorData)}`,
+      }, { status: response.status });
+    }
+
+    // Processar a resposta bem-sucedida
     const responseData = await response.json();
-    
-    if (responseData.errors) {
-      console.error('Erro na API GraphQL do Shopify:', responseData.errors);
-      return NextResponse.json({
-        success: false,
-        error: `Erro na API do Shopify: ${responseData.errors[0].message}`,
-      }, { status: 400 });
-    }
+    console.log('Resposta da API do Shopify:', JSON.stringify(responseData));
 
-    if (responseData.data.productCreate.userErrors.length > 0) {
-      const errors = responseData.data.productCreate.userErrors;
-      console.error('Erros ao criar produto no Shopify:', errors);
-      return NextResponse.json({
-        success: false,
-        error: `Erro ao criar produto: ${errors.map((e: { field: string; message: string }) => `${e.field}: ${e.message}`).join(', ')}`,
-      }, { status: 400 });
-    }
-
-    // Produto criado com sucesso
-    const productId = responseData.data.productCreate.product.id;
-    const handle = responseData.data.productCreate.product.handle;
-    const productUrl = responseData.data.productCreate.product.onlineStoreUrl || 
-                     `https://${shopUrl}/products/${handle}`;
-
-    // Adicionar imagens se fornecidas (em uma mutação separada)
-    if (productData.images && productData.images.length > 0) {
-      try {
-        // Usar a mutação productCreateMedia para adicionar imagens
-        const createMediaQuery = `
-          mutation productCreateMedia($productId: ID!, $media: [CreateMediaInput!]!) {
-            productCreateMedia(productId: $productId, media: $media) {
-              media {
-                mediaContentType
-                status
-                preview {
-                  image {
-                    url
-                  }
-                }
-              }
-              mediaUserErrors {
-                field
-                message
-              }
-            }
-          }
-        `;
-
-        // Converter URLs de imagens para o formato esperado pelo Shopify
-        const mediaInput = productData.images.map((imageUrl: string) => ({
-          originalSource: imageUrl,
-          mediaContentType: 'IMAGE',
-          alt: productData.title
-        }));
-
-        const mediaResponse = await fetch(endpoint, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            query: createMediaQuery,
-            variables: {
-              productId,
-              media: mediaInput
-            }
-          })
-        });
-
-        const mediaData = await mediaResponse.json();
-        
-        if (mediaData.errors || 
-            (mediaData.data && 
-             mediaData.data.productCreateMedia && 
-             mediaData.data.productCreateMedia.mediaUserErrors && 
-             mediaData.data.productCreateMedia.mediaUserErrors.length > 0)) {
-          
-          console.warn('Aviso: Nem todas as imagens foram adicionadas:', 
-                      mediaData.errors || mediaData.data.productCreateMedia.mediaUserErrors);
-        }
-      } catch (mediaError) {
-        console.warn('Erro ao adicionar imagens:', mediaError);
-        // Continuamos mesmo se houver erro nas imagens, já que o produto foi criado
-      }
-    }
-
-    // Adicionar variante com preço se informações de variante foram fornecidas
-    if (productData.variants && productData.variants.length > 0) {
-      try {
-        // Consulta para obter as variantes do produto
-        const getVariantsQuery = `
-          query getProductVariants($id: ID!) {
-            product(id: $id) {
-              variants(first: 1) {
-                edges {
-                  node {
-                    id
-                    inventoryItem {
-                      id
-                    }
-                  }
-                }
-              }
-            }
-          }
-        `;
-
-        const variantsResponse = await fetch(endpoint, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            query: getVariantsQuery,
-            variables: { id: productId }
-          }),
-        });
-
-        const variantsData = await variantsResponse.json();
-        
-        if (variantsData.data && variantsData.data.product && 
-            variantsData.data.product.variants && 
-            variantsData.data.product.variants.edges && 
-            variantsData.data.product.variants.edges.length > 0) {
-          
-          // Obter o ID da primeira variante
-          const variantId = variantsData.data.product.variants.edges[0].node.id;
-          const inventoryItemId = variantsData.data.product.variants.edges[0].node.inventoryItem?.id;
-          
-          // Atualizar o preço da variante
-          const updateVariantQuery = `
-            mutation productVariantUpdate($input: ProductVariantInput!) {
-              productVariantUpdate(input: $input) {
-                productVariant {
-                  id
-                  price
-                  compareAtPrice
-                }
-                userErrors {
-                  field
-                  message
-                }
-              }
-            }
-          `;
-          
-          const variantUpdateResponse = await fetch(endpoint, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              query: updateVariantQuery,
-              variables: {
-                input: {
-                  id: variantId,
-                  price: productData.variants[0].price,
-                  compareAtPrice: productData.variants[0].compareAtPrice,
-                  sku: productData.variants[0].sku || `IMPORT-${productData.id}-${Date.now()}`
-                }
-              }
-            }),
-          });
-          
-          const variantUpdateData = await variantUpdateResponse.json();
-          
-          if (variantUpdateData.errors || 
-              (variantUpdateData.data && 
-               variantUpdateData.data.productVariantUpdate && 
-               variantUpdateData.data.productVariantUpdate.userErrors && 
-               variantUpdateData.data.productVariantUpdate.userErrors.length > 0)) {
-            
-            console.warn('Aviso: Não foi possível atualizar o preço da variante:', 
-                        variantUpdateData.errors || variantUpdateData.data.productVariantUpdate.userErrors);
-          }
-          
-          // Atualizar o inventário se tiver o ID do item de inventário e se não tivemos sucesso ao configurá-lo inicialmente
-          if (inventoryItemId) {
-            const inventoryLevel = productData.variants[0].inventoryQuantity || 100;
-            
-            // Obter os locais de inventário disponíveis (já temos o locationId, mas vamos garantir)
-            const inventoryAdjustQuery = `
-              mutation inventoryAdjustQuantity($input: InventoryAdjustQuantityInput!) {
-                inventoryAdjustQuantity(input: $input) {
-                  inventoryLevel {
-                    available
-                  }
-                  userErrors {
-                    field
-                    message
-                  }
-                }
-              }
-            `;
-            
-            const inventoryResponse = await fetch(endpoint, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify({
-                query: inventoryAdjustQuery,
-                variables: {
-                  input: {
-                    inventoryItemId: inventoryItemId,
-                    locationId: locationId,
-                    availableDelta: inventoryLevel
-                  }
-                }
-              }),
-            });
-            
-            const inventoryData = await inventoryResponse.json();
-            
-            if (inventoryData.errors || 
-                (inventoryData.data && 
-                inventoryData.data.inventoryAdjustQuantity && 
-                inventoryData.data.inventoryAdjustQuantity.userErrors && 
-                inventoryData.data.inventoryAdjustQuantity.userErrors.length > 0)) {
-              
-              console.warn('Aviso: Não foi possível atualizar o inventário:', 
-                          inventoryData.errors || inventoryData.data.inventoryAdjustQuantity.userErrors);
-            }
-          }
-        }
-      } catch (variantError) {
-        console.warn('Erro ao atualizar variante/inventário:', variantError);
-        // Continuamos mesmo se houver erro nas variantes, já que o produto foi criado
-      }
-    }
+    // Obter os dados do produto criado
+    const createdProduct = responseData.product;
+    const productId = createdProduct.id;
+    const handle = createdProduct.handle;
+    const productUrl = `https://${shopUrl}/products/${handle}`;
 
     return NextResponse.json({
       success: true,
