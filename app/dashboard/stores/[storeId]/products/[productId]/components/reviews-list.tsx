@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsItem, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, MessageSquare, Star, Check, X, FileUp, Link, Sparkles, Download, Wand2, Languages } from 'lucide-react';
+import { Loader2, MessageSquare, Star, Check, X, FileUp, Link, Sparkles, Download, Wand2, Languages, Edit, Save } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { getReviews, updateReview, importReviewsFromUrl, generateAIReviews } from '@/lib/supabase';
@@ -65,6 +65,10 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
   // Estados para tradução de reviews
   const [isTranslateDialogOpen, setIsTranslateDialogOpen] = useState(false);
   const [selectedReviewForTranslation, setSelectedReviewForTranslation] = useState<Review | null>(null);
+  
+  // Estado para edição de review
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedReviewForEdit, setSelectedReviewForEdit] = useState<Review | null>(null);
   
   // Estados para melhoria de reviews
   const [isEnhanceDialogOpen, setIsEnhanceDialogOpen] = useState(false);
@@ -302,6 +306,12 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
     setIsEnhanceDialogOpen(true);
   };
   
+  // Adicionar função para edição de review
+  const handleEditReview = (review: Review) => {
+    setSelectedReviewForEdit(review);
+    setIsEditDialogOpen(true);
+  };
+  
   if (isLoading) {
     return (
       <Card>
@@ -494,6 +504,17 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditReview(review);
+                              }}
+                              className="text-green-600 hover:bg-green-50 hover:text-green-700"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleEnhanceSingle(review)}
                               className="text-amber-600 hover:bg-amber-50 hover:text-amber-700"
                             >
@@ -625,6 +646,153 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
         onReviewsUpdated={loadReviews}
         isSingleReview={!!selectedReviewForEnhancement}
       />
-              </div>
+      
+      {/* Diálogo de edição de review */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsEditDialogOpen(false);
+          setSelectedReviewForEdit(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Avaliação</DialogTitle>
+            <DialogDescription>
+              Edite os detalhes da avaliação
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReviewForEdit && (
+            <EditReviewForm 
+              review={selectedReviewForEdit} 
+              onSuccess={() => {
+                setIsEditDialogOpen(false);
+                setSelectedReviewForEdit(null);
+                loadReviews();
+                toast.success('Avaliação atualizada com sucesso!');
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+// Componente para o formulário de edição de review
+interface EditReviewFormProps {
+  review: Review;
+  onSuccess: () => void;
+}
+
+function EditReviewForm({ review, onSuccess }: EditReviewFormProps) {
+  const [author, setAuthor] = useState(review.author);
+  const [content, setContent] = useState(review.content);
+  const [rating, setRating] = useState(review.rating);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!author.trim()) {
+      toast.error('O nome do autor é obrigatório');
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      const { error } = await updateReview(review.id, {
+        author,
+        content,
+        rating
+      });
+      
+      if (error) {
+        toast.error('Erro ao atualizar avaliação');
+        console.error('Erro ao atualizar avaliação:', error);
+        return;
+      }
+      
+      onSuccess();
+    } catch (error) {
+      toast.error('Erro ao atualizar avaliação');
+      console.error('Erro ao atualizar avaliação:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="author">Nome do Autor</Label>
+        <Input
+          id="author"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          placeholder="Nome do cliente"
+          required
+        />
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="rating">Avaliação</Label>
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Slider
+              id="rating"
+              value={[rating]}
+              min={1}
+              max={5}
+              step={1}
+              onValueChange={(value) => setRating(value[0])}
+            />
+          </div>
+          <div className="flex items-center gap-1 w-16">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star 
+                key={star} 
+                size={16} 
+                className={star <= rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setRating(star)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="content">Texto da Avaliação</Label>
+        <textarea
+          id="content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Digite o texto da avaliação"
+          className="w-full min-h-[120px] p-2 rounded-md border border-input"
+          rows={4}
+        />
+      </div>
+      
+      <DialogFooter>
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="w-full sm:w-auto"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Salvar Alterações
+            </>
+          )}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 } 
