@@ -3,67 +3,92 @@ import { Store } from './supabase';
 // Interface para o produto formatado para o Shopify
 export interface ShopifyProductData {
   title: string;
-  body_html: string;
+  descriptionHtml: string;
   vendor: string;
-  product_type: string;
-  tags: string[];
-  variants: {
+  productType: string;
+  tags?: string[];
+  images?: string[];
+  variants?: {
     price: string;
-    compare_at_price?: string;
-    inventory_quantity: number;
+    compareAtPrice?: string;
+    inventoryQuantity: number;
     sku?: string;
   }[];
-  images: {
-    src: string;
-    alt?: string;
-  }[];
-  status: 'active' | 'draft';
+  status?: 'ACTIVE' | 'DRAFT';
+}
+
+// Tipo extendido do Store para incluir api_version
+export interface ShopifyStore {
+  id: string;
+  name: string;
+  user_id: string;
+  platform: 'shopify' | 'aliexpress' | 'other';
+  url: string;
+  api_key: string;
+  api_secret?: string | null;
+  api_version?: string;
+  products_count: number;
+  orders_count: number;
+  last_sync?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Tipo para o input da API GraphQL do Shopify
+interface ShopifyGraphQLVariables {
+  input: {
+    title: string;
+    descriptionHtml: string;
+    vendor: string;
+    productType: string;
+    status: string;
+    tags: string[];
+    images?: Array<{ src: string }>;
+    variants?: Array<{
+      price: string;
+      compareAtPrice?: string;
+      inventoryQuantities?: {
+        availableQuantity: number;
+        locationId: string;
+      };
+    }>;
+  };
 }
 
 /**
- * Publica um produto na loja Shopify
+ * Publica um produto na loja Shopify usando a API GraphQL
  */
 export async function publishProductToShopify(
-  store: Store,
+  store: ShopifyStore,
   productData: ShopifyProductData
-): Promise<{ success: boolean; shopify_product_id?: string; error?: string }> {
+): Promise<{ success: boolean; shopifyProductId?: string; productUrl?: string; error?: string }> {
   try {
-    // Configurações de autenticação para a API do Shopify
-    const apiVersion = '2023-10'; // Usando a versão mais recente da API
-    
-    if (!store.url) {
-      return { success: false, error: 'URL da loja não fornecido' };
-    }
-    
-    const shopUrl = store.url.replace(/https?:\/\//, '');
-    const headers = {
-      'Content-Type': 'application/json',
-      'X-Shopify-Access-Token': store.api_key || '',
-    };
-
-    // Endpoint para criar produtos
-    const endpoint = `https://${shopUrl}/admin/api/${apiVersion}/products.json`;
-
-    // Requisição para a API do Shopify
-    const response = await fetch(endpoint, {
+    // Usamos nossa própria API para evitar problemas de CORS
+    const response = await fetch('/api/shopify/publish-product', {
       method: 'POST',
-      headers,
-      body: JSON.stringify({ product: productData }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        store,
+        productData
+      }),
     });
 
+    // Se a resposta não for ok, lançamos um erro
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Erro ao publicar produto no Shopify:', errorData);
-      return {
-        success: false,
-        error: `Erro ${response.status}: ${JSON.stringify(errorData)}`,
-      };
+      throw new Error(errorData.error || `Erro ${response.status}: ${response.statusText}`);
     }
 
+    // Processamos a resposta
     const data = await response.json();
+    
     return {
-      success: true,
-      shopify_product_id: data.product.id.toString(),
+      success: data.success,
+      shopifyProductId: data.shopifyProductId,
+      productUrl: data.productUrl,
+      error: data.error
     };
   } catch (error) {
     console.error('Erro ao publicar produto no Shopify:', error);
@@ -75,33 +100,30 @@ export async function publishProductToShopify(
 }
 
 /**
- * Verifica se as credenciais da loja Shopify são válidas
+ * Verifica se as credenciais da loja Shopify são válidas usando GraphQL
  */
 export async function verifyShopifyCredentials(
   url: string,
   api_key: string
-): Promise<{ valid: boolean; message?: string }> {
+): Promise<{ valid: boolean; message?: string; shopInfo?: any }> {
   try {
-    const apiVersion = '2023-10';
-    const shopUrl = url.replace(/https?:\/\//, '');
-    const endpoint = `https://${shopUrl}/admin/api/${apiVersion}/shop.json`;
-
-    const response = await fetch(endpoint, {
-      method: 'GET',
+    // Usamos nossa própria API para evitar problemas de CORS
+    const response = await fetch('/api/shopify/verify-credentials', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': api_key,
       },
+      body: JSON.stringify({ url, api_key }),
     });
 
-    if (!response.ok) {
-      return {
-        valid: false,
-        message: `Credenciais inválidas ou erro na conexão (${response.status})`,
-      };
-    }
-
-    return { valid: true };
+    // Processar a resposta
+    const data = await response.json();
+    
+    return {
+      valid: data.valid,
+      message: data.message,
+      shopInfo: data.shopInfo
+    };
   } catch (error) {
     return {
       valid: false,
@@ -118,18 +140,18 @@ export function formatProductForShopify(
   includeReviews: boolean = false
 ): ShopifyProductData {
   // Preparar descrição do produto
-  let bodyHtml = product.description;
+  let descriptionHtml = product.description || '';
   
   // Adicionar avaliações se solicitado
   if (includeReviews && product.reviews && product.reviews.length > 0) {
-    bodyHtml += '<div class="product-reviews">';
-    bodyHtml += '<h3>Avaliações dos Clientes</h3>';
+    descriptionHtml += '<div class="product-reviews">';
+    descriptionHtml += '<h3>Avaliações dos Clientes</h3>';
     
     product.reviews
       .filter((review: any) => review.is_selected || review.is_published)
       .forEach((review: any) => {
         const content = review.improved_content || review.translated_content || review.content;
-        bodyHtml += `
+        descriptionHtml += `
           <div class="review">
             <div class="review-header">
               <span class="review-author">${review.author}</span>
@@ -145,24 +167,24 @@ export function formatProductForShopify(
         `;
       });
     
-    bodyHtml += '</div>';
+    descriptionHtml += '</div>';
   }
 
   return {
     title: product.title,
-    body_html: bodyHtml,
-    vendor: 'Sua Loja', // Pode ser personalizado
-    product_type: product.category || 'Geral',
+    descriptionHtml,
+    vendor: product.vendor || 'Dropfy Import',
+    productType: product.category || 'Importado',
     tags: product.tags || [],
+    images: product.images || [],
     variants: [
       {
         price: product.price.toString(),
-        compare_at_price: product.compare_at_price?.toString(),
-        inventory_quantity: product.stock || 100,
-        sku: product.sku,
+        compareAtPrice: product.compare_at_price?.toString(),
+        inventoryQuantity: product.stock || 100,
+        sku: product.sku || `IMPORT-${product.id}-${Date.now()}`
       }
     ],
-    images: product.images.map((src: string) => ({ src })),
-    status: 'active', // Pode ser 'draft' se desejar revisão antes de publicar
+    status: 'ACTIVE'
   };
 } 
