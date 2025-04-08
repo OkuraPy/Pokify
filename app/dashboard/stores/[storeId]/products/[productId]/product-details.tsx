@@ -16,6 +16,7 @@ import { ProductAnalytics } from './components/product-analytics';
 import { TranslationDialog } from './components/translation-dialog';
 import { ImproveDescriptionDialog } from './components/improve-description-dialog';
 import { DescriptionImages } from './components/description-images';
+import { ShopifyPublishButton } from './components/shopify-publish-button';
 import { getProduct, updateProduct } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -487,6 +488,11 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
                 </a>
               </Button>
             )}
+            <ShopifyPublishButton 
+              storeId={storeId} 
+              productId={product.id} 
+              isPublished={!!product.shopify_product_id} 
+            />
           </div>
         </div>
       </div>
