@@ -249,13 +249,39 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                           </div>
                           <div className="text-sm text-slate-500 font-medium">Nenhuma loja encontrada</div>
                           <div className="text-xs text-slate-400 mt-1 mb-2">Crie sua primeira loja abaixo</div>
+                          
+                          {/* Botão movido para dentro do container vazio */}
+                          {storesCount < maxStores && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={isLoading}
+                              className={cn(
+                                'w-full justify-center mt-4 rounded-xl h-10 min-h-[40px] transition-all duration-300 border shadow-sm',
+                                'bg-gradient-to-r from-blue-50 to-blue-100/50 hover:from-blue-100/80 hover:to-blue-200/50 text-blue-700 border-blue-200/50 hover:shadow-md hover:scale-[1.01]'
+                              )}
+                              onClick={navigateToNewStore}
+                            >
+                              {isLoading ? (
+                                <div className="relative h-6 w-6">
+                                  <div className="absolute inset-0 rounded-full border-2 border-blue-100 opacity-40 animate-ping"></div>
+                                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                </div>
+                              ) : (
+                                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm mr-2">
+                                  <PlusCircle className="h-4 w-4 text-white" />
+                                </div>
+                              )}
+                              <span className="font-medium">Nova Loja</span>
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
                   )}
                   
-                  {/* Botão de Nova Loja - MOVIDO PARA DENTRO DA SCROLLAREA */}
-                  {storesCount < maxStores ? (
+                  {/* Botão de Nova Loja - APENAS VISÍVEL QUANDO HÁ LOJAS EXISTENTES */}
+                  {storesCount < maxStores && stores.length > 0 ? (
                     <div className="mt-3">
                       <TooltipProvider>
                         <Tooltip>

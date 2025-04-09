@@ -189,7 +189,7 @@ export default function StoresPage() {
               <p className="text-muted-foreground">Carregando suas lojas...</p>
             </div>
           ) : stores.length === 0 ? (
-            <div className="py-16 text-center px-4">
+            <div className="py-16 text-center px-4 min-h-[400px] flex flex-col items-center justify-center">
               <div className="mx-auto w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
                 <Store className="h-8 w-8 text-blue-500" />
               </div>
@@ -197,7 +197,7 @@ export default function StoresPage() {
               <p className="text-muted-foreground max-w-sm mx-auto mb-6">
                 Você ainda não possui lojas cadastradas na plataforma
               </p>
-              <div className="pb-6">
+              <div className="mt-2">
                 <Button 
                   variant="outline" 
                   className="mx-auto border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800 transition-all whitespace-nowrap px-5 min-h-[44px]"

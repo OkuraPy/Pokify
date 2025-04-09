@@ -29,6 +29,7 @@ import {
   BarChart,
   RefreshCw,
   AlertTriangle,
+  PlusCircle,
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -147,7 +148,7 @@ export function StoreList({ stores }: StoreListProps) {
 
   if (stores.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-10 text-center">
+      <div className="flex flex-col items-center justify-center py-10 text-center rounded-xl border border-gray-100 bg-white min-h-[350px]">
         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
           <Package className="h-6 w-6 text-muted-foreground" />
         </div>
@@ -155,6 +156,13 @@ export function StoreList({ stores }: StoreListProps) {
         <p className="text-muted-foreground max-w-sm mb-4">
           Você ainda não conectou nenhuma loja à plataforma. Adicione sua primeira loja para começar.
         </p>
+        <Button 
+          onClick={() => router.push('/dashboard/stores/create')}
+          className="flex items-center mt-2 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 border border-blue-200"
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Criar Loja
+        </Button>
       </div>
     );
   }
