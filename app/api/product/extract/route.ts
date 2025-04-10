@@ -49,10 +49,31 @@ export async function POST(request: NextRequest) {
 - Desconto: ${productData.discountPercentage}%
       
 ${productData.variants && productData.variants.length > 0 ? '## Variantes\n- ' + productData.variants.join('\n- ') : ''}
+
+## Imagens
+${productData.imageUrl ? `![Imagem do produto](${productData.imageUrl})` : ''}
 `;
 
       console.log(`[Extract API] Markdown com preços embutidos para o regex do formulário:
 ${markdownWithPrices}`);
+
+      // Extrair imagens do markdown (URLs de imagens) - usando o mesmo método do código original
+      const imageRegex = /!\[.*?\]\((.*?)\)/g;
+      const imageMatches = [...markdownWithPrices.matchAll(imageRegex)];
+      const images = imageMatches
+        .map(match => match[1])
+        .filter((imageUrl: string) => 
+          imageUrl && 
+          !imageUrl.includes('placeholder') && 
+          (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || imageUrl.includes('.png') || imageUrl.includes('.webp') || imageUrl.includes('cdn/shop'))
+        );
+
+      console.log(`[Extract API] Imagens extraídas do markdown: ${JSON.stringify(images)}`);
+
+      // Se temos uma URL de imagem específica, garantir que ela esteja na lista
+      if (productData.imageUrl && !images.includes(productData.imageUrl)) {
+        images.unshift(productData.imageUrl);
+      }
 
       // Formatando para manter a compatibilidade com o formato esperado pelo frontend
       const response = {
@@ -60,13 +81,12 @@ ${markdownWithPrices}`);
         data: {
           title: productData.title,
           description: productData.description,
-          markdownText: markdownWithPrices, // ⚠️ Agora usamos o markdown com preços
-          price: formattedPrice,    // Formato explícito
-          originalPrice: formattedOriginalPrice, // Formato explícito
-          // Também adicionando diretamente no objeto raiz para compatibilidade
+          markdownText: markdownWithPrices, // Markdown com preços e imagens
+          price: formattedPrice,
+          originalPrice: formattedOriginalPrice,
           compare_at_price: formattedOriginalPrice,
           discountPercentage: productData.discountPercentage,
-          images: productData.imageUrl ? [productData.imageUrl] : [],
+          images: images, // ⚠️ Usa a lista de imagens extraídas
           metadata: {
             currency: productData.currency
           }
@@ -74,7 +94,8 @@ ${markdownWithPrices}`);
         // Adiciona os campos direto na raiz também para compatibilidade com diferentes estruturas
         title: productData.title,
         price: formattedPrice,
-        compare_at_price: formattedOriginalPrice
+        compare_at_price: formattedOriginalPrice,
+        images: images // ⚠️ Adiciona imagens na raiz também
       };
 
       console.log(`[Extract API] Resposta final formatada: ${JSON.stringify(response, null, 2)}`);
