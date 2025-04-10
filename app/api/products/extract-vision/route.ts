@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { extractMarkdownFromUrl, extractDirectlyFromPage } from '@/lib/linkfy-service';
 import { extractProductDataWithOpenAI } from '@/lib/openai-extractor';
 import { preserveImagesInDescription } from '@/lib/markdown-utils';
+import { ProductExtractorService } from '@/src/services/product-extractor.service';
+import { ConfigService } from '@/src/services/config.service';
 
 /**
  * Função para logar de forma padronizada
@@ -38,35 +40,84 @@ export async function POST(request: NextRequest) {
     log('info', `🔗 Extraindo produto da URL: ${url}`);
     log('info', `📊 Tamanho do screenshot: ${Math.round(screenshot.length / 1024)} KB`);
     
+    // Verificar se o sistema dual está ativado
+    const useNewExtractor = ConfigService.useNewExtractor();
+    
     // ----- FASE 1: EXTRAÇÃO DO MARKDOWN -----
     const markdown_start = Date.now();
-    log('info', '📝 Fase 1: Extraindo markdown com a API Linkfy');
     
-    const linkfyResult = await extractMarkdownFromUrl(url);
-    
-    // Se a API Linkfy falhar, tentar extração direta
     let markdown = '';
-    if (!linkfyResult.success) {
-      log('warn', `⚠️ API Linkfy falhou: ${linkfyResult.error}`);
-      log('info', '🔄 Tentando extração direta como fallback');
+    let directImages: string[] = [];
+    
+    // Decidir qual extrator usar com base na configuração do sistema
+    if (useNewExtractor) {
+      log('info', '📝 Fase 1: Extraindo dados usando o FireCrawl (novo extrator)');
       
-      const directExtractStart = Date.now();
-      const directResult = await extractDirectlyFromPage(url);
-      
-      if (!directResult.success) {
-        log('error', `❌ Extração direta falhou: ${directResult.error}`);
-        return NextResponse.json({ error: 'Falha ao extrair informações da página' }, { status: 500 });
+      try {
+        // Usar o serviço de extração dual com FireCrawl
+        const productData = await ProductExtractorService.extractProductData(url);
+        
+        // Formatar o resultado do FireCrawl para o formato esperado pelo processamento OpenAI
+        markdown = productData.description;
+        directImages = productData.allImages || [productData.imageUrl].filter(Boolean);
+        
+        // Adicionar informações de preço explicitamente no markdown para detecção
+        markdown += `\n\nPreço: R$ ${productData.price}\n`;
+        if (productData.originalPrice) {
+          markdown += `Preço Original: R$ ${productData.originalPrice}\n`;
+        }
+        if (productData.discountPercentage) {
+          markdown += `Desconto: ${productData.discountPercentage}%\n`;
+        }
+        
+        log('info', `✅ Extração FireCrawl bem-sucedida em ${Date.now() - markdown_start}ms`, {
+          tamanhoMarkdown: `${Math.round((markdown.length || 0) / 1024)} KB`,
+          imagensEncontradas: directImages.length || 0
+        });
+      } catch (error) {
+        log('error', `❌ Erro na extração com FireCrawl: ${error instanceof Error ? error.message : String(error)}`);
+        log('info', '🔄 Voltando para extração com Linkfy como fallback');
+        
+        // Se o FireCrawl falhar, usar o Linkfy como fallback
+        const linkfyResult = await extractMarkdownFromUrl(url);
+        
+        if (!linkfyResult.success) {
+          markdown = '';
+          directImages = [];
+        } else {
+          markdown = linkfyResult.data?.markdown || '';
+          directImages = linkfyResult.data?.images || [];
+        }
       }
-      
-      markdown = directResult.data?.markdown || '';
-      log('info', `✅ Extração direta bem-sucedida em ${Date.now() - directExtractStart}ms`, {
-        tamanhoMarkdown: `${Math.round(markdown.length / 1024)} KB`
-      });
     } else {
-      markdown = linkfyResult.data?.markdown || '';
-      log('info', `✅ Extração Linkfy bem-sucedida em ${Date.now() - markdown_start}ms`, {
-        tamanhoMarkdown: `${Math.round(markdown.length / 1024)} KB`
-      });
+      // Usar o extrator original (Linkfy)
+      log('info', '📝 Fase 1: Extraindo markdown com a API Linkfy (extrator original)');
+      const linkfyResult = await extractMarkdownFromUrl(url);
+      
+      if (!linkfyResult.success) {
+        log('warn', `⚠️ API Linkfy falhou: ${linkfyResult.error}`);
+        log('info', '🔄 Tentando extração direta como fallback');
+        
+        const directExtractStart = Date.now();
+        const directResult = await extractDirectlyFromPage(url);
+        
+        if (!directResult.success) {
+          log('error', `❌ Extração direta falhou: ${directResult.error}`);
+          return NextResponse.json({ error: 'Falha ao extrair informações da página' }, { status: 500 });
+        }
+        
+        markdown = directResult.data?.markdown || '';
+        directImages = directResult.data?.images || [];
+        log('info', `✅ Extração direta bem-sucedida em ${Date.now() - directExtractStart}ms`, {
+          tamanhoMarkdown: `${Math.round(markdown.length / 1024)} KB`
+        });
+      } else {
+        markdown = linkfyResult.data?.markdown || '';
+        directImages = linkfyResult.data?.images || [];
+        log('info', `✅ Extração Linkfy bem-sucedida em ${Date.now() - markdown_start}ms`, {
+          tamanhoMarkdown: `${Math.round(markdown.length / 1024)} KB`
+        });
+      }
     }
     
     // ----- FASE 2: EXTRAÇÃO COM OPENAI VISION -----
@@ -97,6 +148,18 @@ export async function POST(request: NextRequest) {
       imagensPrincipais: openaiResult.data?.mainImages?.length || 0,
       imagensDescricao: openaiResult.data?.descriptionImages?.length || 0
     });
+    
+    // Se temos imagens diretas do extrator, considerá-las para a resposta final
+    if (directImages.length > 0) {
+      log('info', `📊 Integrando ${directImages.length} imagens encontradas pelo extrator direto`);
+      
+      // Se o OpenAI não retornou imagens ou retornou menos que o extrator direto
+      if (openaiResult.data && (!openaiResult.data.mainImages || openaiResult.data.mainImages.length < directImages.length)) {
+        openaiResult.data.mainImages = directImages;
+        openaiResult.data.images = directImages;
+        log('info', `✅ Substituindo imagens da IA por ${directImages.length} imagens do extrator direto`);
+      }
+    }
     
     // ----- FASE 3: PROCESSAMENTO DE IMAGENS NA DESCRIÇÃO -----
     const desc_start = Date.now();
@@ -136,15 +199,15 @@ export async function POST(request: NextRequest) {
     });
     
     // Exemplos de imagens para debug
-    if (productDetails.mainImages?.length > 0) {
+    if (productDetails.mainImages && productDetails.mainImages.length > 0) {
       log('info', '📸 Exemplos de imagens principais:', {
-        exemplos: (productDetails.mainImages || []).slice(0, 3).map(url => url.substring(0, 60) + '...')
+        exemplos: productDetails.mainImages.slice(0, 3).map(url => url.substring(0, 60) + '...')
       });
     }
     
-    if (productDetails.descriptionImages?.length > 0) {
+    if (productDetails.descriptionImages && productDetails.descriptionImages.length > 0) {
       log('info', '📸 Exemplos de imagens de descrição:', {
-        exemplos: (productDetails.descriptionImages || []).slice(0, 2).map(url => url.substring(0, 60) + '...')
+        exemplos: productDetails.descriptionImages.slice(0, 2).map(url => url.substring(0, 60) + '...')
       });
     }
     
@@ -152,7 +215,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ...productDetails,
-      _source: 'vision',
+      _source: useNewExtractor ? 'vision_firecrawl' : 'vision_linkfy',
       _processingTime: totalTime,
       _extractionStats: {
         mainImagesCount: productDetails.mainImages?.length || 0,
@@ -160,7 +223,8 @@ export async function POST(request: NextRequest) {
         totalImagesCount: productDetails.images?.length || 0,
         mainImageSamples: (productDetails.mainImages || []).slice(0, 3),
         descImageSamples: (productDetails.descriptionImages || []).slice(0, 2),
-        processingTimeMs: totalTime
+        processingTimeMs: totalTime,
+        extractor: useNewExtractor ? 'FireCrawl' : 'Linkfy'
       }
     });
   } catch (error: any) {
