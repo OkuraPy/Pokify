@@ -15,15 +15,13 @@ const nextConfig = {
   experimental: {
     forceSwcTransforms: true,
   },
-  webpack: (config, { isServer }) => {
-    // Configurar o webpack para ser case-sensitive
+  webpack: (config) => {
+    // Configurar o webpack para ser case-sensitive e resolver o alias @
     config.resolve.symlinks = false;
-    if (isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@': config.resolve.alias['@'] || '.'
-      };
-    }
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': '.'
+    };
     return config;
   }
 };
