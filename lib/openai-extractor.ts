@@ -816,100 +816,71 @@ Como copywriter especialista, você tem duas tarefas:
 
 TAREFA 1: EXTRAÇÃO DE DADOS
 Extraia com precisão:
-- Título completo e exato do produto (o nome REAL do produto sendo vendido)
+- Título completo e exato do produto (nome real do produto físico à venda, como "Body Shaper", "Vestido")
 - Preço atual em formato numérico (com ponto decimal)
 - URLs de imagens do produto (apenas imagens reais)
 
-ATENÇÃO ESPECIAL PARA O TÍTULO:
-- O título é o nome físico real do produto à venda (ex: "Body Shaper", "Vestido Longo", "Camiseta")
-- Não confunda elementos da interface com produtos (ex: "Guia de Tamanho" não é um produto)
-- Procure o título junto às imagens principais ou no topo da página
-
 TAREFA 2: CRIAR UMA COPY PROFISSIONAL
 Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
-- ATENÇÃO: Gancho poderoso com título em <h2> focado no PRODUTO
-- INTERESSE: Solução oferecida pelo produto e benefícios principais
-- DESEJO: Detalhes técnicos do produto e prova social
-- AÇÃO: Chamada à ação clara e persuasiva
+- ATENÇÃO: Gancho poderoso com título em <h2>, focado no produto real (não usar "Guia de Tamanho")
+- INTERESSE: Solução e benefícios principais 
+- DESEJO: Detalhes técnicos e prova social
+- AÇÃO: Chamada à ação clara (em texto, não como botão)
 
-REQUISITOS DA DESCRIÇÃO:
-- Use APENAS as seguintes tags HTML: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
-- Seja MUITO detalhado e persuasivo (mínimo 600 palavras)
-- Use tom profissional e confiante
-- Inclua pelo menos 3 parágrafos por seção
-- Termine com uma chamada à ação clara EM TEXTO, sem usar botões
-
-PROIBIÇÕES ABSOLUTAS:
-1. NÃO inclua botões como "Compre Agora", "Adicionar ao Carrinho"
-2. NÃO inclua elementos <a href> ou links
-3. NÃO inclua trechos como \`\`\`html ou \`html - apenas texto formatado
-4. NÃO use "Guia de Tamanho" como título do produto ou da descrição
-5. NÃO inclua preços/valores na descrição - estes serão adicionados separadamente
-6. NÃO inicie sua resposta com \`\`\`html ou \`html
-
-EXEMPLOS DO QUE NÃO FAZER:
-❌ INCORRETO: "\`\`\`html
-<h2>Guia de Tamanho</h2>
-<p>Texto aqui...</p>
-\`\`\`"
-
-❌ INCORRETO: "html
-<h2>Produto Premium</h2>
-<p>Texto aqui...</p>"
-
-❌ INCORRETO: "<h2>Guia de Tamanho - Ajuste Perfeito</h2>"
-
-✅ CORRETO: "<h2>Body Shaper Premium: Redefina Sua Silhueta</h2>
-<p>Descubra o poder da transformação com nosso Body Shaper Premium...</p>"`;
+A descrição deve:
+- Ter formato HTML com tags h2, h3, p, ul, li, strong, em
+- Ser extensa (800+ palavras) e muito detalhada
+- Ter tom profissional e persuasivo
+- NÃO incluir botões, links ou código HTML
+- NÃO mencionar preços ou valores
+- NÃO incluir blocos de código ou \`\`\`html
+- Terminar com um parágrafo de chamada à ação (não um botão)`;
   
       const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
 
 1. EXTRAIA as informações básicas do produto:
-   - Título exato do produto (o nome real físico à venda, como "Body", "Vestido", "Calça")
+   - Título exato do produto físico real
    - Preço com ponto decimal
-   - URLs das imagens principais
+   - URLs das imagens
 
-2. CRIE uma descrição profissional e persuasiva usando a estrutura AIDA:
+2. CRIE uma descrição completa usando a estrutura AIDA:
 
    A) ATENÇÃO:
-      - Título chamativo em <h2> focado no PRODUTO REAL (não em "Guia de Tamanho")
-      - EXEMPLO CORRETO: <h2>Redefina Sua Silhueta com o Body Shaper Canelado</h2>
-      - EXEMPLO INCORRETO: <h2>Guia de Tamanho</h2>
+      - Título chamativo em <h2> sobre o produto (ex: "Redefina Sua Silhueta com o Body Shaper")
       - Gancho poderoso que gere curiosidade
       - Problema que o cliente enfrenta
 
    B) INTERESSE:
       - Subtítulo em <h3>
       - Solução oferecida pelo produto
-      - 5+ benefícios detalhados em texto rico
-      - Características únicas do produto
+      - 5+ benefícios detalhados
 
    C) DESEJO:
       - Subtítulo em <h3>
-      - Detalhes técnicos do produto
+      - Características técnicas completas
       - Listas organizadas <ul><li>
-      - Prova social com citação de clientes satisfeitos
-      - Resposta a possíveis objeções
+      - Prova social e exclusividade
 
    D) AÇÃO:
       - Subtítulo em <h3>
-      - Chamada à ação em texto simples (em parágrafo)
+      - Chamada à ação em texto simples: "Adquira este produto..."
       - Urgência e escassez
       - Garantia de satisfação
 
-ATENÇÃO - REGRAS CRÍTICAS:
-- NÃO inicie sua resposta com \`\`\`html ou mencione "html" no início
-- NÃO use "Guia de Tamanho" como título em <h2>
-- NÃO inclua botões ou links
-- NÃO inclua preços na descrição
-- NÃO mencione R$ ou valores monetários na descrição
+IMPORTANTE:
+- NÃO use "Guia de Tamanho" como título, isso não é o produto real
+- NÃO inclua botões ou links na descrição
+- NÃO inclua preços ou valores na descrição
+- NÃO inicie sua resposta com \`\`\`html ou qualquer código
+- Sua descrição deve ter pelo menos 800 palavras
+- Use HTML limpo apenas com h2, h3, p, ul, li, strong, em
 
-MODELO PARA SUA RESPOSTA:
+Responda exatamente neste formato:
 {
-  "title": "Nome real do produto",
-  "price": "149.90", 
+  "title": "Título do produto real",
+  "price": "149.90",
   "mainImages": ["url1", "url2"],
-  "description": "<h2>Título Focado no Produto</h2><p>Descrição AIDA...</p>"
+  "description": "<h2>Título Persuasivo Sobre o Produto</h2><p>Sua descrição AIDA aqui...</p>"
 }
 
 HTML/Markdown para análise:
@@ -1086,68 +1057,39 @@ ${markdown.substring(0, 3000)}`;
   }
   
   /**
-   * Sanitiza a descrição para remover elementos proibidos
+   * Sanitiza a descrição para remover elementos HTML indesejados
    */
   private sanitizeDescription(description: string): string {
     if (!description) return '';
     
-    console.log('[OpenAI Extractor] Sanitizando descrição: início');
+    console.log('[OpenAI Extractor] Sanitizando descrição');
     
-    // Primeiro, remover todos os blocos de código e backticks
+    // Remover blocos de código e menções a HTML
     let sanitized = description
+      .replace(/```html[\s\S]*?```/g, '')
       .replace(/```[\s\S]*?```/g, '')
-      .replace(/`[\s\S]*?`/g, '')
+      .replace(/`html/g, '')
       .replace(/\bhtml\b/g, '');
     
-    console.log('[OpenAI Extractor] Remoção de blocos de código/backticks completa');
-    
-    // Remover botões, links e elementos de ação
+    // Remover botões e links
     sanitized = sanitized
       .replace(/<a\b[^>]*>.*?<\/a>/gi, 'Adquira este produto')
-      .replace(/<button\b[^>]*>.*?<\/button>/gi, 'Adquira este produto')
-      .replace(/<div[^>]*class="[^"]*button[^"]*"[^>]*>.*?<\/div>/gi, 'Adquira este produto')
-      .replace(/<p>.*?Compre\s*Agora.*?<\/p>/gi, '<p>Adquira este produto de alta qualidade hoje mesmo.</p>');
+      .replace(/<button\b[^>]*>.*?<\/button>/gi, 'Adquira este produto');
     
-    console.log('[OpenAI Extractor] Remoção de botões e links completa');
+    // Remover menções a preços
+    sanitized = sanitized
+      .replace(/R\$\s*[\d.,]+/g, 'valor especial')
+      .replace(/\b\d+[.,]\d+\s*reais\b/gi, 'valor especial')
+      .replace(/preço\s*:?\s*[\d.,]+/gi, 'preço especial');
     
-    // Substituir frases problemáticas
+    // Substituir frases relacionadas a compras
     sanitized = sanitized
       .replace(/Compre Agora/gi, 'Adquira este produto')
-      .replace(/Comprar agora/gi, 'Adquira este produto')
-      .replace(/Comprar Agora/gi, 'Adquira este produto')
-      .replace(/Compre agora/gi, 'Adquira este produto')
-      .replace(/Adicione ao carrinho/gi, 'Escolha este produto')
-      .replace(/Adicionar ao carrinho/gi, 'Escolha este produto');
+      .replace(/Comprar agora/gi, 'Adquira este produto');
     
-    // Remover divs de galeria e elementos estruturais
+    // Remover "Guia de Tamanho" como título
     sanitized = sanitized
-      .replace(/<div[^>]*?>[\s\S]*?<\/div>/gi, '')
-      .replace(/<section[^>]*?>[\s\S]*?<\/section>/gi, '')
-      .replace(/<article[^>]*?>[\s\S]*?<\/article>/gi, '');
-    
-    console.log('[OpenAI Extractor] Remoção de elementos estruturais completa');
-    
-    // Remover estilos inline
-    sanitized = sanitized.replace(/style=["'][^"']*["']/gi, '');
-    
-    // Substituir "Guia de Tamanho" como título
-    sanitized = sanitized.replace(/<h2[^>]*>[^<]*Guia de Tamanho[^<]*<\/h2>/gi, '<h2>Produto Premium para seu Conforto</h2>');
-    
-    // LIMPEZA FINAL: Permitir apenas tags HTML específicas
-    const allowedTags = ['h2', 'h3', 'p', 'ul', 'li', 'strong', 'em', 'br'];
-    const allowedTagsRegex = new RegExp(`<(?!\/?(?:${allowedTags.join('|')})\\b)[^>]+>`, 'gi');
-    sanitized = sanitized.replace(allowedTagsRegex, '');
-    
-    console.log('[OpenAI Extractor] Filtro de tags HTML seguras aplicado');
-    
-    // Verificação final de segurança - remover tudo que sobrou
-    sanitized = sanitized
-      .replace(/```/g, '')
-      .replace(/`/g, '')
-      .replace(/\bhtml\b/gi, '')
-      .replace(/\$\{.*?\}/g, '');
-    
-    console.log('[OpenAI Extractor] Sanitização concluída');
+      .replace(/<h2[^>]*>Guia de Tamanho[^<]*<\/h2>/gi, '<h2>Body Premium para seu Conforto</h2>');
     
     return sanitized;
   }
