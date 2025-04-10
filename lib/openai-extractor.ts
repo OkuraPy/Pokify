@@ -820,96 +820,86 @@ Extraia com precisão:
 - Preço atual em formato numérico (com ponto decimal)
 - URLs de imagens do produto (apenas imagens reais)
 
-REGRAS CRÍTICAS PARA EXTRAÇÃO DO TÍTULO:
-- O título é o nome COMERCIAL REAL do produto físico que está à venda
-- "Guia de Tamanho" é um elemento da interface, NÃO um produto
-- "Compre Agora", "Adicionar ao Carrinho", "Compartilhar" são elementos da interface, NÃO produtos
-- O título DEVE ser um produto físico como "Camiseta", "Body", "Vestido", "Calça" etc.
-- Tire o título de elementos de destaque perto das imagens principais
-- EXEMPLOS CORRETOS de título: "Body Shaper Canelado", "Camiseta Dry-Fit Masculina"
-- EXEMPLOS INCORRETOS de título: "Guia de Tamanho", "Adicionar ao Carrinho", "Compartilhar"
+ATENÇÃO ESPECIAL PARA O TÍTULO:
+- O título é o nome físico real do produto à venda (ex: "Body Shaper", "Vestido Longo", "Camiseta")
+- Não confunda elementos da interface com produtos (ex: "Guia de Tamanho" não é um produto)
+- Procure o título junto às imagens principais ou no topo da página
 
 TAREFA 2: CRIAR UMA COPY PROFISSIONAL
 Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
-- ATENÇÃO: Gancho poderoso com título em <h2>
-- INTERESSE: Solução e benefícios principais 
-- DESEJO: Detalhes do produto e prova social
+- ATENÇÃO: Gancho poderoso com título em <h2> focado no PRODUTO
+- INTERESSE: Solução oferecida pelo produto e benefícios principais
+- DESEJO: Detalhes técnicos do produto e prova social
 - AÇÃO: Chamada à ação clara e persuasiva
 
-PROIBIÇÕES ABSOLUTAS:
-- PROIBIDO incluir qualquer botão como "Compre Agora", "Adicionar ao Carrinho", etc.
-- PROIBIDO incluir qualquer elemento <a href> com links
-- PROIBIDO incluir galerias de imagens, cards ou qualquer estrutura de exibição
-- PROIBIDO incluir tags <button>, <div class="button">, ou similar
-- PROIBIDO incluir tags <a> estilizadas como botões
-- PROIBIDO incluir trechos como \`html, \`\`\`html, ou código
-- PROIBIDO incluir <div class="product-image-gallery"> ou similar
-
-REGRAS PARA A DESCRIÇÃO:
+REQUISITOS DA DESCRIÇÃO:
 - Use APENAS as seguintes tags HTML: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
-- A chamada à ação deve ser um texto simples, NUNCA um botão
-- Terminar com um parágrafo simples, sem botões ou links
-- Exemplo correto de chamada à ação: "<p>Adquira agora e transforme seu visual!</p>"
-- Exemplo INCORRETO: "<a href...>Compre Agora</a>" ou qualquer botão`;
+- Seja MUITO detalhado e persuasivo (mínimo 600 palavras)
+- Use tom profissional e confiante
+- Inclua pelo menos 3 parágrafos por seção
+- Termine com uma chamada à ação clara EM TEXTO, sem usar botões
+
+PROIBIÇÕES ABSOLUTAS:
+- NÃO inclua botões como "Compre Agora", "Adicionar ao Carrinho"
+- NÃO inclua elementos <a href> ou links
+- NÃO inclua trechos como \`\`\`html ou \`html - apenas texto formatado
+- NÃO use "Guia de Tamanho" como título do produto ou da descrição
+- NÃO inclua preços/valores na descrição - estes serão adicionados separadamente`;
   
       const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
 
 1. EXTRAIA as informações básicas do produto:
-   - Título exato do produto (o nome COMERCIAL REAL do produto físico à venda)
-     * ATENÇÃO: "Guia de Tamanho" NÃO é um produto, é uma seção da interface
-     * O título correto deve ser algo como "Body", "Camiseta", "Vestido" etc.
-     * Procure o nome real do produto junto às imagens principais
+   - Título exato do produto (o nome real físico à venda, como "Body", "Vestido", "Calça")
    - Preço com ponto decimal
-   - URLs das imagens
+   - URLs das imagens principais
 
-2. CRIE uma descrição completa usando a estrutura AIDA:
+2. CRIE uma descrição profissional e persuasiva usando a estrutura AIDA:
 
    A) ATENÇÃO:
-      - Título chamativo em <h2>
+      - Título chamativo em <h2> focado no PRODUTO REAL (não em "Guia de Tamanho")
+      - Exemplo correto: <h2>Redefina Sua Silhueta com o Body Shaper Canelado</h2>
       - Gancho poderoso que gere curiosidade
       - Problema que o cliente enfrenta
 
    B) INTERESSE:
+      - Subtítulo em <h3>
       - Solução oferecida pelo produto
-      - 5+ benefícios detalhados
-      - Subtítulos em <h3>
+      - 5+ benefícios detalhados em texto rico
+      - Características únicas do produto
 
    C) DESEJO:
-      - Características técnicas completas
+      - Subtítulo em <h3>
+      - Detalhes técnicos do produto
       - Listas organizadas <ul><li>
-      - Prova social e exclusividade
+      - Prova social com citação de clientes satisfeitos
+      - Resposta a possíveis objeções
 
    D) AÇÃO:
-      - Chamada à ação EM TEXTO SIMPLES (apenas um parágrafo <p>)
+      - Subtítulo em <h3>
+      - Chamada à ação em texto simples (em parágrafo)
       - Urgência e escassez
       - Garantia de satisfação
 
-PROIBIÇÕES ABSOLUTAS (sua resposta será rejeitada se incluir):
-- PROIBIDO incluir QUALQUER botão "Compre Agora" ou similar
-- PROIBIDO incluir QUALQUER elemento <a href...>
-- PROIBIDO incluir galerias, cards, ou divs de imagem
-- PROIBIDO incluir QUALQUER tag estilizada como botão
-- PROIBIDO usar <div>, <section>, <article> ou elementos estruturais
-
-USE APENAS estas tags HTML:
-- <h2>, <h3> para títulos
-- <p> para parágrafos 
-- <ul>, <li> para listas
-- <strong>, <em> para ênfase
-- NADA MAIS é permitido
+IMPORTANTE:
+- Sua descrição deve ter pelo menos 600 palavras
+- Não inclua preços na descrição
+- Não inclua links ou botões na descrição
+- Use apenas HTML semântico: h2, h3, p, ul, li, strong, em
+- Seja MUITO detalhado e persuasivo
+- NÃO use \`\`\`html ou qualquer marcação de código
 
 Estruture sua resposta exatamente assim:
 {
-  "title": "Nome real do produto (não use 'Guia de Tamanho')",
+  "title": "Nome real do produto",
   "price": "149.90",
   "mainImages": ["url1", "url2"],
-  "description": "<h2>Título Persuasivo</h2><p>Texto AIDA completo aqui...</p>"
+  "description": "<h2>Título Focado no Produto</h2><p>Sua descrição AIDA completa aqui...</p>"
 }
 
 HTML/Markdown para análise:
 ${markdown.substring(0, 8000)}`;
 
-      console.log('[OpenAI Extractor] Enviando prompt Pro Copy simplificado para OpenAI');
+      console.log('[OpenAI Extractor] Enviando prompt Pro Copy para OpenAI');
       console.log(`[OpenAI Extractor] Tamanho do prompt: ${userPrompt.length} caracteres`);
       
       try {
