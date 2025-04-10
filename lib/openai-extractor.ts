@@ -884,10 +884,11 @@ Responda exatamente neste formato:
 }
 
 HTML/Markdown para análise:
-${markdown.substring(0, 8000)}`;
+${markdown}`;
 
       console.log('[OpenAI Extractor] Enviando prompt Pro Copy para OpenAI');
       console.log(`[OpenAI Extractor] Tamanho do prompt: ${userPrompt.length} caracteres`);
+      console.log(`[OpenAI Extractor] Tamanho do markdown enviado: ${markdown.length} caracteres`);
       
       try {
         // Chamar a API da OpenAI com configurações otimizadas
