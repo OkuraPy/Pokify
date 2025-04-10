@@ -20,7 +20,9 @@ import {
   LogOut,
   Lock,
   Check,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ShoppingCart,
+  CreditCard
 } from 'lucide-react';
 import { StoreCounter } from '@/components/stores/store-counter';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -60,10 +62,13 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
 
   // Carregar o estado inicial com base na rota atual
   useEffect(() => {
-    setActiveRoute(pathname);
+    if (pathname) {
+      setActiveRoute(pathname);
+    }
   }, [pathname]);
 
-  // As lojas são agora carregadas automaticamente pelo hook useStores
+  // Verificar se o usuário é gratuito
+  const isFreeUser = user?.billing_status === 'free';
 
   const navigateToStore = (storeId: string) => {
     router.push(`/dashboard/stores/${storeId}`);
@@ -353,6 +358,30 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 </Button>
               </Link>
               
+              <Link href="/dashboard/billing">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'w-full justify-start rounded-xl transition-all duration-200 h-10 border border-transparent',
+                    activeRoute.includes('/dashboard/billing') 
+                      ? 'text-blue-700 bg-blue-50 font-medium border-blue-100/70 shadow-sm'
+                      : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/40 hover:border-blue-100/40'
+                  )}
+                  onClick={() => setActiveRoute('/dashboard/billing')}
+                >
+                  <div className={cn(
+                    'h-7 w-7 rounded-lg flex items-center justify-center shadow-sm',
+                    activeRoute.includes('/dashboard/billing') 
+                      ? 'bg-gradient-to-br from-blue-400 to-blue-500 text-white'
+                      : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100'
+                  )}>
+                    <CreditCard className="h-4 w-4" />
+                  </div>
+                  <span className="ml-2.5">Assinatura</span>
+                </Button>
+              </Link>
+              
               <Link href="/dashboard/help">
                 <Button
                   variant="ghost"
@@ -403,19 +432,24 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   </div>
                   <div>
                     <span className="text-sm font-medium text-slate-700">Limite de Lojas</span>
-                    <div className="text-xs text-slate-500 mt-0.5">{storesCount} de {maxStores} utilizadas</div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {isFreeUser 
+                        ? "Plano necessário" 
+                        : `${storesCount} de ${maxStores} utilizadas`}
+                    </div>
                   </div>
                 </div>
                 <Badge 
-                  variant={storePercentage >= 100 ? "destructive" : "secondary"}
+                  variant={isFreeUser ? "outline" : (storePercentage >= 100 ? "destructive" : "secondary")}
                   className={cn(
                     "px-2.5 py-0.5 text-xs font-medium rounded-full shadow-sm",
+                    isFreeUser ? "bg-orange-50 text-orange-700 border-orange-200/50" :
                     storePercentage >= 100 ? "bg-gradient-to-br from-red-100 to-red-200 text-red-700 border-red-200/50" : 
                     storePercentage >= 75 ? "bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 border-blue-200/50" :
                     "bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700 border-emerald-200/50"
                   )}
                 >
-                  {storesCount}/{maxStores}
+                  {isFreeUser ? "0/0" : `${storesCount}/${maxStores}`}
                 </Badge>
               </div>
               
@@ -424,35 +458,45 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                   <div 
                     className={cn(
                       "absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out",
-                      storePercentage >= 100 
-                        ? "bg-gradient-to-r from-red-500 to-red-400" 
-                        : storePercentage >= 75
-                        ? "bg-gradient-to-r from-blue-500 to-blue-400"
-                        : "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                      isFreeUser 
+                        ? "bg-gradient-to-r from-orange-500 to-orange-400 w-0"
+                        : storePercentage >= 100 
+                          ? "bg-gradient-to-r from-red-500 to-red-400" 
+                          : storePercentage >= 75
+                          ? "bg-gradient-to-r from-blue-500 to-blue-400"
+                          : "bg-gradient-to-r from-emerald-500 to-emerald-400"
                     )}
-                    style={{ width: `${storePercentage}%` }}
+                    style={{ width: isFreeUser ? "0%" : `${storePercentage}%` }}
                   />
                 </div>
                 
                 <div className={cn(
                   "text-xs flex items-center",
+                  isFreeUser ? "text-orange-600" :
                   storePercentage >= 100 ? "text-red-600" :
                   storePercentage >= 75 ? "text-blue-600" :
                   "text-emerald-600"
                 )}>
-                  {remaining > 0 
+                  {isFreeUser 
                     ? <>
                         <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mr-1.5 shadow-sm">
-                          <PlusCircle className="h-3 w-3" />
+                          <ShoppingCart className="h-3 w-3" />
                         </div>
-                        <span>Você pode adicionar mais {remaining} {remaining === 1 ? 'loja' : 'lojas'}</span>
-                      </> 
-                    : <>
-                        <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mr-1.5 shadow-sm">
-                          <AlertCircle className="h-3 w-3" />
-                        </div>
-                        <span>Limite máximo atingido</span>
+                        <span>Adquira um plano para criar lojas</span>
                       </>
+                    : remaining > 0 
+                      ? <>
+                          <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mr-1.5 shadow-sm">
+                            <PlusCircle className="h-3 w-3" />
+                          </div>
+                          <span>Você pode adicionar mais {remaining} {remaining === 1 ? 'loja' : 'lojas'}</span>
+                        </> 
+                      : <>
+                          <div className="h-5 w-5 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mr-1.5 shadow-sm">
+                            <AlertCircle className="h-3 w-3" />
+                          </div>
+                          <span>Limite máximo atingido</span>
+                        </>
                   }
                 </div>
               </div>
@@ -465,9 +509,10 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 <TooltipTrigger asChild>
                   <div className="flex justify-center">
                     <Badge 
-                      variant={storePercentage >= 100 ? "destructive" : "secondary"}
+                      variant={isFreeUser ? "outline" : (storePercentage >= 100 ? "destructive" : "secondary")}
                       className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center p-0 shadow-sm hover:shadow-md transition-all duration-200",
+                        isFreeUser ? "bg-gradient-to-br from-orange-100 to-orange-200 text-orange-600 hover:from-orange-200 hover:to-orange-300" :
                         storePercentage >= 100 
                           ? "bg-gradient-to-br from-red-100 to-red-200 text-red-600 hover:from-red-200 hover:to-red-300" 
                           : storePercentage >= 75
@@ -476,24 +521,27 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                       )}
                     >
                       <div className="flex flex-col items-center justify-center leading-none">
-                        <span className="text-xs font-bold">{storesCount}</span>
+                        <span className="text-xs font-bold">{isFreeUser ? "0" : storesCount}</span>
                         <div className="my-0.5 h-px w-4 bg-current opacity-40" />
-                        <span className="text-[9px]">{maxStores}</span>
+                        <span className="text-[9px]">{isFreeUser ? "0" : maxStores}</span>
                       </div>
                     </Badge>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right" className={cn(
                   "border-none text-white shadow-md", 
+                  isFreeUser ? "bg-gradient-to-br from-orange-600 to-orange-700" :
                   storePercentage >= 100 ? "bg-gradient-to-br from-red-600 to-red-700" : 
                   storePercentage >= 75 ? "bg-gradient-to-br from-blue-600 to-blue-700" :
                   "bg-gradient-to-br from-emerald-600 to-emerald-700"
                 )}>
                   <div className="px-1 py-1">
                     <span className="text-sm">
-                      {remaining > 0 
-                        ? `Você pode adicionar mais ${remaining} ${remaining === 1 ? 'loja' : 'lojas'}`
-                        : 'Limite máximo atingido'
+                      {isFreeUser 
+                        ? "Adquira um plano para criar lojas"
+                        : remaining > 0 
+                          ? `Você pode adicionar mais ${remaining} ${remaining === 1 ? 'loja' : 'lojas'}`
+                          : 'Limite máximo atingido'
                       }
                     </span>
                   </div>
