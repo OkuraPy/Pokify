@@ -14,6 +14,17 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     forceSwcTransforms: true,
+  },
+  webpack: (config, { isServer }) => {
+    // Configurar o webpack para ser case-sensitive
+    config.resolve.symlinks = false;
+    if (isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@': config.resolve.alias['@'] || '.'
+      };
+    }
+    return config;
   }
 };
 
