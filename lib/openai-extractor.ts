@@ -816,43 +816,49 @@ Como copywriter especialista, você tem duas tarefas:
 
 TAREFA 1: EXTRAÇÃO DE DADOS
 Extraia com precisão:
-- Título completo e exato do produto
+- Título completo e exato do produto (o nome REAL do produto sendo vendido)
 - Preço atual em formato numérico (com ponto decimal)
 - URLs de imagens do produto (apenas imagens reais)
 
-ATENÇÃO ESPECIAL PARA O TÍTULO:
-- O título é o nome real do produto que está à venda
-- NÃO confunda elementos da interface com o título (exemplos incorretos: "Guia de Tamanho", "Adicionar ao Carrinho", "Compartilhar")
-- O título DEVE ser o nome comercial do produto principal, não um recurso ou complemento
-- Procure o título em elementos de destaque, geralmente no topo da página ou perto das imagens principais
-- Título correto exemplo: "Camiseta Dry-Fit Esportiva Masculina", não "Guia de Tamanho" ou "Compartilhar Produto"
+REGRAS CRÍTICAS PARA EXTRAÇÃO DO TÍTULO:
+- O título é o nome COMERCIAL REAL do produto físico que está à venda
+- "Guia de Tamanho" é um elemento da interface, NÃO um produto
+- "Compre Agora", "Adicionar ao Carrinho", "Compartilhar" são elementos da interface, NÃO produtos
+- O título DEVE ser um produto físico como "Camiseta", "Body", "Vestido", "Calça" etc.
+- Tire o título de elementos de destaque perto das imagens principais
+- EXEMPLOS CORRETOS de título: "Body Shaper Canelado", "Camiseta Dry-Fit Masculina"
+- EXEMPLOS INCORRETOS de título: "Guia de Tamanho", "Adicionar ao Carrinho", "Compartilhar"
 
 TAREFA 2: CRIAR UMA COPY PROFISSIONAL
 Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
 - ATENÇÃO: Gancho poderoso com título em <h2>
-- INTERESSE: Solução e benefícios principais
+- INTERESSE: Solução e benefícios principais 
 - DESEJO: Detalhes do produto e prova social
 - AÇÃO: Chamada à ação clara e persuasiva
 
-REGRAS ESSENCIAIS PARA A DESCRIÇÃO:
-- NÃO INCLUA BOTÕES como "Compre Agora", "Adicionar ao Carrinho", etc. na descrição
-- NÃO INCLUA TRECHOS DE HTML BRUTO como "\`html" ou símbolos de código
-- NÃO COPIE ELEMENTOS DA INTERFACE DO SITE (menus, botões, etc.)
-- Foque apenas no conteúdo do texto persuasivo
-- A chamada à ação deve ser em texto, não um botão ou elemento visual
-- Ter formato HTML completo apenas com tags h2, h3, p, ul, li, strong, em
-- Ser extensa (800+ palavras) e muito detalhada
-- Ter tom profissional e persuasivo
-- NÃO incluir links ou imagens (serão adicionados depois)
-- Terminar com um parágrafo de "AÇÃO" clara, não um botão`;
+PROIBIÇÕES ABSOLUTAS:
+- PROIBIDO incluir qualquer botão como "Compre Agora", "Adicionar ao Carrinho", etc.
+- PROIBIDO incluir qualquer elemento <a href> com links
+- PROIBIDO incluir galerias de imagens, cards ou qualquer estrutura de exibição
+- PROIBIDO incluir tags <button>, <div class="button">, ou similar
+- PROIBIDO incluir tags <a> estilizadas como botões
+- PROIBIDO incluir trechos como \`html, \`\`\`html, ou código
+- PROIBIDO incluir <div class="product-image-gallery"> ou similar
+
+REGRAS PARA A DESCRIÇÃO:
+- Use APENAS as seguintes tags HTML: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
+- A chamada à ação deve ser um texto simples, NUNCA um botão
+- Terminar com um parágrafo simples, sem botões ou links
+- Exemplo correto de chamada à ação: "<p>Adquira agora e transforme seu visual!</p>"
+- Exemplo INCORRETO: "<a href...>Compre Agora</a>" ou qualquer botão`;
   
       const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
 
 1. EXTRAIA as informações básicas do produto:
-   - Título exato do produto (o nome comercial REAL do produto à venda)
-     * CUIDADO! NÃO use como título elementos da interface como "Guia de Tamanho", "Compartilhar", "Detalhes" ou outros
-     * O título correto geralmente é o texto mais destacado próximo às imagens principais ou no topo da página
-     * Exemplo correto: "Camisa Polo Ralph Lauren Masculina Azul", não "Guia de Tamanho" ou "Entrega Rápida"
+   - Título exato do produto (o nome COMERCIAL REAL do produto físico à venda)
+     * ATENÇÃO: "Guia de Tamanho" NÃO é um produto, é uma seção da interface
+     * O título correto deve ser algo como "Body", "Camiseta", "Vestido" etc.
+     * Procure o nome real do produto junto às imagens principais
    - Preço com ponto decimal
    - URLs das imagens
 
@@ -872,28 +878,32 @@ REGRAS ESSENCIAIS PARA A DESCRIÇÃO:
       - Características técnicas completas
       - Listas organizadas <ul><li>
       - Prova social e exclusividade
-      - Resposta a possíveis objeções
 
    D) AÇÃO:
-      - Chamada à ação clara em texto (NÃO como botão)
+      - Chamada à ação EM TEXTO SIMPLES (apenas um parágrafo <p>)
       - Urgência e escassez
       - Garantia de satisfação
 
-IMPORTANTE:
-- Sua descrição deve ter pelo menos 800 palavras
-- Não inclua links ou URLs na descrição
-- NÃO INCLUA BOTÕES como "Compre Agora" ou elementos de interface
-- NÃO INCLUA TRECHOS DE CÓDIGO ou \`\`\`html - apenas texto formatado
-- Use apenas HTML semântico: h2, h3, p, ul, li, strong, em
-- Seja MUITO detalhado e persuasivo
-- Termine com um parágrafo de chamada à ação, NÃO um botão
+PROIBIÇÕES ABSOLUTAS (sua resposta será rejeitada se incluir):
+- PROIBIDO incluir QUALQUER botão "Compre Agora" ou similar
+- PROIBIDO incluir QUALQUER elemento <a href...>
+- PROIBIDO incluir galerias, cards, ou divs de imagem
+- PROIBIDO incluir QUALQUER tag estilizada como botão
+- PROIBIDO usar <div>, <section>, <article> ou elementos estruturais
+
+USE APENAS estas tags HTML:
+- <h2>, <h3> para títulos
+- <p> para parágrafos 
+- <ul>, <li> para listas
+- <strong>, <em> para ênfase
+- NADA MAIS é permitido
 
 Estruture sua resposta exatamente assim:
 {
-  "title": "Título extraído",
+  "title": "Nome real do produto (não use 'Guia de Tamanho')",
   "price": "149.90",
   "mainImages": ["url1", "url2"],
-  "description": "<h2>Título Persuasivo</h2><p>Seu texto AIDA completo aqui...</p>"
+  "description": "<h2>Título Persuasivo</h2><p>Texto AIDA completo aqui...</p>"
 }
 
 HTML/Markdown para análise:
@@ -931,6 +941,12 @@ ${markdown.substring(0, 8000)}`;
         
         // Processar o conteúdo da resposta com o método robusto
         const extractedData = this.parseResponseContent(responseContent);
+        
+        // Aplicar filtro de segurança para remover elementos proibidos
+        if (extractedData.description) {
+          extractedData.description = this.sanitizeDescription(extractedData.description);
+          console.log('[OpenAI Extractor] Descrição sanitizada para remover elementos proibidos');
+        }
         
         // Verificar se a descrição é longa o suficiente
         if (extractedData.description) {
@@ -974,13 +990,13 @@ ${markdown.substring(0, 8000)}`;
           
           // Extrair apenas dados básicos primeiro
           const basicDataPrompt = `Extraia APENAS as informações básicas deste produto:
-- Título exato
+- Título exato (ATENÇÃO: "Guia de Tamanho" NÃO é um produto real)
 - Preço com ponto decimal
 - URLs das imagens
 
 Resposta apenas em JSON:
 {
-  "title": "Título do produto",
+  "title": "Nome real do produto (ex: Body Shaper, Camiseta)",
   "price": "123.45",
   "mainImages": ["url1", "url2"]
 }
@@ -1009,8 +1025,9 @@ ${basicData.title || 'Produto'}
 A descrição deve:
 - Seguir a estrutura AIDA (Atenção, Interesse, Desejo, Ação)
 - Ser muito detalhada e persuasiva
-- Ter formato HTML com h2, h3, p, ul, li, strong
-- Terminar com chamada à ação clara
+- Ter formato HTML apenas com h2, h3, p, ul, li, strong, em
+- NUNCA incluir botões, links ou galerias
+- Terminar com chamada à ação em texto simples
 
 HTML/Markdown original:
 ${markdown.substring(0, 3000)}`;
@@ -1033,6 +1050,9 @@ ${markdown.substring(0, 3000)}`;
           if (!description.includes('<')) {
             formattedDescription = `<h2>${basicData.title || 'Produto'}</h2>\n<p>${description.replace(/\n\n/g, '</p><p>')}</p>`;
           }
+          
+          // Sanitizar descrição para remover elementos proibidos
+          formattedDescription = this.sanitizeDescription(formattedDescription);
           
           const combinedResult: ExtractedProduct = {
             title: basicData.title || '',
@@ -1057,6 +1077,46 @@ ${markdown.substring(0, 3000)}`;
         error: error.message || 'Erro ao processar resposta da IA'
       };
     }
+  }
+  
+  /**
+   * Sanitiza a descrição para remover elementos proibidos
+   */
+  private sanitizeDescription(description: string): string {
+    if (!description) return '';
+    
+    let sanitized = description;
+    
+    // Remover botões e links
+    sanitized = sanitized.replace(/<a\b[^>]*>.*?<\/a>/gi, '');
+    sanitized = sanitized.replace(/<button\b[^>]*>.*?<\/button>/gi, '');
+    
+    // Remover divs de galeria e similares
+    sanitized = sanitized.replace(/<div\b[^>]*?product-image-gallery[^>]*?>[\s\S]*?<\/div>/gi, '');
+    sanitized = sanitized.replace(/<div\b[^>]*?gallery[^>]*?>[\s\S]*?<\/div>/gi, '');
+    sanitized = sanitized.replace(/<div\b[^>]*?image-grid[^>]*?>[\s\S]*?<\/div>/gi, '');
+    
+    // Remover outros elementos estruturais
+    sanitized = sanitized.replace(/<div\b[^>]*>|<\/div>/gi, '');
+    sanitized = sanitized.replace(/<section\b[^>]*>|<\/section>/gi, '');
+    sanitized = sanitized.replace(/<article\b[^>]*>|<\/article>/gi, '');
+    
+    // Limpar estilos inline
+    sanitized = sanitized.replace(/style=["'][^"']*["']/gi, '');
+    
+    // Substituir frases específicas
+    sanitized = sanitized.replace(/Compre agora/gi, 'Adquira este produto');
+    sanitized = sanitized.replace(/Adicione ao carrinho/gi, 'Escolha este produto');
+    
+    // Substituir "Guia de Tamanho" como título
+    sanitized = sanitized.replace(/<h2[^>]*>Guia de Tamanho[^<]*<\/h2>/gi, '<h2>Produto Premium para seu Conforto</h2>');
+    
+    // Permitir apenas tags seguras
+    const allowedTags = ['h2', 'h3', 'p', 'ul', 'li', 'strong', 'em', 'br'];
+    const allowedTagsRegex = new RegExp(`<(?!\/?(?:${allowedTags.join('|')})\\b)[^>]+>`, 'gi');
+    sanitized = sanitized.replace(allowedTagsRegex, '');
+    
+    return sanitized;
   }
 }
 
