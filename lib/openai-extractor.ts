@@ -809,96 +809,56 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
    */
   private async extractWithProCopy(url: string, markdown: string): Promise<ExtractionResponse> {
     try {
-      // Construir o prompt para o sistema - específico para Pro Copy
-      const systemPrompt = `Você é um copywriter profissional de e-commerce especializado em criar descrições de produtos de alta conversão.
+      // Prompt totalmente refeito e simplificado ao máximo
+      const systemPrompt = `Você é um copywriter profissional de e-commerce.
 
-Como copywriter especialista, você tem duas tarefas:
+Sua tarefa é criar uma descrição de produto persuasiva com pelo menos 800 palavras, usando a estrutura AIDA.
 
-TAREFA 1: EXTRAÇÃO DE DADOS
-Extraia com precisão:
-- Título completo e exato do produto (nome real do produto físico à venda, como "Body Shaper", "Vestido")
-- Preço atual em formato numérico (com ponto decimal)
-- URLs de imagens do produto (apenas imagens reais)
-
-TAREFA 2: CRIAR UMA COPY PROFISSIONAL
-Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
-- ATENÇÃO: Gancho poderoso com título em <h2>, focado no produto real (não usar "Guia de Tamanho")
-- INTERESSE: Solução e benefícios principais 
-- DESEJO: Detalhes técnicos e prova social
-- AÇÃO: Chamada à ação clara (em texto, não como botão)
-
-A descrição deve:
-- Ter formato HTML com tags h2, h3, p, ul, li, strong, em
-- Ser extensa (800+ palavras) e muito detalhada
-- Ter tom profissional e persuasivo
-- NÃO incluir botões, links ou código HTML
-- NÃO mencionar preços ou valores
-- NÃO incluir blocos de código ou \`\`\`html
-- Terminar com um parágrafo de chamada à ação (não um botão)`;
+Algumas regras importantes:
+- O título H2 deve ser sobre o produto real (como 'Body Shaper', 'Vestido', etc)
+- NÃO use 'Guia de Tamanho' como título
+- NÃO inclua botões ou links
+- NÃO mencione preços específicos na descrição
+- Use somente HTML básico: h2, h3, p, ul, li, strong, em`;
   
-      const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
+      const userPrompt = `Crie uma descrição de produto persuasiva de 800+ palavras.
 
-1. EXTRAIA as informações básicas do produto:
-   - Título exato do produto físico real
-   - Preço com ponto decimal
-   - URLs das imagens
+ESTRUTURA:
+1. <h2>Título forte sobre o produto</h2>
+2. Seções AIDA:
+   - ATENÇÃO: Gancho atrativo e problema
+   - INTERESSE: Solução e benefícios (criar <h3>Benefícios</h3>)
+   - DESEJO: Detalhes técnicos e prova social (criar <h3>Características</h3>)
+   - AÇÃO: Chamada final (criar <h3>Adquira Hoje</h3>)
 
-2. CRIE uma descrição completa usando a estrutura AIDA:
+REGRAS:
+- NÃO inicie com \`\`\`html ou qualquer código
+- NÃO use "Guia de Tamanho" como título
+- NÃO inclua preços, botões ou links
+- A chamada à ação deve ser texto simples em um parágrafo, sem botão
+- Mínimo 800 palavras, divida em parágrafos curtos
+- Use listas com <ul><li> quando apropriado
 
-   A) ATENÇÃO:
-      - Título chamativo em <h2> sobre o produto (ex: "Redefina Sua Silhueta com o Body Shaper")
-      - Gancho poderoso que gere curiosidade
-      - Problema que o cliente enfrenta
-
-   B) INTERESSE:
-      - Subtítulo em <h3>
-      - Solução oferecida pelo produto
-      - 5+ benefícios detalhados
-
-   C) DESEJO:
-      - Subtítulo em <h3>
-      - Características técnicas completas
-      - Listas organizadas <ul><li>
-      - Prova social e exclusividade
-
-   D) AÇÃO:
-      - Subtítulo em <h3>
-      - Chamada à ação em texto simples: "Adquira este produto..."
-      - Urgência e escassez
-      - Garantia de satisfação
-
-IMPORTANTE:
-- NÃO use "Guia de Tamanho" como título, isso não é o produto real
-- NÃO inclua botões ou links na descrição
-- NÃO inclua preços ou valores na descrição
-- NÃO inicie sua resposta com \`\`\`html ou qualquer código
-- Sua descrição deve ter pelo menos 800 palavras
-- Use HTML limpo apenas com h2, h3, p, ul, li, strong, em
-
-Responda exatamente neste formato:
+Responda apenas com JSON:
 {
-  "title": "Título do produto real",
+  "title": "Nome do produto real",
   "price": "149.90",
   "mainImages": ["url1", "url2"],
-  "description": "<h2>Título Persuasivo Sobre o Produto</h2><p>Sua descrição AIDA aqui...</p>"
+  "description": "<h2>Título Sobre o Produto</h2><p>Texto...</p>"
 }
 
-HTML/Markdown para análise:
+Markdown da página para análise:
 ${markdown}`;
 
-      console.log('[OpenAI Extractor] Enviando prompt Pro Copy para OpenAI');
-      console.log(`[OpenAI Extractor] Tamanho do prompt: ${userPrompt.length} caracteres`);
+      console.log('[OpenAI Extractor] Enviando prompt simplificado para OpenAI');
       console.log(`[OpenAI Extractor] Tamanho do markdown enviado: ${markdown.length} caracteres`);
       
       try {
-        // Chamar a API da OpenAI com configurações otimizadas
+        // Chamar a API da OpenAI com o prompt simplificado
         const response = await this.openai.chat.completions.create({
           model: 'gpt-4o',
           messages: [
-            {
-              role: 'system',
-              content: systemPrompt
-            },
+            { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
           ],
           temperature: 0.7,
@@ -907,190 +867,74 @@ ${markdown}`;
         });
 
         const responseContent = response.choices[0]?.message?.content || '';
-
         if (!responseContent) {
-          console.error('[OpenAI Extractor] Resposta vazia da OpenAI');
           throw new Error('Resposta vazia da OpenAI');
         }
 
-        // Registrar a resposta para depuração
-        console.log('[OpenAI Extractor] Resposta recebida da OpenAI (Pro Copy)');
-        console.log(`[OpenAI Extractor] Tamanho da resposta: ${responseContent.length} caracteres`);
-        
-        // Processar o conteúdo da resposta com o método robusto
+        // Processar o conteúdo da resposta
         const extractedData = this.parseResponseContent(responseContent);
         
-        // Aplicar filtro de segurança para remover elementos proibidos
+        // Aplicar sanitização simplificada
         if (extractedData.description) {
           extractedData.description = this.sanitizeDescription(extractedData.description);
-          console.log('[OpenAI Extractor] Descrição sanitizada para remover elementos proibidos');
         }
         
-        // Verificar se a descrição é longa o suficiente
+        // Verificar contagem de palavras
         if (extractedData.description) {
-          // Remover todas as tags HTML para contar apenas o texto
           const textOnly = extractedData.description.replace(/<[^>]*>/g, ' ');
           const wordCount = textOnly.split(/\s+/).filter((word: string) => word.length > 0).length;
-          
           console.log(`[OpenAI Extractor] Descrição gerada com ${wordCount} palavras`);
-          
-          // Se a descrição for muito curta, talvez enriquecer (não implementado aqui)
-          if (wordCount < 400) {
-            console.warn(`[OpenAI Extractor] A descrição gerada é curta (${wordCount} palavras).`);
-          }
         }
 
-        // Combinar imagens principais e de descrição em uma única lista
-        const allImages = [
-          ...(extractedData.mainImages || []),
-          ...(extractedData.descriptionImages || [])
-        ];
-
-        // Adicionar as imagens combinadas ao objeto final
+        // Criar objeto de resultado final
         const result: ExtractedProduct = {
           title: extractedData.title || '',
           price: extractedData.price || '',
           description: extractedData.description || '',
           mainImages: extractedData.mainImages || [],
           descriptionImages: extractedData.descriptionImages || [],
-          images: this.removeDuplicateUrls(allImages),
-          reviews: extractedData.reviews || []
+          images: this.removeDuplicateUrls(extractedData.mainImages || []),
+          reviews: []
         };
 
-        console.log(`[OpenAI Extractor] Extração Pro Copy concluída com sucesso.`);
         return { success: true, data: result };
-      } catch (apiError: any) {
-        console.error('[OpenAI Extractor] Erro na chamada da API OpenAI (Pro Copy):', apiError);
-        
-        // Tentar com uma abordagem diferente se falhar
-        try {
-          console.log('[OpenAI Extractor] Tentando abordagem alternativa para Pro Copy...');
-          
-          // Extrair apenas dados básicos primeiro
-          const basicDataPrompt = `Extraia APENAS as informações básicas deste produto:
-- Título exato (ATENÇÃO: "Guia de Tamanho" NÃO é um produto real)
-- Preço com ponto decimal
-- URLs das imagens
-
-Resposta apenas em JSON:
-{
-  "title": "Nome real do produto (ex: Body Shaper, Camiseta)",
-  "price": "123.45",
-  "mainImages": ["url1", "url2"]
-}
-
-HTML/Markdown do produto:
-${markdown.substring(0, 5000)}`;
-
-          const basicResponse = await this.openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              { role: 'system', content: 'Extraia apenas dados básicos do produto em formato JSON.' },
-              { role: 'user', content: basicDataPrompt }
-            ],
-            temperature: 0.3,
-            max_tokens: 1000,
-            response_format: { type: 'json_object' }
-          });
-          
-          const basicData = JSON.parse(basicResponse.choices[0]?.message?.content || '{}');
-          console.log('[OpenAI Extractor] Dados básicos extraídos:', basicData);
-          
-          // Agora gerar apenas a descrição
-          const descriptionPrompt = `Crie uma descrição AIDA profissional para este produto:
-${basicData.title || 'Produto'}
-
-A descrição deve:
-- Seguir a estrutura AIDA (Atenção, Interesse, Desejo, Ação)
-- Ser muito detalhada e persuasiva
-- Ter formato HTML apenas com h2, h3, p, ul, li, strong, em
-- NUNCA incluir botões, links ou galerias
-- Terminar com chamada à ação em texto simples
-
-HTML/Markdown original:
-${markdown.substring(0, 3000)}`;
-
-          const descResponse = await this.openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              { role: 'system', content: 'Crie uma descrição AIDA profissional em HTML.' },
-              { role: 'user', content: descriptionPrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 3000
-          });
-          
-          // Combinar os resultados
-          const description = descResponse.choices[0]?.message?.content || '';
-          
-          // Formatar a descrição como HTML se não estiver
-          let formattedDescription = description;
-          if (!description.includes('<')) {
-            formattedDescription = `<h2>${basicData.title || 'Produto'}</h2>\n<p>${description.replace(/\n\n/g, '</p><p>')}</p>`;
-          }
-          
-          // Sanitizar descrição para remover elementos proibidos
-          formattedDescription = this.sanitizeDescription(formattedDescription);
-          
-          const combinedResult: ExtractedProduct = {
-            title: basicData.title || '',
-            price: basicData.price || '',
-            description: formattedDescription,
-            mainImages: this.removeDuplicateUrls(basicData.mainImages || []),
-            descriptionImages: [],
-            images: this.removeDuplicateUrls(basicData.mainImages || [])
-          };
-          
-          console.log('[OpenAI Extractor] Recuperação alternativa bem-sucedida');
-          return { success: true, data: combinedResult };
-        } catch (recoveryError) {
-          console.error('[OpenAI Extractor] Tentativa de recuperação alternativa falhou:', recoveryError);
-          throw new Error(`Erro na API OpenAI: ${apiError.message}`);
-        }
+      } catch (error: any) {
+        console.error('[OpenAI Extractor] Erro na API OpenAI:', error);
+        return {
+          success: false,
+          error: error.message || 'Erro ao processar resposta da IA'
+        };
       }
     } catch (error: any) {
-      console.error('[OpenAI Extractor] Erro na extração Pro Copy com OpenAI:', error);
+      console.error('[OpenAI Extractor] Erro geral na extração:', error);
       return {
         success: false,
-        error: error.message || 'Erro ao processar resposta da IA'
+        error: error.message || 'Erro ao processar descrição'
       };
     }
   }
   
   /**
-   * Sanitiza a descrição para remover elementos HTML indesejados
+   * Sanitizador simplificado que apenas remove elementos problemáticos
    */
   private sanitizeDescription(description: string): string {
     if (!description) return '';
     
-    console.log('[OpenAI Extractor] Sanitizando descrição');
-    
-    // Remover blocos de código e menções a HTML
-    let sanitized = description
-      .replace(/```html[\s\S]*?```/g, '')
+    // Sanitização simplificada em uma única passagem
+    const sanitized = description
+      // Remover blocos de código
       .replace(/```[\s\S]*?```/g, '')
-      .replace(/`html/g, '')
-      .replace(/\bhtml\b/g, '');
-    
-    // Remover botões e links
-    sanitized = sanitized
+      // Remover backticks e html
+      .replace(/`html|html`|`/g, '')
+      // Substituir "Guia de Tamanho" no título h2
+      .replace(/<h2[^>]*>Guia de Tamanho[^<]*<\/h2>/gi, '<h2>Produto Premium: Conforto e Estilo</h2>')
+      // Remover links e botões
       .replace(/<a\b[^>]*>.*?<\/a>/gi, 'Adquira este produto')
-      .replace(/<button\b[^>]*>.*?<\/button>/gi, 'Adquira este produto');
-    
-    // Remover menções a preços
-    sanitized = sanitized
-      .replace(/R\$\s*[\d.,]+/g, 'valor especial')
-      .replace(/\b\d+[.,]\d+\s*reais\b/gi, 'valor especial')
-      .replace(/preço\s*:?\s*[\d.,]+/gi, 'preço especial');
-    
-    // Substituir frases relacionadas a compras
-    sanitized = sanitized
-      .replace(/Compre Agora/gi, 'Adquira este produto')
-      .replace(/Comprar agora/gi, 'Adquira este produto');
-    
-    // Remover "Guia de Tamanho" como título
-    sanitized = sanitized
-      .replace(/<h2[^>]*>Guia de Tamanho[^<]*<\/h2>/gi, '<h2>Body Premium para seu Conforto</h2>');
+      .replace(/<button\b[^>]*>.*?<\/button>/gi, 'Adquira este produto')
+      // Remover referências a preços
+      .replace(/R\$\s*[\d.,]+/g, 'preço especial')
+      // Substituir frases relacionadas a compras
+      .replace(/Compre Agora|Comprar agora|Adicione ao carrinho|Adicionar ao carrinho/gi, 'Adquira este produto');
     
     return sanitized;
   }
