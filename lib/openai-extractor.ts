@@ -840,11 +840,27 @@ REQUISITOS DA DESCRIÇÃO:
 - Termine com uma chamada à ação clara EM TEXTO, sem usar botões
 
 PROIBIÇÕES ABSOLUTAS:
-- NÃO inclua botões como "Compre Agora", "Adicionar ao Carrinho"
-- NÃO inclua elementos <a href> ou links
-- NÃO inclua trechos como \`\`\`html ou \`html - apenas texto formatado
-- NÃO use "Guia de Tamanho" como título do produto ou da descrição
-- NÃO inclua preços/valores na descrição - estes serão adicionados separadamente`;
+1. NÃO inclua botões como "Compre Agora", "Adicionar ao Carrinho"
+2. NÃO inclua elementos <a href> ou links
+3. NÃO inclua trechos como \`\`\`html ou \`html - apenas texto formatado
+4. NÃO use "Guia de Tamanho" como título do produto ou da descrição
+5. NÃO inclua preços/valores na descrição - estes serão adicionados separadamente
+6. NÃO inicie sua resposta com \`\`\`html ou \`html
+
+EXEMPLOS DO QUE NÃO FAZER:
+❌ INCORRETO: "\`\`\`html
+<h2>Guia de Tamanho</h2>
+<p>Texto aqui...</p>
+\`\`\`"
+
+❌ INCORRETO: "html
+<h2>Produto Premium</h2>
+<p>Texto aqui...</p>"
+
+❌ INCORRETO: "<h2>Guia de Tamanho - Ajuste Perfeito</h2>"
+
+✅ CORRETO: "<h2>Body Shaper Premium: Redefina Sua Silhueta</h2>
+<p>Descubra o poder da transformação com nosso Body Shaper Premium...</p>"`;
   
       const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
 
@@ -857,7 +873,8 @@ PROIBIÇÕES ABSOLUTAS:
 
    A) ATENÇÃO:
       - Título chamativo em <h2> focado no PRODUTO REAL (não em "Guia de Tamanho")
-      - Exemplo correto: <h2>Redefina Sua Silhueta com o Body Shaper Canelado</h2>
+      - EXEMPLO CORRETO: <h2>Redefina Sua Silhueta com o Body Shaper Canelado</h2>
+      - EXEMPLO INCORRETO: <h2>Guia de Tamanho</h2>
       - Gancho poderoso que gere curiosidade
       - Problema que o cliente enfrenta
 
@@ -880,20 +897,19 @@ PROIBIÇÕES ABSOLUTAS:
       - Urgência e escassez
       - Garantia de satisfação
 
-IMPORTANTE:
-- Sua descrição deve ter pelo menos 600 palavras
-- Não inclua preços na descrição
-- Não inclua links ou botões na descrição
-- Use apenas HTML semântico: h2, h3, p, ul, li, strong, em
-- Seja MUITO detalhado e persuasivo
-- NÃO use \`\`\`html ou qualquer marcação de código
+ATENÇÃO - REGRAS CRÍTICAS:
+- NÃO inicie sua resposta com \`\`\`html ou mencione "html" no início
+- NÃO use "Guia de Tamanho" como título em <h2>
+- NÃO inclua botões ou links
+- NÃO inclua preços na descrição
+- NÃO mencione R$ ou valores monetários na descrição
 
-Estruture sua resposta exatamente assim:
+MODELO PARA SUA RESPOSTA:
 {
   "title": "Nome real do produto",
-  "price": "149.90",
+  "price": "149.90", 
   "mainImages": ["url1", "url2"],
-  "description": "<h2>Título Focado no Produto</h2><p>Sua descrição AIDA completa aqui...</p>"
+  "description": "<h2>Título Focado no Produto</h2><p>Descrição AIDA...</p>"
 }
 
 HTML/Markdown para análise:
@@ -1075,36 +1091,63 @@ ${markdown.substring(0, 3000)}`;
   private sanitizeDescription(description: string): string {
     if (!description) return '';
     
-    let sanitized = description;
+    console.log('[OpenAI Extractor] Sanitizando descrição: início');
     
-    // Remover botões e links
-    sanitized = sanitized.replace(/<a\b[^>]*>.*?<\/a>/gi, '');
-    sanitized = sanitized.replace(/<button\b[^>]*>.*?<\/button>/gi, '');
+    // Primeiro, remover todos os blocos de código e backticks
+    let sanitized = description
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`[\s\S]*?`/g, '')
+      .replace(/\bhtml\b/g, '');
     
-    // Remover divs de galeria e similares
-    sanitized = sanitized.replace(/<div\b[^>]*?product-image-gallery[^>]*?>[\s\S]*?<\/div>/gi, '');
-    sanitized = sanitized.replace(/<div\b[^>]*?gallery[^>]*?>[\s\S]*?<\/div>/gi, '');
-    sanitized = sanitized.replace(/<div\b[^>]*?image-grid[^>]*?>[\s\S]*?<\/div>/gi, '');
+    console.log('[OpenAI Extractor] Remoção de blocos de código/backticks completa');
     
-    // Remover outros elementos estruturais
-    sanitized = sanitized.replace(/<div\b[^>]*>|<\/div>/gi, '');
-    sanitized = sanitized.replace(/<section\b[^>]*>|<\/section>/gi, '');
-    sanitized = sanitized.replace(/<article\b[^>]*>|<\/article>/gi, '');
+    // Remover botões, links e elementos de ação
+    sanitized = sanitized
+      .replace(/<a\b[^>]*>.*?<\/a>/gi, 'Adquira este produto')
+      .replace(/<button\b[^>]*>.*?<\/button>/gi, 'Adquira este produto')
+      .replace(/<div[^>]*class="[^"]*button[^"]*"[^>]*>.*?<\/div>/gi, 'Adquira este produto')
+      .replace(/<p>.*?Compre\s*Agora.*?<\/p>/gi, '<p>Adquira este produto de alta qualidade hoje mesmo.</p>');
     
-    // Limpar estilos inline
+    console.log('[OpenAI Extractor] Remoção de botões e links completa');
+    
+    // Substituir frases problemáticas
+    sanitized = sanitized
+      .replace(/Compre Agora/gi, 'Adquira este produto')
+      .replace(/Comprar agora/gi, 'Adquira este produto')
+      .replace(/Comprar Agora/gi, 'Adquira este produto')
+      .replace(/Compre agora/gi, 'Adquira este produto')
+      .replace(/Adicione ao carrinho/gi, 'Escolha este produto')
+      .replace(/Adicionar ao carrinho/gi, 'Escolha este produto');
+    
+    // Remover divs de galeria e elementos estruturais
+    sanitized = sanitized
+      .replace(/<div[^>]*?>[\s\S]*?<\/div>/gi, '')
+      .replace(/<section[^>]*?>[\s\S]*?<\/section>/gi, '')
+      .replace(/<article[^>]*?>[\s\S]*?<\/article>/gi, '');
+    
+    console.log('[OpenAI Extractor] Remoção de elementos estruturais completa');
+    
+    // Remover estilos inline
     sanitized = sanitized.replace(/style=["'][^"']*["']/gi, '');
     
-    // Substituir frases específicas
-    sanitized = sanitized.replace(/Compre agora/gi, 'Adquira este produto');
-    sanitized = sanitized.replace(/Adicione ao carrinho/gi, 'Escolha este produto');
-    
     // Substituir "Guia de Tamanho" como título
-    sanitized = sanitized.replace(/<h2[^>]*>Guia de Tamanho[^<]*<\/h2>/gi, '<h2>Produto Premium para seu Conforto</h2>');
+    sanitized = sanitized.replace(/<h2[^>]*>[^<]*Guia de Tamanho[^<]*<\/h2>/gi, '<h2>Produto Premium para seu Conforto</h2>');
     
-    // Permitir apenas tags seguras
+    // LIMPEZA FINAL: Permitir apenas tags HTML específicas
     const allowedTags = ['h2', 'h3', 'p', 'ul', 'li', 'strong', 'em', 'br'];
     const allowedTagsRegex = new RegExp(`<(?!\/?(?:${allowedTags.join('|')})\\b)[^>]+>`, 'gi');
     sanitized = sanitized.replace(allowedTagsRegex, '');
+    
+    console.log('[OpenAI Extractor] Filtro de tags HTML seguras aplicado');
+    
+    // Verificação final de segurança - remover tudo que sobrou
+    sanitized = sanitized
+      .replace(/```/g, '')
+      .replace(/`/g, '')
+      .replace(/\bhtml\b/gi, '')
+      .replace(/\$\{.*?\}/g, '');
+    
+    console.log('[OpenAI Extractor] Sanitização concluída');
     
     return sanitized;
   }
