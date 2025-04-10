@@ -831,8 +831,18 @@ REGRAS CRÍTICAS PARA EXTRAÇÃO DO TÍTULO:
 
 TAREFA 2: CRIAR UMA COPY PROFISSIONAL
 Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
-- ATENÇÃO: Gancho poderoso com título em <h2>
-- INTERESSE: Solução e benefícios principais 
+
+ATENÇÃO - MUITO IMPORTANTE PARA O H2 INICIAL DA DESCRIÇÃO:
+- NUNCA use "Guia de Tamanho" no título H2 da descrição
+- O título H2 deve ser sobre o PRODUTO, não sobre "Guia de Tamanho"
+- Use um título persuasivo que destaque o PRODUTO REAL, como:
+  * "<h2>Body Modelador: Transforme sua Silhueta em Minutos</h2>"
+  * "<h2>Camiseta Premium: Estilo e Conforto em Todas as Ocasiões</h2>"
+- EXEMPLO INCORRETO: "<h2>Guia de Tamanho - Ajuste Perfeito</h2>"
+
+Siga a estrutura:
+- ATENÇÃO: Gancho poderoso com título em <h2> SOBRE O PRODUTO, não sobre "Guia de Tamanho"
+- INTERESSE: Solução oferecida pelo produto e benefícios principais 
 - DESEJO: Detalhes do produto e prova social
 - AÇÃO: Chamada à ação clara e persuasiva
 
@@ -844,6 +854,7 @@ PROIBIÇÕES ABSOLUTAS:
 - PROIBIDO incluir tags <a> estilizadas como botões
 - PROIBIDO incluir trechos como \`html, \`\`\`html, ou código
 - PROIBIDO incluir <div class="product-image-gallery"> ou similar
+- PROIBIDO usar "Guia de Tamanho" no título H2 da descrição
 
 REGRAS PARA A DESCRIÇÃO:
 - Use APENAS as seguintes tags HTML: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
@@ -865,7 +876,8 @@ REGRAS PARA A DESCRIÇÃO:
 2. CRIE uma descrição completa usando a estrutura AIDA:
 
    A) ATENÇÃO:
-      - Título chamativo em <h2>
+      - NUNCA use "Guia de Tamanho" como título H2
+      - Use um título H2 que destaque o PRODUTO, como "Body Modelador: Silhueta Perfeita"
       - Gancho poderoso que gere curiosidade
       - Problema que o cliente enfrenta
 
@@ -890,6 +902,7 @@ PROIBIÇÕES ABSOLUTAS (sua resposta será rejeitada se incluir):
 - PROIBIDO incluir galerias, cards, ou divs de imagem
 - PROIBIDO incluir QUALQUER tag estilizada como botão
 - PROIBIDO usar <div>, <section>, <article> ou elementos estruturais
+- PROIBIDO usar "Guia de Tamanho" no título H2 da descrição
 
 USE APENAS estas tags HTML:
 - <h2>, <h3> para títulos
@@ -903,7 +916,7 @@ Estruture sua resposta exatamente assim:
   "title": "Nome real do produto (não use 'Guia de Tamanho')",
   "price": "149.90",
   "mainImages": ["url1", "url2"],
-  "description": "<h2>Título Persuasivo</h2><p>Texto AIDA completo aqui...</p>"
+  "description": "<h2>Título Sobre o PRODUTO (não use 'Guia de Tamanho')</h2><p>Texto AIDA completo aqui...</p>"
 }
 
 HTML/Markdown para análise:
