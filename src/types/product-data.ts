@@ -16,4 +16,5 @@ export interface ProductData {
     count: number;
     value: string;
   };
+  allImages?: string[];
 } 

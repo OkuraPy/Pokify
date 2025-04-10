@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
         console.log(`[Extract API] Preço original formatado: ${formattedOriginalPrice}`);
       }
 
+      // Obter todas as imagens disponíveis
+      const allProductImages = productData.allImages || [productData.imageUrl].filter(Boolean);
+      console.log(`[Extract API] Total de imagens disponíveis: ${allProductImages.length}`);
+      
+      // Construir markdown para cada imagem
+      const imagesMarkdown = allProductImages
+        .map((img, index) => `![Imagem do produto ${index+1}](${img})`)
+        .join('\n');
+
       // Criar uma versão do markdown que inclui os preços para que sejam detectados pelo regex do formulário
       const markdownWithPrices = `${productData.description}
 
@@ -51,10 +60,10 @@ export async function POST(request: NextRequest) {
 ${productData.variants && productData.variants.length > 0 ? '## Variantes\n- ' + productData.variants.join('\n- ') : ''}
 
 ## Imagens
-${productData.imageUrl ? `![Imagem do produto](${productData.imageUrl})` : ''}
+${imagesMarkdown}
 `;
 
-      console.log(`[Extract API] Markdown com preços embutidos para o regex do formulário:
+      console.log(`[Extract API] Markdown com preços e imagens embutidos para o regex do formulário:
 ${markdownWithPrices}`);
 
       // Extrair imagens do markdown (URLs de imagens) - usando o mesmo método do código original
@@ -71,7 +80,7 @@ ${markdownWithPrices}`);
       console.log(`[Extract API] Imagens extraídas do markdown: ${JSON.stringify(images)}`);
 
       // Se temos uma URL de imagem específica, garantir que ela esteja na lista
-      if (productData.imageUrl && !images.includes(productData.imageUrl)) {
+      if (productData.imageUrl && !images.includes(productData.imageUrl) && productData.imageUrl.trim() !== '') {
         images.unshift(productData.imageUrl);
       }
 

@@ -18,8 +18,7 @@ export class FirecrawlExtractor implements WebExtractor {
       console.log(`[FirecrawlExtractor] Usando API Key: ${this.apiKey.substring(0, 5)}...`);
       
       const response = await axios.post('https://api.firecrawl.dev/v1/scrape', {
-        url: url,
-        formats: ['markdown', 'html']
+        url: url
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -36,6 +35,15 @@ export class FirecrawlExtractor implements WebExtractor {
       const responseData = response.data.data;
       const metadata = responseData.metadata || {};
       
+      console.log(`[FirecrawlExtractor] Metadados recebidos: ${JSON.stringify(metadata)}`);
+      
+      // Procurar imagens em vários locais na resposta
+      const imageUrls = this.extractAllImages(responseData);
+      console.log(`[FirecrawlExtractor] Todas as imagens encontradas: ${JSON.stringify(imageUrls)}`);
+      
+      // Obter a imagem principal (primeira ou a mais específica)
+      const mainImageUrl = imageUrls.length > 0 ? imageUrls[0] : '';
+      
       // Tentar extrair preço do markdown usando regex
       const priceInfo = this.extractPriceInfoFromMarkdown(responseData.markdown || '');
       
@@ -46,15 +54,99 @@ export class FirecrawlExtractor implements WebExtractor {
         originalPrice: priceInfo.originalPrice,
         discountPercentage: priceInfo.discountPercentage,
         currency: 'BRL', // Assume padrão para o Brasil
-        imageUrl: metadata.ogImage || '',
+        imageUrl: mainImageUrl,
         url: metadata.sourceURL || url,
         variants: this.extractVariantsFromMarkdown(responseData.markdown || ''),
-        material: this.extractMaterialFromMarkdown(responseData.markdown || '')
+        material: this.extractMaterialFromMarkdown(responseData.markdown || ''),
+        allImages: imageUrls // Armazenar todas as imagens para uso posterior
       };
     } catch (error) {
       console.error('Erro ao extrair dados com Firecrawl:', error);
       throw new Error(`Falha na extração com Firecrawl: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+  
+  private extractAllImages(data: any): string[] {
+    const images: string[] = [];
+    const seenUrls = new Set<string>();
+    
+    // Função para adicionar URL se for válida e não duplicada
+    const addImageIfValid = (url: string) => {
+      if (!url) return;
+      
+      // Normalizar URL
+      let normalizedUrl = url.trim();
+      if (normalizedUrl.startsWith('//')) {
+        normalizedUrl = 'https:' + normalizedUrl;
+      }
+      
+      // Verificar se é uma URL de imagem válida
+      const isValidImageUrl = 
+        normalizedUrl.includes('.jpg') || 
+        normalizedUrl.includes('.jpeg') || 
+        normalizedUrl.includes('.png') || 
+        normalizedUrl.includes('.webp') || 
+        normalizedUrl.includes('.gif') ||
+        normalizedUrl.includes('cdn/shop') || // URLs Shopify
+        normalizedUrl.includes('/image/') ||
+        normalizedUrl.includes('/images/');
+      
+      // Ignorar URLs de placeholder ou ícones
+      const isPlaceholder = 
+        normalizedUrl.includes('placeholder') || 
+        normalizedUrl.includes('icon') ||
+        normalizedUrl.includes('logo') ||
+        normalizedUrl.length < 10;
+      
+      if (isValidImageUrl && !isPlaceholder && !seenUrls.has(normalizedUrl)) {
+        seenUrls.add(normalizedUrl);
+        images.push(normalizedUrl);
+        console.log(`[FirecrawlExtractor] Imagem válida encontrada: ${normalizedUrl}`);
+      }
+    };
+    
+    // 1. Verificar metadata.ogImage
+    if (data.metadata && data.metadata.ogImage) {
+      addImageIfValid(data.metadata.ogImage);
+    }
+    
+    // 2. Verificar campos específicos em metadata
+    if (data.metadata) {
+      const checkFields = ['image', 'productImage', 'coverImage', 'thumbnailUrl', 'imageUrl'];
+      checkFields.forEach(field => {
+        if (data.metadata[field]) {
+          addImageIfValid(data.metadata[field]);
+        }
+      });
+    }
+    
+    // 3. Procurar imagens no markdown
+    if (data.markdown) {
+      // Regex para encontrar imagens no markdown: ![alt](url)
+      const markdownImageRegex = /!\[.*?\]\((.*?)\)/g;
+      let match;
+      while ((match = markdownImageRegex.exec(data.markdown)) !== null) {
+        addImageIfValid(match[1]);
+      }
+      
+      // Regex para encontrar tags img no HTML dentro do markdown: <img src="url">
+      const htmlImageRegex = /<img[^>]+src=["']([^"']+)["']/g;
+      while ((match = htmlImageRegex.exec(data.markdown)) !== null) {
+        addImageIfValid(match[1]);
+      }
+    }
+    
+    // 4. Verificar html, se disponível
+    if (data.html) {
+      const htmlImageRegex = /<img[^>]+src=["']([^"']+)["']/g;
+      let match;
+      while ((match = htmlImageRegex.exec(data.html)) !== null) {
+        addImageIfValid(match[1]);
+      }
+    }
+    
+    console.log(`[FirecrawlExtractor] Total de ${images.length} imagens únicas encontradas`);
+    return images;
   }
   
   private extractPriceInfoFromMarkdown(markdown: string): any {
