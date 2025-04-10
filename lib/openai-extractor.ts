@@ -646,7 +646,7 @@ Sua tarefa principal é categorizar corretamente as imagens com base em sua loca
       const data = JSON.parse(jsonContent);
       console.log('[OpenAI Extractor] JSON parseado com sucesso');
       
-      // Validar e normalizar as URLs das imagens
+      // Validar e normalizar URLs de imagens
       console.log('[OpenAI Extractor] Imagens principais antes da normalização:', data.mainImages?.length || 0);
       
       if (data.mainImages && Array.isArray(data.mainImages)) {
@@ -834,12 +834,17 @@ Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
 - DESEJO: Detalhes do produto e prova social
 - AÇÃO: Chamada à ação clara e persuasiva
 
-A descrição deve:
-- Ter formato HTML completo (h2, h3, p, ul, li)
+REGRAS ESSENCIAIS PARA A DESCRIÇÃO:
+- NÃO INCLUA BOTÕES como "Compre Agora", "Adicionar ao Carrinho", etc. na descrição
+- NÃO INCLUA TRECHOS DE HTML BRUTO como "\`html" ou símbolos de código
+- NÃO COPIE ELEMENTOS DA INTERFACE DO SITE (menus, botões, etc.)
+- Foque apenas no conteúdo do texto persuasivo
+- A chamada à ação deve ser em texto, não um botão ou elemento visual
+- Ter formato HTML completo apenas com tags h2, h3, p, ul, li, strong, em
 - Ser extensa (800+ palavras) e muito detalhada
 - Ter tom profissional e persuasivo
 - NÃO incluir links ou imagens (serão adicionados depois)
-- Terminar com seção de "AÇÃO" clara`;
+- Terminar com um parágrafo de "AÇÃO" clara, não um botão`;
   
       const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
 
@@ -870,15 +875,18 @@ A descrição deve:
       - Resposta a possíveis objeções
 
    D) AÇÃO:
-      - Chamada à ação clara "Adquira agora"
+      - Chamada à ação clara em texto (NÃO como botão)
       - Urgência e escassez
       - Garantia de satisfação
 
 IMPORTANTE:
 - Sua descrição deve ter pelo menos 800 palavras
 - Não inclua links ou URLs na descrição
-- Use HTML completo com h2, h3, p, ul, li, strong, em
+- NÃO INCLUA BOTÕES como "Compre Agora" ou elementos de interface
+- NÃO INCLUA TRECHOS DE CÓDIGO ou \`\`\`html - apenas texto formatado
+- Use apenas HTML semântico: h2, h3, p, ul, li, strong, em
 - Seja MUITO detalhado e persuasivo
+- Termine com um parágrafo de chamada à ação, NÃO um botão
 
 Estruture sua resposta exatamente assim:
 {
