@@ -1,4 +1,4 @@
-import { getProductById } from '../../../services/productService';
+import { getProductById, updateProductShopifyId } from '../../../services/productService';
 import { getShopById } from '../../../services/shopService';
 
 /**
@@ -113,14 +113,4 @@ async function publishToShopify(shopifyProduct, credentials) {
   }
 
   return await response.json();
-}
-
-/**
- * Atualiza o ID do Shopify no produto do Pokify
- * @param {string} productId - ID do produto no Pokify
- * @param {string} shopifyId - ID do produto no Shopify
- */
-async function updateProductShopifyId(productId, shopifyId) {
-  // Implemente a lu00f3gica para atualizar o produto com o ID do Shopify
-  // Isso depende de como o seu banco de dados e serviços estão estruturados
 }
