@@ -44,11 +44,15 @@ export class FirecrawlExtractor implements WebExtractor {
       // Obter a imagem principal (primeira ou a mais específica)
       const mainImageUrl = imageUrls.length > 0 ? imageUrls[0] : '';
       
+      // Extrair o título corretamente, evitando elementos de interface
+      const title = this.extractCleanTitle(responseData, metadata);
+      console.log(`[FirecrawlExtractor] Título extraído: "${title}"`);
+      
       // Tentar extrair preço do markdown usando regex
       const priceInfo = this.extractPriceInfoFromMarkdown(responseData.markdown || '');
       
       return {
-        title: metadata.title || '',
+        title: title,
         description: metadata.description || '',
         price: priceInfo.price,
         originalPrice: priceInfo.originalPrice,
@@ -64,6 +68,140 @@ export class FirecrawlExtractor implements WebExtractor {
       console.error('Erro ao extrair dados com Firecrawl:', error);
       throw new Error(`Falha na extração com Firecrawl: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+  
+  /**
+   * Extrai o título do produto de forma inteligente, evitando elementos de interface
+   */
+  private extractCleanTitle(responseData: any, metadata: any): string {
+    console.log(`[FirecrawlExtractor] Iniciando extração de título limpo`);
+    
+    // Lista de títulos incorretos comuns (elementos de interface)
+    const invalidTitles = [
+      'guia de tamanho', 'tabela de tamanho', 'guide size', 'size guide',
+      'adicionar ao carrinho', 'add to cart', 'compartilhar', 'share',
+      'detalhes', 'details', 'comprar agora', 'buy now',
+      'entrega rápida', 'meu carrinho', 'my cart'
+    ];
+    
+    // Verificar se o título da meta tag é válido
+    let candidateTitle = metadata.title || '';
+    
+    // Se o título da meta tag for muito curto ou inválido, tentar outras opções
+    if (!candidateTitle || 
+        candidateTitle.length < 5 || 
+        invalidTitles.some(t => candidateTitle.toLowerCase().includes(t))) {
+      console.log(`[FirecrawlExtractor] Título dos metadados rejeitado: "${candidateTitle}"`);
+      
+      // Opção 1: Tentar encontrar título em h1
+      const markdown = responseData.markdown || '';
+      const h1Match = markdown.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      if (h1Match && h1Match[1] && 
+          h1Match[1].length > 5 && 
+          !invalidTitles.some(t => h1Match[1].toLowerCase().includes(t))) {
+        candidateTitle = h1Match[1].trim();
+        console.log(`[FirecrawlExtractor] Usando título de H1: "${candidateTitle}"`);
+      } 
+      // Opção 2: Procurar por padrões específicos de títulos de produtos
+      else {
+        // Buscar frases que provavelmente são títulos de produtos
+        const titlePatterns = [
+          // Meta property padrão
+          /<meta\s+property=["']og:title["']\s+content=["'](.*?)["']/i,
+          // Nome do produto em estrutura comum
+          /<div[^>]*class=["'][^"']*product[^"']*title[^"']*["'][^>]*>(.*?)<\/div>/i,
+          // Outros padrões comuns
+          /<span[^>]*class=["'][^"']*product-title[^"']*["'][^>]*>(.*?)<\/span>/i,
+          /<div[^>]*class=["'][^"']*product-name[^"']*["'][^>]*>(.*?)<\/div>/i,
+          /<h1[^>]*class=["'][^"']*product[^"']*["'][^>]*>(.*?)<\/h1>/i,
+          // Título em JSON-LD
+          /"name":\s*"([^"]+)"/
+        ];
+        
+        for (const pattern of titlePatterns) {
+          const match = responseData.html ? responseData.html.match(pattern) : null;
+          if (match && match[1] && 
+              match[1].length > 5 && 
+              !invalidTitles.some(t => match[1].toLowerCase().includes(t))) {
+            candidateTitle = match[1].trim();
+            console.log(`[FirecrawlExtractor] Encontrado título via padrão: "${candidateTitle}"`);
+            break;
+          }
+        }
+      }
+    }
+    
+    // Se ainda não temos um título válido, usar abordagem de fallback
+    if (!candidateTitle || 
+        candidateTitle.length < 5 || 
+        invalidTitles.some(t => candidateTitle.toLowerCase().includes(t))) {
+      console.log(`[FirecrawlExtractor] Título ainda não válido: "${candidateTitle}"`);
+      
+      // Analisar o body para encontrar frases que parecem títulos de produtos
+      const markdown = responseData.markdown || '';
+      const potentialTitles = [];
+      
+      // Extrair todas as frases que parecem títulos relevantes
+      const bodyTextLines = markdown.split(/\n|\r|\r\n/);
+      for (const line of bodyTextLines) {
+        // Ignora linhas muito pequenas ou muito grandes
+        if (line.length < 10 || line.length > 200) continue;
+        
+        // Ignora linhas com elementos óbvios de UI
+        if (invalidTitles.some(t => line.toLowerCase().includes(t))) continue;
+        
+        // Favorece linhas que têm palavras-chave de produto
+        const hasProductTerms = [
+          'camiseta', 'camisa', 'calça', 'vestido', 'jaqueta', 'casaco', 
+          'shorts', 'body', 'macacão', 'kit', 'conjunto', 'shaper', 
+          'modelador', 'blusa', 'top', 'sutiã', 'calcinha', 'cueca'
+        ].some(term => line.toLowerCase().includes(term));
+        
+        if (hasProductTerms) {
+          potentialTitles.push({
+            text: line.trim().replace(/<[^>]*>/g, ''),  // Remove HTML tags
+            score: hasProductTerms ? 10 : 5
+          });
+        }
+      }
+      
+      // Ordena por pontuação
+      potentialTitles.sort((a, b) => b.score - a.score);
+      
+      if (potentialTitles.length > 0) {
+        candidateTitle = potentialTitles[0].text;
+        console.log(`[FirecrawlExtractor] Usando título extraído do conteúdo: "${candidateTitle}"`);
+      } else {
+        // Último recurso: usar URL da fonte
+        const sourceUrl = metadata.sourceURL || '';
+        if (sourceUrl) {
+          const urlParts = sourceUrl.split('/');
+          const lastPart = urlParts[urlParts.length - 1].replace(/-/g, ' ').replace(/\.(html|php|aspx)$/, '');
+          
+          if (lastPart && lastPart.length > 5) {
+            candidateTitle = lastPart.charAt(0).toUpperCase() + lastPart.slice(1);
+            console.log(`[FirecrawlExtractor] Usando título baseado na URL: "${candidateTitle}"`);
+          } else {
+            // Se tudo falhar, usar um título genérico
+            candidateTitle = "Produto";
+            console.log(`[FirecrawlExtractor] Nenhum título válido encontrado, usando genérico: "${candidateTitle}"`);
+          }
+        } else {
+          candidateTitle = "Produto";
+          console.log(`[FirecrawlExtractor] Sem URL de origem, usando título genérico: "${candidateTitle}"`);
+        }
+      }
+    }
+    
+    // Limpar o título de HTML e outros artefatos
+    candidateTitle = candidateTitle
+      .replace(/<[^>]*>/g, '')        // Remove HTML tags
+      .replace(/&nbsp;/g, ' ')        // Remove nbsp
+      .replace(/\s+/g, ' ')           // Normaliza espaços
+      .trim();                        // Remove espaços extras
+    
+    console.log(`[FirecrawlExtractor] Título final: "${candidateTitle}"`);
+    return candidateTitle;
   }
   
   private extractAllImages(data: any): string[] {
