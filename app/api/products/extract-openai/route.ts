@@ -200,6 +200,49 @@ export async function POST(request: NextRequest) {
       
       logger.info(`✅ Total final de imagens: ${imagensFinais.length}`);
 
+      // CORREÇÃO DE TÍTULO: Verificar se o título é "Guia de Tamanho" ou outro elemento de interface
+      if (openaiResult.data.title) {
+        const invalidTitles = [
+          'guia de tamanho', 'tabela de tamanho', 'guide size', 'size guide',
+          'adicionar ao carrinho', 'add to cart', 'compartilhar', 'share',
+          'detalhes', 'details', 'comprar agora', 'buy now',
+          'entrega rápida', 'meu carrinho', 'my cart'
+        ];
+        
+        const currentTitle = openaiResult.data.title.toLowerCase();
+        const isTitleInvalid = invalidTitles.some(t => currentTitle.includes(t));
+        
+        if (isTitleInvalid) {
+          logger.warn(`⚠️ Título inválido detectado: "${openaiResult.data.title}". Tentando corrigir...`);
+          
+          // Se estamos usando FireCrawl, temos potencialmente um título melhor disponível
+          if (useNewExtractor && linkfyResult.data?.title) {
+            openaiResult.data.title = linkfyResult.data.title;
+            logger.info(`✅ Título corrigido para: "${openaiResult.data.title}"`);
+          } else {
+            // Tentar extrair do URL
+            try {
+              const sourceUrl = new URL(url);
+              const pathParts = sourceUrl.pathname.split('/').filter(p => p.length > 0);
+              if (pathParts.length > 0) {
+                const lastPart = pathParts[pathParts.length - 1]
+                  .replace(/-/g, ' ')
+                  .replace(/\.(html|php|aspx)$/, '');
+                
+                if (lastPart && lastPart.length > 5) {
+                  // Capitalizar primeira letra
+                  const fixedTitle = lastPart.charAt(0).toUpperCase() + lastPart.slice(1);
+                  openaiResult.data.title = fixedTitle;
+                  logger.info(`✅ Título extraído da URL: "${fixedTitle}"`);
+                }
+              }
+            } catch (error) {
+              logger.error(`❌ Erro ao extrair título da URL: ${error}`);
+            }
+          }
+        }
+      }
+
       // Verificar se o título, preço e descrição estão presentes na resposta do OpenAI
       // Se não estiverem, tentar extraí-los do Linkfy
       if (!openaiResult.data.title && linkfyResult.data?.title) {
