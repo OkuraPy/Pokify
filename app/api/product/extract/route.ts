@@ -40,13 +40,27 @@ export async function POST(request: NextRequest) {
         console.log(`[Extract API] Preço original formatado: ${formattedOriginalPrice}`);
       }
 
+      // Criar uma versão do markdown que inclui os preços para que sejam detectados pelo regex do formulário
+      const markdownWithPrices = `${productData.description}
+
+## Preços
+- Preço atual: R$ ${formattedPrice}
+- Preço original: R$ ${formattedOriginalPrice}
+- Desconto: ${productData.discountPercentage}%
+      
+${productData.variants && productData.variants.length > 0 ? '## Variantes\n- ' + productData.variants.join('\n- ') : ''}
+`;
+
+      console.log(`[Extract API] Markdown com preços embutidos para o regex do formulário:
+${markdownWithPrices}`);
+
       // Formatando para manter a compatibilidade com o formato esperado pelo frontend
       const response = {
         success: true,
         data: {
           title: productData.title,
           description: productData.description,
-          markdownText: productData.description, // Usamos a descrição como markdown também
+          markdownText: markdownWithPrices, // ⚠️ Agora usamos o markdown com preços
           price: formattedPrice,    // Formato explícito
           originalPrice: formattedOriginalPrice, // Formato explícito
           // Também adicionando diretamente no objeto raiz para compatibilidade
