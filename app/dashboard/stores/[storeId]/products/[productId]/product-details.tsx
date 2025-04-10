@@ -224,6 +224,13 @@ export function ProductDetails({ storeId, productId }: ProductDetailsProps) {
   const formatProductDescription = (description: string): string => {
     let formatted = description;
     
+    // Se a descrição já contiver elementos HTML, especialmente tags IMG, não modificá-la
+    if (formatted.includes('<img') || formatted.includes(' src=')) {
+      // Certifique-se apenas de que as imagens tenham estilo adequado
+      formatted = formatted.replace(/<img/g, '<img class="w-full max-w-full h-auto rounded-md my-4 mx-auto object-contain"');
+      return formatted;
+    }
+    
     // Remover múltiplas quebras de linha
     formatted = formatted.replace(/(\r\n|\r|\n){2,}/g, '<br><br>');
     
