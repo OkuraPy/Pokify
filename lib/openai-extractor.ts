@@ -87,6 +87,13 @@ SUA MISSÃO É EXTRAIR TODAS AS INFORMAÇÕES IMPORTANTES DO PRODUTO:
    - Imagens principais (carrossel/galeria)
    - Imagens da descrição (incorporadas no texto)
 
+ATENÇÃO ESPECIAL PARA O TÍTULO:
+- O título é o nome real do produto que está à venda
+- NÃO confunda elementos da interface com o título (exemplos incorretos: "Guia de Tamanho", "Adicionar ao Carrinho", "Compartilhar")
+- O título DEVE ser o nome comercial do produto principal, não um recurso ou complemento
+- Procure o título em elementos de destaque, geralmente no topo da página ou perto das imagens principais
+- Título correto exemplo: "Camiseta Dry-Fit Esportiva Masculina", não "Guia de Tamanho" ou "Compartilhar Produto"
+
 PARA EXTRAÇÃO DE IMAGENS, PROCURE APENAS POR ARQUIVOS DE IMAGEM REAIS:
 - URLs que terminam com .jpg, .jpeg, .png, .webp, .gif
 - <img src="URL"> onde URL é um arquivo de imagem
@@ -116,9 +123,15 @@ NÃO IGNORE NENHUMA INFORMAÇÃO. EXTRAIA ABSOLUTAMENTE TUDO.`;
       const userPrompt = `Este é um HTML/markdown de uma página de produto de e-commerce. 
 EXTRAIA TODAS AS INFORMAÇÕES DO PRODUTO, incluindo:
 
-1. TÍTULO: O título exato e completo do produto
+1. TÍTULO: O título exato e completo do produto (o nome comercial real do produto à venda)
+   - CUIDADO! NÃO use como título elementos da interface como "Guia de Tamanho", "Compartilhar", "Detalhes" ou outros
+   - O título correto geralmente é o texto mais destacado próximo às imagens principais ou no topo da página
+   - Exemplo correto: "Camisa Polo Ralph Lauren Masculina Azul", não "Guia de Tamanho" ou "Entrega Rápida"
+
 2. PREÇO: O preço atual do produto (em formato numérico COM PONTO como separador decimal, exemplo correto: 143.65, exemplo incorreto: 143,65)
+
 3. DESCRIÇÃO: A descrição completa em formato HTML válido (não apenas texto plano)
+
 4. IMAGENS: Todas as imagens do produto, com atenção especial às IMAGENS DA DESCRIÇÃO
 
 PARA IMAGENS, SEPARE EM:
@@ -807,6 +820,13 @@ Extraia com precisão:
 - Preço atual em formato numérico (com ponto decimal)
 - URLs de imagens do produto (apenas imagens reais)
 
+ATENÇÃO ESPECIAL PARA O TÍTULO:
+- O título é o nome real do produto que está à venda
+- NÃO confunda elementos da interface com o título (exemplos incorretos: "Guia de Tamanho", "Adicionar ao Carrinho", "Compartilhar")
+- O título DEVE ser o nome comercial do produto principal, não um recurso ou complemento
+- Procure o título em elementos de destaque, geralmente no topo da página ou perto das imagens principais
+- Título correto exemplo: "Camiseta Dry-Fit Esportiva Masculina", não "Guia de Tamanho" ou "Compartilhar Produto"
+
 TAREFA 2: CRIAR UMA COPY PROFISSIONAL
 Crie uma descrição de produto detalhada seguindo a estrutura AIDA:
 - ATENÇÃO: Gancho poderoso com título em <h2>
@@ -824,7 +844,10 @@ A descrição deve:
       const userPrompt = `Analise este HTML/markdown de produto e FAÇA DUAS COISAS:
 
 1. EXTRAIA as informações básicas do produto:
-   - Título exato
+   - Título exato do produto (o nome comercial REAL do produto à venda)
+     * CUIDADO! NÃO use como título elementos da interface como "Guia de Tamanho", "Compartilhar", "Detalhes" ou outros
+     * O título correto geralmente é o texto mais destacado próximo às imagens principais ou no topo da página
+     * Exemplo correto: "Camisa Polo Ralph Lauren Masculina Azul", não "Guia de Tamanho" ou "Entrega Rápida"
    - Preço com ponto decimal
    - URLs das imagens
 
