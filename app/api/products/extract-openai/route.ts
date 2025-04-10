@@ -4,6 +4,8 @@ import { extractProductDataWithOpenAI } from '@/lib/openai-extractor';
 import { preserveImagesInDescription } from '@/lib/markdown-utils';
 import { createLogger } from '@/lib/logger';
 import { DirectExtractor, OpenAIExtractor } from '@/lib/extractor-service';
+import { ProductExtractorService } from '@/src/services/product-extractor.service';
+import { ConfigService } from '@/src/services/config.service';
 
 // Configurar a duração máxima para o limite do plano Pro (60 segundos)
 export const maxDuration = 60;
@@ -55,11 +57,63 @@ export async function POST(request: NextRequest) {
     
     logger.info(`🔗 URL do produto: ${url}`);
     
+    // Verificar se o sistema dual está ativado
+    const useNewExtractor = ConfigService.useNewExtractor();
+    
     // ----- FASE 1: EXTRAÇÃO DO MARKDOWN -----
     const markdown_start = Date.now();
-    logger.info('📝 Fase 1: Extraindo markdown com a API Linkfy');
     
-    let linkfyResult = await extractMarkdownFromUrl(url);
+    let linkfyResult: any = { success: false, error: "Não iniciado" };
+    let markdownText = "";
+    let directImages: string[] = [];
+    
+    // Decidir qual extrator usar com base na configuração do sistema
+    if (useNewExtractor) {
+      logger.info('📝 Fase 1: Extraindo dados usando o FireCrawl (novo extrator)');
+      
+      try {
+        // Usar o serviço de extração dual com FireCrawl
+        const productData = await ProductExtractorService.extractProductData(url);
+        
+        // Formatar o resultado do FireCrawl para o formato esperado pelo processamento OpenAI
+        markdownText = productData.description;
+        directImages = productData.allImages || [productData.imageUrl].filter(Boolean);
+        
+        // Adicionar informações de preço explicitamente no markdown para detecção
+        markdownText += `\n\nPreço: R$ ${productData.price}\n`;
+        if (productData.originalPrice) {
+          markdownText += `Preço Original: R$ ${productData.originalPrice}\n`;
+        }
+        if (productData.discountPercentage) {
+          markdownText += `Desconto: ${productData.discountPercentage}%\n`;
+        }
+        
+        linkfyResult = {
+          success: true,
+          data: {
+            markdown: markdownText,
+            title: productData.title,
+            description: productData.description,
+            images: directImages
+          }
+        };
+        
+        logger.info(`✅ Extração FireCrawl bem-sucedida em ${Date.now() - markdown_start}ms`, {
+          tamanhoMarkdown: `${Math.round((markdownText.length || 0) / 1024)} KB`,
+          imagensEncontradas: directImages.length || 0
+        });
+      } catch (error) {
+        logger.error(`❌ Erro na extração com FireCrawl: ${error instanceof Error ? error.message : String(error)}`);
+        logger.info('🔄 Voltando para extração com Linkfy como fallback');
+        
+        // Se o FireCrawl falhar, usar o Linkfy como fallback
+        linkfyResult = await extractMarkdownFromUrl(url);
+      }
+    } else {
+      // Usar o extrator original (Linkfy)
+      logger.info('📝 Fase 1: Extraindo markdown com a API Linkfy (extrator original)');
+      linkfyResult = await extractMarkdownFromUrl(url);
+    }
     
     // Se a Linkfy falhar, tentar extração direta
     if (!linkfyResult.success) {
@@ -78,7 +132,7 @@ export async function POST(request: NextRequest) {
         tamanhoMarkdown: `${Math.round((linkfyResult.data?.markdown?.length || 0) / 1024)} KB`,
         imagensEncontradas: linkfyResult.data?.images?.length || 0
       });
-    } else {
+    } else if (!useNewExtractor) {
       logger.info(`✅ Extração Linkfy bem-sucedida em ${Date.now() - markdown_start}ms`, {
         tamanhoMarkdown: `${Math.round((linkfyResult.data?.markdown?.length || 0) / 1024)} KB`,
         imagensEncontradas: linkfyResult.data?.images?.length || 0
