@@ -27,22 +27,43 @@ export async function POST(request: NextRequest) {
         discountPercentage: productData.discountPercentage,
       })}`);
 
-      // Formatar a resposta para manter compatibilidade com o formato esperado pelo frontend
+      // Formatação explícita do preço no formato necessário para o frontend
+      let formattedPrice = '';
+      if (productData.price) {
+        formattedPrice = productData.price.toString().replace(',', '.');
+        console.log(`[Extract API] Preço formatado: ${formattedPrice}`);
+      }
+
+      let formattedOriginalPrice = '';
+      if (productData.originalPrice) {
+        formattedOriginalPrice = productData.originalPrice.toString().replace(',', '.');
+        console.log(`[Extract API] Preço original formatado: ${formattedOriginalPrice}`);
+      }
+
+      // Formatando para manter a compatibilidade com o formato esperado pelo frontend
       const response = {
         success: true,
         data: {
           title: productData.title,
           description: productData.description,
-          markdownText: productData.description,
-          price: productData.price,
-          originalPrice: productData.originalPrice,
+          markdownText: productData.description, // Usamos a descrição como markdown também
+          price: formattedPrice,    // Formato explícito
+          originalPrice: formattedOriginalPrice, // Formato explícito
+          // Também adicionando diretamente no objeto raiz para compatibilidade
+          compare_at_price: formattedOriginalPrice,
           discountPercentage: productData.discountPercentage,
-          images: [productData.imageUrl],
+          images: productData.imageUrl ? [productData.imageUrl] : [],
           metadata: {
             currency: productData.currency
           }
-        }
+        },
+        // Adiciona os campos direto na raiz também para compatibilidade com diferentes estruturas
+        title: productData.title,
+        price: formattedPrice,
+        compare_at_price: formattedOriginalPrice
       };
+
+      console.log(`[Extract API] Resposta final formatada: ${JSON.stringify(response, null, 2)}`);
 
       return NextResponse.json(response);
     } catch (error) {
@@ -71,6 +92,10 @@ export async function POST(request: NextRequest) {
       }
 
       const data = await response.json();
+      
+      // Log para debug do fallback
+      console.log(`[Extract API] Resposta do fallback: ${JSON.stringify(data, null, 2)}`);
+      
       return NextResponse.json(data);
     }
   } catch (error) {
