@@ -10,10 +10,11 @@ import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
-import { Loader2, CheckCircle, CreditCard, AlertTriangle, Calendar, Clock, Star, Package, TrendingUp, Award, Shield, XCircle, Gift } from 'lucide-react';
+import { Loader2, CheckCircle, CreditCard, AlertTriangle, Calendar, Clock, Star, Package, TrendingUp, Award, Shield, XCircle, Gift, AlertCircle, Plus, Store } from 'lucide-react';
 import { Diamond as DiamondIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CancelSubscriptionDialog } from '@/components/cancel-subscription-dialog';
 
 export default function BillingPage() {
   const [plans, setPlans] = useState<any[]>([]);
@@ -42,6 +43,7 @@ export default function BillingPage() {
   const [isSimulating, setIsSimulating] = useState(false);
   const [subscribingPlanId, setSubscribingPlanId] = useState<string | null>(null);
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Função para carregar dados
   const loadData = async () => {
@@ -291,17 +293,14 @@ export default function BillingPage() {
       return;
     }
 
-    // Vamos usar o ID do plano atual que está armazenado no estado
-    console.log("Tentando cancelar assinatura atual:", {
-      id: currentPlan.id,
-      planDetails: currentPlan.planDetails?.name,
-      status: currentPlan.status
-    });
+    // Mostra o diálogo de confirmação em vez de usar confirm()
+    setShowCancelDialog(true);
+  };
 
-    if (!confirm('Tem certeza que deseja cancelar sua assinatura?')) {
-      return;
-    }
-
+  // Nova função para executar o cancelamento após a confirmação
+  const executeCancelSubscription = async () => {
+    if (!userId || !currentPlan) return;
+    
     try {
       setProcessingId(currentPlan.id);
       setNotification(null);
@@ -341,6 +340,7 @@ export default function BillingPage() {
       });
     } finally {
       setProcessingId(null);
+      setShowCancelDialog(false);
     }
   };
 
@@ -552,15 +552,19 @@ export default function BillingPage() {
                     <Button
                     onClick={() => cancelSubscription(currentPlan.id)}
                     disabled={!!processingId}
-                      className="bg-white border border-red-200 text-red-600 hover:bg-red-50 shadow-sm hover:text-red-700 hover:border-red-300 transition-all rounded-xl px-6 py-6 h-auto font-medium"
+                      className="bg-white border border-red-200 text-red-600 hover:bg-red-50 shadow-sm hover:text-red-700 hover:border-red-300 transition-all rounded-xl px-6 py-6 h-auto font-medium gap-2"
                     >
-                      {processingId === currentPlan.id ? 
-                        <span className="flex items-center">
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processando...
-                        </span> : 
-                        'Cancelar Assinatura'
-                      }
+                      {processingId === currentPlan.id ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Processando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-4 w-4" />
+                          <span>Cancelar Assinatura</span>
+                        </>
+                      )}
                     </Button>
                 )}
               </div>
@@ -1138,6 +1142,18 @@ export default function BillingPage() {
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white text-xs px-4 py-2 rounded-full z-50 shadow-xl backdrop-blur-sm border border-gray-700">
               ⚠️ Ambiente de Sandbox - Nenhuma cobrança real será feita
         </div>
+      )}
+
+      {/* Diálogo de cancelamento de assinatura */}
+      {currentPlan && (
+        <CancelSubscriptionDialog
+          open={showCancelDialog}
+          onOpenChange={setShowCancelDialog}
+          onConfirmCancel={executeCancelSubscription}
+          isProcessing={!!processingId}
+          planName={currentPlan.planDetails?.name || 'Premium'}
+          nextPaymentDate={currentPlan.next_payment_date}
+        />
       )}
     </div>
   );
