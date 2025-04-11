@@ -1,5 +1,10 @@
 'use client';
 
+// Configuração para evitar problemas durante a build
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Badge } from '@/components/ui/badge';
