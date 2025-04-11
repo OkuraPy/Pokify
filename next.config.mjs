@@ -1,4 +1,11 @@
 /** @type {import('next').NextConfig} */
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Obter o diretório atual para definir caminhos absolutos
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -21,7 +28,7 @@ const nextConfig = {
     config.resolve.symlinks = false;
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': '.'
+      '@': path.resolve(__dirname)
     };
     // Corrige o erro do browserslist com Node.js v22
     config.resolve.fallback = {
