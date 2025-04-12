@@ -12,10 +12,10 @@ export async function GET(request: NextRequest, { params }: { params: { productI
     const shopDomain = searchParams.get('shopDomain');
     const userId = searchParams.get('userId');
     
-    // Apenas o productId u00e9 obrigatu00f3rio
+    // Apenas o productId é obrigatório
     if (!productId) {
       return NextResponse.json(
-        { error: 'Paru00e2metro necessário: productId' },
+        { error: 'Parâmetro necessário: productId' },
         { status: 400 }
       );
     }
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: { productI
     const safeShopDomain = shopDomain || 'default';
     const safeUserId = userId || 'anonymous';
 
-    // Buscar a configurau00e7u00e3o do review
+    // Buscar a configuração do review
     const config = await loadConfig(safeShopDomain, productId, safeUserId);
 
     // Buscar reviews da tabela published_reviews_json
@@ -60,13 +60,55 @@ export async function GET(request: NextRequest, { params }: { params: { productI
       // Não retornar erro 500, apenas usar dados vazios
     }
 
-    // Aplicar formatau00e7u00e3o com base no display_format configurado
+    // Aplicar formatação com base no display_format configurado
     const stylesByFormat = {
       default: '',
       stars: `
-        .review-stars {
-          font-size: 24px;
-          margin-bottom: 15px;
+        .review-product-info {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .product-tag {
+          display: flex;
+          align-items: center;
+        }
+
+        .product-thumbnail {
+          width: 36px;
+          height: 36px;
+          object-fit: cover;
+          border-radius: 4px;
+          margin-right: 12px;
+        }
+
+        .product-details {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .product-tag-name {
+          font-weight: 600;
+          font-size: 13px;
+          color: #2d3748;
+        }
+
+        .product-tag-offer {
+          font-size: 12px;
+          color: #4299e1;
+        }
+      `,
+      minimal: `
+        .review-card {
+          box-shadow: none;
+          border: 1px solid var(--border-color);
+        }
+        .avatar {
+          display: none;
+        }
+        .review-date {
+          font-size: 12px;
         }
       `,
       compact: `
@@ -97,85 +139,72 @@ export async function GET(request: NextRequest, { params }: { params: { productI
           height: 100px;
         }
       `,
-      minimal: `
-        .review-card {
-          box-shadow: none;
-          border: 1px solid var(--border-color);
-        }
-        .avatar {
-          display: none;
-        }
-        .review-date {
-          font-size: 12px;
-        }
-      `
     };
 
     // Processar os reviews para HTML
     let reviewsHtml = '';
     if (reviews && reviews.length > 0) {
       try {
-        reviewsHtml = reviews.map((review: any) => {
-          // Formatar data
-          const reviewDate = new Date(review.created_at).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-          });
+        reviewsHtml = paginatedReviews.map((review: any, index: number) => {
+          // Extrair iniciais do nome para avatar (se necessário)
+          let initials = '';
+          if (review.name) {
+            const nameParts = review.name.split(' ');
+            initials = nameParts[0][0] + (nameParts.length > 1 ? nameParts[nameParts.length - 1][0] : '');
+            initials = initials.toUpperCase();
+          }
           
-          // Mostrar estrelas
-          const rating = review.rating || 0;
+          // Formatar data se disponível
+          const reviewDate = review.created_at ? new Date(review.created_at).toLocaleDateString('pt-BR') : 'Recentemente';
+
+          // Opcionalmente mostrar imagens anexadas ao review
+          const hasImages = review.images && review.images.length > 0;
+          const imageCount = hasImages ? review.images.length : 0;
+          const imageCountText = imageCount > 0 ? `+${imageCount}` : '';
+          const imageClass = hasImages ? 'has-images' : '';
+          const mainImage = hasImages ? review.images[0] : '';
+
+          // Calcular estrelas
           let stars = '';
           for (let i = 1; i <= 5; i++) {
-            stars += `<span class="star ${i <= rating ? 'filled' : 'empty'}">${i <= rating ? 'u2605' : 'u2606'}</span>`;
+            stars += `<span class="star ${i <= review.rating ? 'filled' : 'empty'}">${i <= review.rating ? '★' : '☆'}</span>`;
           }
-          
-          // Iniciais do autor para avatar
-          let initials = '??';
-          if (review.author) {
-            const nameParts = review.author.trim().split(' ');
-            if (nameParts.length >= 2) {
-              initials = `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`;
-            } else if (nameParts.length === 1 && nameParts[0].length > 0) {
-              initials = nameParts[0][0];
-            }
-          }
-          
-          // Processar imagens, se houver
-          let imagesHtml = '';
-          if (review.images && review.images.length) {
-            imagesHtml = `
-              <div class="review-images">
-                ${review.images.map((img: string) => `
-                  <img src="${img}" alt="Imagem da avaliau00e7u00e3o" class="review-image">
-                `).join('')}
-              </div>
-            `;
-          }
-          
-          const highlightBadge = review.is_selected ? '<div class="highlight-badge">Em destaque</div>' : '';
-          
+
+          // Formatar conteúdo truncando se for muito longo
+          const contentPreview = review.content.length > 200 
+            ? review.content.substring(0, 200) + '...' 
+            : review.content;
+
           return `
-            <div class="review-card">
-              ${highlightBadge}
+            <div class="review-card ${review.highlight ? 'highlighted' : ''}">
               <div class="review-header">
-                <div class="avatar">${initials}</div>
                 <div class="reviewer-info">
-                  <p class="reviewer-name">
-                    ${review.author}
-                    <span class="verified-badge">Compra verificada</span>
-                  </p>
-                  <p class="review-date">${reviewDate}</p>
+                  <div class="reviewer-date">${reviewDate}</div>
+                  <div class="reviewer-name">${review.name || 'Cliente'}</div>
                 </div>
+                <div class="review-stars">${stars}</div>
               </div>
-              
-              <div class="review-stars">${stars}</div>
               
               <div class="review-content">
-                <p>${review.content}</p>
+                <p>${contentPreview}</p>
               </div>
               
-              ${imagesHtml}
+              ${hasImages ? `
+                <div class="review-image-container ${imageClass}">
+                  <img src="${mainImage}" alt="Foto do review" class="review-main-image" />
+                  ${imageCount > 1 ? `<div class="image-count">${imageCountText}</div>` : ''}
+                </div>
+              ` : ''}
+              
+              <div class="review-product-info">
+                <div class="product-tag">
+                  <img src="${reviewsData.product_image || 'https://via.placeholder.com/50'}" alt="Produto" class="product-thumbnail">
+                  <div class="product-details">
+                    <span class="product-tag-name">${reviewsData.product_name || '2 Up Shapers - QUEIMA DE ESTOQUE'}</span>
+                    <span class="product-tag-offer">Compre 1 leve 2</span>
+                  </div>
+                </div>
+              </div>
             </div>
           `;
         }).join('');
@@ -184,8 +213,8 @@ export async function GET(request: NextRequest, { params }: { params: { productI
         reviewsHtml = `
           <div class="review-card">
             <div class="review-content">
-              <p>Erro ao processar avaliau00e7u00f5es: ${e instanceof Error ? e.message : 'Erro desconhecido'}</p>
-              <p class="text-xs text-gray-500 mt-1">Detalhes: Encontradas ${reviews.length} avaliau00e7u00f5es, mas houve um erro ao processu00e1-las.</p>
+              <p>Erro ao processar avaliações: ${e instanceof Error ? e.message : 'Erro desconhecido'}</p>
+              <p class="text-xs text-gray-500 mt-1">Detalhes: Encontradas ${reviews.length} avaliações, mas houve um erro ao processá-las.</p>
             </div>
           </div>
         `;
@@ -193,92 +222,97 @@ export async function GET(request: NextRequest, { params }: { params: { productI
     }
 
     // Gerar HTML com os reviews
+    const paginationHtml = totalPages > 1 ? `
+      <div class="pagination">
+        ${hasPrevPage ? `<a href="?shopDomain=${encodeURIComponent(safeShopDomain)}&userId=${encodeURIComponent(safeUserId)}&page=${page - 1}&perPage=${perPage}" class="page-btn prev">Anterior</a>` : ''}
+        ${hasNextPage ? `<a href="?shopDomain=${encodeURIComponent(safeShopDomain)}&userId=${encodeURIComponent(safeUserId)}&page=${page + 1}&perPage=${perPage}" class="page-btn next">Próximo</a>` : ''}
+      </div>
+    ` : '';
+
     const html = `
       <!DOCTYPE html>
       <html lang="pt-BR">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Avaliau00e7u00f5es de Clientes</title>
+        <title>Avaliações de Clientes</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
           
           :root {
-            --primary-color: #8B5CF6;
-            --primary-light: #F3F0FF;
-            --primary-dark: #6D28D9;
-            --text-dark: #18181B;
-            --text-medium: #52525B;
-            --text-light: #A1A1AA;
-            --success-color: #10B981;
-            --highlight-color: #10B981;
-            --star-color: #fbbf24;
-            --border-color: #E4E4E7;
-            --badge-bg: #F1FFFA;
-            --highlight-badge-bg: #10B981;
+            --primary-color: #d53f8c;
+            --secondary-color: #4299e1;
+            --star-color: #ffc107;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --border-color: #e2e8f0;
           }
-          
+
+          * {
+            box-sizing: border-box;
+          }
+
           body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.5;
-            color: var(--text-dark);
-            background-color: #ffffff;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 20px;
+            background-color: #fff;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
           }
-          
+
           .reviews-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
             width: 100%;
           }
-          
+
+          .reviews-header {
+            grid-column: 1 / -1;
+            margin-bottom: 30px;
+          }
+
+          .reviews-title {
+            font-size: 28px;
+            color: #d53f8c;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+            grid-column: 1 / -1;
+          }
+
+          .reviews-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            grid-column: 1 / -1;
+          }
+
           .review-card {
+            background-color: #fff;
             border-radius: 8px;
-            background-color: #ffffff;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
             position: relative;
             overflow: hidden;
           }
-          
-          .highlight-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background-color: var(--highlight-badge-bg);
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 0 0 0 8px;
-          }
-          
+
           .review-header {
             display: flex;
-            align-items: center;
+            justify-content: space-between;
             margin-bottom: 12px;
           }
-          
-          .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--primary-light);
-            color: var(--primary-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-            margin-right: 12px;
-          }
-          
+
           .reviewer-info {
             flex: 1;
           }
-          
+
           .reviewer-name {
             margin: 0;
             font-weight: 600;
@@ -287,74 +321,54 @@ export async function GET(request: NextRequest, { params }: { params: { productI
             flex-wrap: wrap;
             gap: 8px;
           }
-          
-          .verified-badge {
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 500;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background-color: var(--badge-bg);
-            color: var(--success-color);
-          }
-          
+
           .review-date {
             margin: 0;
             font-size: 14px;
             color: var(--text-light);
           }
-          
+
           .review-stars {
             margin-bottom: 12px;
             color: var(--star-color);
             font-size: 18px;
             letter-spacing: 2px;
           }
-          
+
           .star {
             display: inline-block;
           }
-          
+
           .star.filled {
             color: var(--star-color);
           }
-          
+
           .star.empty {
             color: #E5E7EB;
           }
-          
+
           .review-content {
             margin-bottom: 16px;
+            line-height: 1.5;
           }
-          
+
           .review-content p {
             margin: 0;
-            color: var(--text-dark);
+            color: #2d3748;
           }
-          
-          .review-images {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 8px;
+
+          .review-image-container {
+            position: relative;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            overflow: hidden;
           }
-          
-          .review-image {
-            width: 80px;
-            height: 80px;
+
+          .review-main-image {
+            width: 100%;
+            max-height: 180px;
             object-fit: cover;
-            border-radius: 4px;
-            cursor: pointer;
-          }
-          
-          @media (max-width: 768px) {
-            .reviews-container {
-              grid-template-columns: 1fr;
-            }
-            
-            body {
-              padding: 10px;
-            }
+            border-radius: 8px;
           }
 
           /* CSS Personalizado do usuu00e1rio */
@@ -366,7 +380,23 @@ export async function GET(request: NextRequest, { params }: { params: { productI
       </head>
       <body>
         <div class="reviews-container">
+          <div class="reviews-header">
+            <div class="reviews-title">Depoimentos reais</div>
+            <div class="reviews-summary">
+              <div class="review-stars-summary">
+                <!-- Inserir estrelas baseadas na mu00e9dia -->
+                ${'\u2605'.repeat(5)} <span class="review-number">${reviewCount.toLocaleString('pt-BR')} Avaliações</span>
+              </div>
+              <div class="filter-icon">
+                <!-- Botão de filtro -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 4.5h18m-18 7.5h18m-18 7.5h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
           ${reviewsHtml}
+          ${paginationHtml}
         </div>
       </body>
       </html>
