@@ -382,29 +382,30 @@ export function Sidebar({ currentStoreId, isCollapsed }: SidebarProps) {
                 </Button>
               </Link>
               
-              <Link href="/dashboard/help">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    'w-full justify-start rounded-xl transition-all duration-200 h-10 border border-transparent',
-                    activeRoute === '/dashboard/help' 
-                      ? 'text-blue-700 bg-blue-50 font-medium border-blue-100/70 shadow-sm'
-                      : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/50 hover:border-blue-100/40'
-                  )}
-                  onClick={() => setActiveRoute('/dashboard/help')}
-                >
-                  <div className={cn(
-                    'h-7 w-7 rounded-lg flex items-center justify-center shadow-sm',
-                    activeRoute === '/dashboard/help' 
-                      ? 'bg-gradient-to-br from-blue-400 to-blue-500 text-white'
-                      : 'bg-slate-100 text-slate-500'
-                  )}>
-                    <LifeBuoy className="h-4 w-4" />
-                  </div>
-                  <span className="ml-2.5">Suporte</span>
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  'w-full justify-start rounded-xl transition-all duration-200 h-10 border border-transparent',
+                  activeRoute === '/dashboard/help' 
+                    ? 'text-blue-700 bg-blue-50 font-medium border-blue-100/70 shadow-sm'
+                    : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50/50 hover:border-blue-100/40'
+                )}
+                onClick={() => {
+                  // Abrir WhatsApp no navegador
+                  window.open('https://wa.me/553291262639', '_blank');
+                }}
+              >
+                <div className={cn(
+                  'h-7 w-7 rounded-lg flex items-center justify-center shadow-sm',
+                  activeRoute === '/dashboard/help' 
+                    ? 'bg-gradient-to-br from-blue-400 to-blue-500 text-white'
+                    : 'bg-slate-100 text-slate-500'
+                )}>
+                  <LifeBuoy className="h-4 w-4" />
+                </div>
+                <span className="ml-2.5">Suporte</span>
+              </Button>
 
               <Button
                 variant="ghost"
