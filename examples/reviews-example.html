@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exemplo de Reviews no Shopify</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1 {
+      font-size: 28px;
+      margin-bottom: 30px;
+      color: #2a2a2a;
+    }
+    
+    .product-description {
+      margin-bottom: 40px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    
+    /* Estilo dos reviews */
+    .pokify-reviews {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 25px;
+      margin: 30px 0;
+    }
+    
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .review-count {
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .overall-rating {
+      display: flex;
+      align-items: center;
+      margin-bottom: 25px;
+    }
+    
+    .rating-number {
+      font-size: 48px;
+      font-weight: bold;
+      margin-right: 15px;
+    }
+    
+    .rating-stars {
+      font-size: 24px;
+      color: #FFB900;
+      letter-spacing: 3px;
+    }
+    
+    .rating-stats {
+      margin-left: 20px;
+    }
+    
+    .rating-progress {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+    }
+    
+    .rating-label {
+      min-width: 30px;
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: #e0e0e0;
+      width: 150px;
+      border-radius: 4px;
+      margin: 0 10px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: #FFB900;
+    }
+    
+    .progress-percent {
+      font-size: 12px;
+      color: #666;
+      min-width: 35px;
+    }
+    
+    .review {
+      border-bottom: 1px solid #e5e5e5;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .review:last-child {
+      border-bottom: none;
+    }
+    
+    .review-author {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .author-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-weight: bold;
+      color: #666;
+    }
+    
+    .author-info {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .author-name {
+      font-weight: 600;
+    }
+    
+    .review-date {
+      font-size: 12px;
+      color: #777;
+    }
+    
+    .review-stars {
+      color: #FFB900;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    
+    .review-title {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    
+    .review-content {
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+    
+    .review-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .review-image {
+      width: 80px;
+      height: 80px;
+      border-radius: 4px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+    
+    .verified-badge {
+      background-color: #e8f4fd;
+      color: #0076de;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      margin-top: 10px;
+      margin-right: 10px;
+    }
+    
+    .verified-badge svg {
+      margin-right: 4px;
+      width: 12px;
+      height: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Camiseta Premium Masculina - Algodão Pima</h1>
+  
+  <div class="product-description">
+    <p>Camiseta de alta qualidade confeccionada com 100% algodão Pima, proporcionando conforto excepcional e durabilidade. Ideal para o dia a dia, com corte moderno e acabamento impecável.</p>
+    
+    <p>✅ Material premium: 100% algodão Pima</p>
+    <p>✅ Respirável e confortável</p>
+    <p>✅ Resistente a lavagens</p>
+    <p>✅ Disponível em diversas cores</p>
+  </div>
+  
+  <!-- Início do bloco de reviews que seria injetado -->  
+  <div class="pokify-reviews">
+    <div class="review-header">
+      <h2>Avaliações de clientes</h2>
+      <span class="review-count">12 avaliações</span>
+    </div>
+    
+    <div class="overall-rating">
+      <div class="rating-number">4.7</div>
+      <div class="rating-stats">
+        <div class="rating-stars">★★★★★</div>
+        
+        <div class="rating-progress">
+          <span class="rating-label">5★</span>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 80%"></div>
+          </div>
+          <span class="progress-percent">80%</span>
+        </div>
+        
+        <div class="rating-progress">
+          <span class="rating-label">4★</span>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 15%"></div>
+          </div>
+          <span class="progress-percent">15%</span>
+        </div>
+        
+        <div class="rating-progress">
+          <span class="rating-label">3★</span>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 5%"></div>
+          </div>
+          <span class="progress-percent">5%</span>
+        </div>
+        
+        <div class="rating-progress">
+          <span class="rating-label">2★</span>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+          <span class="progress-percent">0%</span>
+        </div>
+        
+        <div class="rating-progress">
+          <span class="rating-label">1★</span>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+          <span class="progress-percent">0%</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="review">
+      <div class="review-author">
+        <div class="author-avatar">MS</div>
+        <div class="author-info">
+          <span class="author-name">Maria Silva</span>
+          <span class="review-date">12 de março de 2025</span>
+        </div>
+      </div>
+      <div class="review-stars">★★★★★</div>
+      <h4 class="review-title">Qualidade excelente!</h4>
+      <p class="review-content">Comprei essa camiseta há 2 semanas e estou impressionada com a qualidade. O tecido é realmente superior aos das camisetas comuns. Muito macia e confortável. O acabamento é perfeito e após algumas lavagens continua como nova.</p>
+      <div class="review-images">
+        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400" class="review-image" alt="Imagem do review">
+        <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400" class="review-image" alt="Imagem do review">
+      </div>
+      <div class="verified-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+        </svg>
+        Compra verificada
+      </div>
+    </div>
+    
+    <div class="review">
+      <div class="review-author">
+        <div class="author-avatar">JP</div>
+        <div class="author-info">
+          <span class="author-name">João Paulo</span>
+          <span class="review-date">2 de março de 2025</span>
+        </div>
+      </div>
+      <div class="review-stars">★★★★★</div>
+      <h4 class="review-title">Superou minhas expectativas</h4>
+      <p class="review-content">Sempre tive problemas com camisetas que deformam ou desbotam rapidamente. Esta é realmente diferente! Já estou usando há mais de um mês e continua perfeita. Vale cada centavo pelo conforto e durabilidade.</p>
+      <div class="verified-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+        </svg>
+        Compra verificada
+      </div>
+    </div>
+    
+    <div class="review">
+      <div class="review-author">
+        <div class="author-avatar">CR</div>
+        <div class="author-info">
+          <span class="author-name">Carlos Rodrigues</span>
+          <span class="review-date">25 de fevereiro de 2025</span>
+        </div>
+      </div>
+      <div class="review-stars">★★★★☆</div>
+      <h4 class="review-title">Ótima camiseta, mas cuidado com o tamanho</h4>
+      <p class="review-content">A qualidade do tecido é incrível, muito macia e confortável. O único problema é que veste um pouco menor do que o esperado. Recomendo pedir um tamanho acima do que normalmente usa. Fora isso, é uma excelente compra.</p>
+      <div class="review-images">
+        <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400" class="review-image" alt="Imagem do review">
+      </div>
+      <div class="verified-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+        </svg>
+        Compra verificada
+      </div>
+    </div>
+  </div>
+  <!-- Fim do bloco de reviews que seria injetado -->
+  
+  <p><strong>Instruções de cuidado:</strong> Lavar em máquina com água fria, não usar alvejante, secar em temperatura baixa.</p>
+  
+</body>
+</html>

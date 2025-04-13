@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Depoimentos Reais - Exemplo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    /* Bloco principal de depoimentos */
+    .depoimentos-reais {
+      margin: 40px 0;
+      padding: 20px 0;
+      border-top: 1px solid #e0e0e0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .depoimentos-titulo {
+      text-align: center;
+      font-size: 24px;
+      color: #6a1b9a;
+      margin-bottom: 15px;
+    }
+    
+    .depoimentos-resumo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    .estrelas {
+      color: #ffc107;
+      font-size: 24px;
+      margin-right: 10px;
+    }
+    
+    .quantidade-avaliacoes {
+      font-size: 16px;
+      color: #555;
+    }
+    
+    /* Grid de depoimentos */
+    .depoimentos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+      gap: 25px;
+    }
+    
+    .depoimento-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      display: flex;
+    }
+    
+    .depoimento-texto {
+      flex: 1;
+    }
+    
+    .depoimento-imagem {
+      width: 100px;
+      min-width: 100px;
+      margin-left: 15px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .depoimento-imagem img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    
+    .cliente-nome {
+      font-weight: 600;
+      margin-bottom: 0;
+    }
+    
+    .data-compra {
+      font-size: 12px;
+      color: #777;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    
+    .depoimento-estrelas {
+      color: #ffc107;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    
+    .depoimento-conteudo {
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    
+    .produto-comprado {
+      font-size: 12px;
+      background-color: #f5f5f5;
+      padding: 5px 10px;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    
+    .badge-numero {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 20px;
+      background-color: #6a1b9a;
+      color: white;
+      border-radius: 50%;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="depoimentos-reais">
+    <h2 class="depoimentos-titulo">Depoimentos reais</h2>
+    
+    <div class="depoimentos-resumo">
+      <div class="estrelas">u2605u2605u2605u2605u2605</div>
+      <div class="quantidade-avaliacoes">428 Avaliau00e7u00f5es</div>
+    </div>
+    
+    <div class="depoimentos-grid">
+      <!-- Depoimento 1 -->
+      <div class="depoimento-card">
+        <div class="depoimento-texto">
+          <p class="cliente-nome">Maria S.</p>
+          <p class="data-compra">12/03/2025</p>
+          <div class="depoimento-estrelas">u2605u2605u2605u2605u2605</div>
+          <p class="depoimento-conteudo">Comprei essa camiseta e fiquei impressionada com a qualidade! O tecido u00e9 muito macio e confortu00e1vel. Lavei vu00e1rias vezes e nu00e3o desbotou nem deformou. Com certeza vou comprar mais cores!</p>
+          <div class="produto-comprado">Camiseta Premium Masculina <span class="badge-numero">+3</span></div>
+        </div>
+        <div class="depoimento-imagem">
+          <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400" alt="Produto">
+        </div>
+      </div>
+      
+      <!-- Depoimento 2 -->
+      <div class="depoimento-card">
+        <div class="depoimento-texto">
+          <p class="cliente-nome">Jou00e3o P.</p>
+          <p class="data-compra">02/03/2025</p>
+          <div class="depoimento-estrelas">u2605u2605u2605u2605u2605</div>
+          <p class="depoimento-conteudo">Quando os modeladores chegaram, provei e foi satisfatu00f3rio o resultado, poru00e9m nu00e3o sei se quando fui provar o vestido para o casamento do meu filho, nu00e3o teve um bom resultado, nu00e3o sei se nu00e3o vesti direito, mas nu00e3o apertou nem modelou o barriga su00f3 o catinho pra ver se aperta mais um pouco, usando as duas juntas, seru00e1 se vai dar certo?</p>
+          <div class="produto-comprado">Modelador Corporal <span class="badge-numero">+2</span></div>
+        </div>
+        <div class="depoimento-imagem">
+          <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400" alt="Produto">
+        </div>
+      </div>
+      
+      <!-- Depoimento 3 -->
+      <div class="depoimento-card">
+        <div class="depoimento-texto">
+          <p class="cliente-nome">Carlos R.</p>
+          <p class="data-compra">25/02/2025</p>
+          <div class="depoimento-estrelas">u2605u2605u2605u2605u2606</div>
+          <p class="depoimento-conteudo">u00d3tima camiseta, mas cuidado com o tamanho. A qualidade do tecido u00e9 incru00edvel, muito macia e confortu00e1vel. O u00fanico problema u00e9 que veste um pouco menor do que o esperado. Recomendo pedir um tamanho acima do que normalmente usa.</p>
+          <div class="produto-comprado">Camiseta Premium Masculina</div>
+        </div>
+        <div class="depoimento-imagem">
+          <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400" alt="Produto">
+        </div>
+      </div>
+      
+      <!-- Depoimento 4 -->
+      <div class="depoimento-card">
+        <div class="depoimento-texto">
+          <p class="cliente-nome">Elaine M.</p>
+          <p class="data-compra">28/01/2025</p>
+          <div class="depoimento-estrelas">u2605u2605u2605u2605u2605</div>
+          <p class="depoimento-conteudo">Gente juro q ia ficar no prejuu00edzo como d outras compras q fiz pelo instagram. Mais hoje mim surpreendi ao chegar em casa a encontrar minha compra mim esperando juro to tu00e3o feliz e satisfeita com minha compra e sem falar ns qualidades desta loja plena e manter mesmoo acabamento e repondabilidade desta empresa em nu00e3o nos deixar nu00f3 muito bom obrigado midastime!</p>
+          <div class="produto-comprado">Conjunto Fitness <span class="badge-numero">+2</span></div>
+        </div>
+        <div class="depoimento-imagem">
+          <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400" alt="Produto">
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

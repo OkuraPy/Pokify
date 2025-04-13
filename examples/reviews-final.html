@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avaliações de Clientes</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --primary-color: #8B5CF6;
+      --primary-light: #F3F0FF;
+      --primary-dark: #6D28D9;
+      --text-dark: #18181B;
+      --text-medium: #52525B;
+      --text-light: #A1A1AA;
+      --success-color: #10B981;
+      --highlight-color: #10B981;
+      --star-color: #fbbf24;
+      --border-color: #E4E4E7;
+      --badge-bg: #F1FFFA;
+      --highlight-badge-bg: #10B981;
+    }
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: var(--text-dark);
+      background-color: #F5F1FF;
+      margin: 0;
+      padding: 20px;
+    }
+    
+    .reviews-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+      gap: 20px;
+    }
+    
+    .review-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 20px;
+      position: relative;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+    
+    .review-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-light);
+      color: var(--primary-color);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+      font-size: 14px;
+    }
+    
+    .reviewer-info {
+      flex: 1;
+    }
+    
+    .reviewer-name {
+      font-weight: 600;
+      color: var(--text-dark);
+      margin: 0;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--badge-bg);
+      color: var(--success-color);
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    
+    .highlight-badge {
+      display: inline-flex;
+      align-items: center;
+      background-color: var(--highlight-badge-bg);
+      color: white;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-weight: 500;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+    
+    .review-date {
+      color: var(--text-light);
+      font-size: 14px;
+      margin: 0;
+    }
+    
+    .review-stars {
+      color: var(--star-color);
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .review-content {
+      color: var(--text-medium);
+      margin-bottom: 15px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    
+    .review-images {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    
+    .review-image {
+      width: 60px;
+      height: 60px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+    
+    .product-info {
+      display: flex;
+      align-items: center;
+      color: var(--primary-color);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    .product-icon {
+      margin-right: 8px;
+      width: 16px;
+      height: 16px;
+    }
+    
+    .product-count {
+      margin-left: auto;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+      .reviews-container {
+        grid-template-columns: 1fr;
+      }
+      
+      body {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="reviews-container">
+    <!-- Review 1 -->
+    <div class="review-card">
+      <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">MS</div>
+      <div class="review-header">
+        <div class="reviewer-info">
+          <p class="reviewer-name">
+            Maria Silva
+            <span class="verified-badge">Compra verificada</span>
+          </p>
+          <p class="review-date">12 de março de 2025</p>
+        </div>
+      </div>
+      
+      <div class="highlight-badge">Em destaque</div>
+      
+      <div class="review-stars">★★★★★</div>
+      
+      <div class="review-content">
+        <p>Comprei essa camiseta e fiquei impressionada com a qualidade! O tecido é muito macio e confortável. Lavei várias vezes e não desbotou nem deformou. Com certeza vou comprar mais cores! A entrega também foi super rápida e o produto veio exatamente como descrito no site.</p>
+      </div>
+      
+      <div class="review-images">
+        <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400" class="review-image" alt="Camiseta branca">
+        <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400" class="review-image" alt="Camiseta preta">
+      </div>
+      
+      <div class="product-info">
+        <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+        </svg>
+        Camiseta Premium Masculina
+        <span class="product-count">+3</span>
+      </div>
+    </div>
+    
+    <!-- Review 2 -->
+    <div class="review-card">
+      <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">JP</div>
+      <div class="review-header">
+        <div class="reviewer-info">
+          <p class="reviewer-name">
+            João Paulo
+            <span class="verified-badge">Compra verificada</span>
+          </p>
+          <p class="review-date">2 de março de 2025</p>
+        </div>
+      </div>
+      
+      <div class="review-stars">★★★★★</div>
+      
+      <div class="review-content">
+        <p>Quando os modeladores chegaram, provei e foi satisfatório o resultado, porém não sei se quando fui provar o vestido para o casamento do meu filho, não teve um bom resultado, não sei se não vesti direito, mas não apertou nem modelou a barriga só o catinho pra ver se aperta mais um pouco, usando as duas juntas, será se vai dar certo?</p>
+      </div>
+      
+      <div class="review-images">
+        <img src="https://images.unsplash.com/photo-1596609548086-85bbf8ddb6b9?w=400" class="review-image" alt="Modelador">
+      </div>
+      
+      <div class="product-info">
+        <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+        </svg>
+        Modelador Corporal
+        <span class="product-count">+2</span>
+      </div>
+    </div>
+    
+    <!-- Review 3 -->
+    <div class="review-card">
+      <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">CR</div>
+      <div class="review-header">
+        <div class="reviewer-info">
+          <p class="reviewer-name">
+            Carlos Rodrigues
+            <span class="verified-badge">Compra verificada</span>
+          </p>
+          <p class="review-date">25 de fevereiro de 2025</p>
+        </div>
+      </div>
+      
+      <div class="review-stars">★★★★☆</div>
+      
+      <div class="review-content">
+        <p>Ótima camiseta, mas cuidado com o tamanho. A qualidade do tecido é incrível, muito macia e confortável. O único problema é que veste um pouco menor do que o esperado. Recomendo pedir um tamanho acima do que normalmente usa. Fora isso, é uma excelente compra.</p>
+      </div>
+      
+      <div class="review-images">
+        <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400" class="review-image" alt="Camiseta masculina">
+      </div>
+      
+      <div class="product-info">
+        <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+        </svg>
+        Camiseta Premium Masculina
+      </div>
+    </div>
+    
+    <!-- Review 4 -->
+    <div class="review-card">
+      <div class="avatar" style="background-color: #F3F0FF; color: #8B5CF6;">EM</div>
+      <div class="review-header">
+        <div class="reviewer-info">
+          <p class="reviewer-name">
+            Elaine Martins
+            <span class="verified-badge">Compra verificada</span>
+          </p>
+          <p class="review-date">28 de janeiro de 2025</p>
+        </div>
+      </div>
+      
+      <div class="review-stars">★★★★★</div>
+      
+      <div class="review-content">
+        <p>Gente juro q ia ficar no prejuízo como d outras compras q fiz pelo Instagram. Mais hoje mim surpreendi ao chegar em casa a encontrar minha compra mim esperando juro to tão feliz e satisfeita com minha compra e sem falar ns qualidades desta loja plena n montar mesmo acabamento e responsabilidade deixa empresa em não nos deixar nó muito bom obrigado loja!</p>
+      </div>
+      
+      <div class="review-images">
+        <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400" class="review-image" alt="Conjunto fitness">
+      </div>
+      
+      <div class="product-info">
+        <svg class="product-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z"/>
+        </svg>
+        Conjunto Fitness
+        <span class="product-count">+2</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
