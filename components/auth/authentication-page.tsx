@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoginForm } from './login-form';
-import { SignupForm } from './signup-form';
 import { ShoppingBag, PlayCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -12,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 
 export function AuthenticationPage() {
-  const [activeTab, setActiveTab] = useState('login');
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const router = useRouter();
   const { user } = useAuth();
@@ -124,28 +121,11 @@ export function AuthenticationPage() {
           transition={{ delay: 0.2 }}
           className="bg-white rounded-2xl shadow-xl p-8 border border-blue-100/50 backdrop-blur-sm"
         >
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-2 w-full mb-8 p-1 bg-blue-50/80 rounded-lg">
-              <TabsTrigger value="login" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm">Login</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-md data-[state=active]:bg-white data-[state=active]:text-blue-700 data-[state=active]:shadow-sm">Cadastro</TabsTrigger>
-            </TabsList>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <TabsContent value="login">
-                  <LoginForm />
-                </TabsContent>
-                <TabsContent value="signup">
-                  <SignupForm />
-                </TabsContent>
-              </motion.div>
-            </AnimatePresence>
-          </Tabs>
+          <h2 className="text-xl font-semibold text-center mb-6 text-gray-800">
+            Acesse sua conta
+          </h2>
+          
+          <LoginForm />
         </motion.div>
         
         <div className="mt-6 text-center text-sm text-gray-500">
@@ -154,7 +134,7 @@ export function AuthenticationPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            Transforme seu negócio com IA • <span className="text-blue-600">Dropfy</span> © 2023
+            Transforme seu negócio com IA • <span className="text-blue-600">Dropfy</span> © 2025
           </motion.p>
         </div>
       </motion.div>

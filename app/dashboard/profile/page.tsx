@@ -7,7 +7,7 @@ import { getUserProfile, getUserStores, getProducts } from '@/lib/supabase';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
-import { ExternalLink, Edit, Store, Clock, CheckCircle, ShoppingBag, ChevronRight, Loader2 } from 'lucide-react';
+import { ExternalLink, Edit, Store, Clock, ShoppingBag, ChevronRight, Loader2 } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -68,20 +68,15 @@ export default function ProfilePage() {
     );
   }
 
-  // Determinar plano e limites
-  const planType = user?.billing_status || 'free';
-  const planName = planType === 'free' ? 'Gratuito' : 'Anual';
+  // Determinar limites de lojas
   const storesLimit = user?.stores_limit || 5;
   const storesCount = stores.length;
   
-  // Calcular data de renovação (1 ano a partir da data de criação)
+  // Calcular data desde que é membro
   const createdAt = new Date(user?.created_at);
-  const renewalDate = new Date(createdAt);
-  renewalDate.setFullYear(renewalDate.getFullYear() + 1);
   
   // Formatar data para exibição
   const memberSince = format(createdAt, 'dd/MM/yyyy', { locale: ptBR });
-  const renewalDateFormatted = format(renewalDate, 'dd/MM/yyyy', { locale: ptBR });
 
   return (
     <div className="container py-10">
@@ -93,9 +88,9 @@ export default function ProfilePage() {
         </Button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Coluna da esquerda - Informações Pessoais */}
-        <div className="md:col-span-2">
+      <div className="grid grid-cols-1 gap-6">
+        {/* Informações Pessoais */}
+        <div>
           <Card>
             <CardHeader>
               <h2 className="text-xl font-semibold">Informações Pessoais</h2>
@@ -137,67 +132,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Coluna da direita - Plano */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Seu Plano</h2>
-                <div className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                  {planName}
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Informações sobre sua assinatura
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
-                <div>
-                  <h3 className="text-sm font-medium">Plano Anual</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Acesso a todos os recursos por 12 meses
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-1">
-                <h3 className="text-sm font-medium">Data de Renovação</h3>
-                <p className="text-base">{renewalDateFormatted}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Recursos incluídos</h3>
-                
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <p className="text-sm">Até {storesLimit} lojas</p>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <p className="text-sm">Produtos ilimitados</p>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <p className="text-sm">Ferramentas de IA</p>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                  <p className="text-sm">Suporte prioritário</p>
-                </div>
-              </div>
-              
-              <Button variant="outline" className="w-full">
-                Fazer Upgrade para Vitalício
-              </Button>
             </CardContent>
           </Card>
         </div>

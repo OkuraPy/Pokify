@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, MessageSquare, Star, Check, X, FileUp, Link, Sparkles, Download, Wand2, Languages, Edit, Save } from 'lucide-react';
+import { Loader2, MessageSquare, Star, Check, X, FileUp, Link, Sparkles, Download, Wand2, Languages, Edit, Save, Settings } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { getReviews, updateReview, importReviewsFromUrl, generateAIReviews } from '@/lib/supabase';
@@ -21,6 +21,7 @@ import { GenerateReviewsDialog } from './generate-reviews-dialog';
 import { FC } from 'react';
 import { TranslateReviewsDialog } from './translate-reviews-dialog';
 import { EnhanceReviewsDialog } from './enhance-reviews-dialog';
+import ReviewConfig from './review-config';
 
 interface Review {
   id: string;
@@ -49,6 +50,11 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
   const [isImporting, setIsImporting] = useState(false);
   const [selectAll, setSelectAll] = useState(false);
   const [averageRating, setAverageRating] = useState(0);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  
+  // Referência para o componente ReviewConfig
+  const reviewConfigRef = useRef<HTMLDivElement>(null);
   
   // Estados para importação via URL
   const [productUrl, setProductUrl] = useState('');
@@ -312,6 +318,15 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
     setIsEditDialogOpen(true);
   };
   
+  // Função para abrir o diálogo de publicação
+  const openPublishDialog = () => {
+    // Encontra o botão e clica nele
+    const publishButton = document.querySelector('button[data-publish-reviews="true"]');
+    if (publishButton) {
+      (publishButton as HTMLButtonElement).click();
+    }
+  };
+  
   if (isLoading) {
     return (
       <Card>
@@ -370,6 +385,15 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
   
   return (
     <div className="space-y-6">
+      {/* ReviewConfig escondido (display none) */}
+      <div className="hidden" ref={reviewConfigRef}>
+        <ReviewConfig 
+          productId={productId} 
+          userId="10c1173a-02a3-493d-b782-0c6cba9274b2" 
+          shopDomain="loja-demo" 
+        />
+      </div>
+
       {/* Header com estatísticas */}
       <Card className="border-0 shadow-sm">
         <CardHeader className="border-b bg-gray-50/80">
@@ -381,19 +405,16 @@ export const ReviewsList: FC<ReviewsListProps> = ({ productId, reviewsCount }) =
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-md border shadow-sm">
-                <div className="flex">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star 
-                      key={star} 
-                      size={16} 
-                      className={star <= averageRating ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"} 
-                    />
-                  ))}
-                </div>
-                <Separator orientation="vertical" className="h-4" />
-                <span className="text-sm font-medium">{reviews.length} avaliações</span>
-              </div>
+              <Button 
+                variant="outline" 
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md shadow-sm"
+                onClick={openPublishDialog}
+              >
+                <span className="flex items-center">
+                  <Settings className="w-5 h-5 mr-2" />
+                  Publicar Reviews
+                </span>
+              </Button>
               <Button variant="default" onClick={() => setImportDialogOpen(true)}>
                 <Sparkles className="h-4 w-4 mr-2" />
                 Gerar Reviews com IA
