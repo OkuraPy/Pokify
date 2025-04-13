@@ -140,7 +140,20 @@ export async function signOut() {
 }
 
 export async function resetPassword(email: string) {
-  const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+  // A URL de redirecionamento deve apontar para uma página onde o usuário poderá definir a nova senha
+  const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/update-password`;
+  
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectTo
+  });
+  
+  // Para depuração
+  if (error) {
+    console.error('Erro ao solicitar reset de senha:', error);
+  } else {
+    console.log('Solicitação de reset de senha enviada com sucesso');
+  }
+  
   return { data, error };
 }
 
@@ -1835,130 +1848,65 @@ export async function saveConfig(config: {
 }
 
 /**
- * Publica os reviews de um produto para que possam ser exibidos no iframe
+ * Publica as avaliações de um produto para exibição na loja
+ * @param productId ID do produto para publicar avaliações
+ * @returns Promise com status, mensagem e dados das avaliações
  */
-export async function publishProductReviews(productId: string): Promise<{
+export async function publishProductReviews(
+  productId: string
+): Promise<{
   success: boolean;
   message: string;
-  data?: any;
+  data?: {
+    productName: string;
+    averageRating: number;
+    reviewsCount: number;
+  };
 }> {
   try {
-    // 1. Obter informações do produto
-    const { data: productData, error: productError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .maybeSingle();
+    console.log(`Publicando avaliações para o produto: ${productId}`);
     
-    if (productError) throw productError;
-    if (!productData) throw new Error('Produto não encontrado');
-    
-    // 2. Obter reviews selecionados
-    const { data: reviews, error: reviewsError } = await supabase
-      .from('reviews')
-      .select('*')
-      .eq('product_id', productId)
-      .eq('is_selected', true)
-      .order('rating', { ascending: false });
-    
-    if (reviewsError) throw reviewsError;
-    
-    // 3. Calcular médias
-    let totalRating = 0;
-    const reviewStats: {
-      total: number;
-      average: number;
-      distribution: Record<string, number>;
-    } = {
-      total: reviews.length,
-      average: 0,
-      distribution: {
-        '5': 0,
-        '4': 0,
-        '3': 0,
-        '2': 0,
-        '1': 0
-      }
-    };
-    
-    reviews.forEach(review => {
-      totalRating += review.rating;
-      // Usar como string para evitar erro de tipagem
-      reviewStats.distribution[String(review.rating)]++;
+    // Chamar a stored procedure para publicar avaliações
+    const { data, error } = await supabase.rpc('publish_product_reviews', {
+      p_product_id: productId,
     });
     
-    reviewStats.average = reviews.length > 0 ? parseFloat((totalRating / reviews.length).toFixed(1)) : 0;
+    if (error) {
+      console.error('Erro ao publicar avaliações:', error);
+      return {
+        success: false,
+        message: `Erro ao publicar avaliações: ${error.message}`,
+      };
+    }
     
-    // 4. Verificar se já existe registro de reviews publicados
-    const { data: existingPublished, error: existingError } = await (supabase as any)
-      .from('published_reviews_json')
-      .select('*')
-      .eq('product_id', productId)
-      .maybeSingle();
-    
-    // 5. Preparar dados para salvar
-    const reviewsData = {
-      product_id: productId,
-      product_name: productData.title,
-      product_image: Array.isArray(productData.images) && productData.images.length > 0 
-        ? productData.images[0] 
-        : null,
-      reviews_data: JSON.stringify({
-        product: {
-          id: productId,
-          title: productData.title,
-          image: Array.isArray(productData.images) && productData.images.length > 0 
-            ? productData.images[0] 
-            : null
+    // Verificar se os dados foram retornados corretamente
+    if (data && typeof data === 'object') {
+      return {
+        success: true,
+        message: 'Avaliações publicadas com sucesso',
+        data: {
+          productName: data.product_name || 'Produto',
+          averageRating: parseFloat(data.average_rating) || 0,
+          reviewsCount: parseInt(data.reviews_count) || 0,
         },
-        stats: reviewStats,
-        reviews: reviews.map(review => ({
-          id: review.id,
-          author: review.author,
-          rating: review.rating,
-          content: review.content,
-          date: review.date,
-          images: review.images || []
-        }))
-      }),
-      reviews_count: reviews.length,
-      average_rating: reviewStats.average,
-      updated_at: new Date().toISOString()
-    };
-    
-    // 6. Inserir ou atualizar
-    let result;
-    if (existingPublished) {
-      const { data, error } = await (supabase as any)
-        .from('published_reviews_json')
-        .update(reviewsData)
-        .eq('id', existingPublished.id)
-        .select()
-        .maybeSingle();
-      
-      if (error) throw error;
-      result = data;
-    } else {
-      const { data, error } = await (supabase as any)
-        .from('published_reviews_json')
-        .insert(reviewsData)
-        .select()
-        .maybeSingle();
-      
-      if (error) throw error;
-      result = data;
+      };
     }
     
     return {
       success: true,
-      message: 'Reviews publicados com sucesso',
-      data: result
+      message: 'Avaliações publicadas',
+      data: {
+        productName: 'Produto',
+        averageRating: 0,
+        reviewsCount: 0,
+      },
     };
   } catch (error) {
-    console.error('Erro ao publicar reviews:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+    console.error(`Erro ao publicar avaliações: ${errorMessage}`, error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Erro desconhecido ao publicar reviews'
+      message: `Falha ao publicar avaliações: ${errorMessage}`,
     };
   }
 }

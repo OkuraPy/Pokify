@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/hooks/use-auth';
 import { StoresProvider } from '@/hooks/use-stores';
+import { PasswordChangeModal } from '@/components/auth/password-change-modal';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -31,6 +32,7 @@ export default function RootLayout({
             <StoresProvider>
               {children}
               <Toaster />
+              <PasswordChangeModal />
             </StoresProvider>
           </AuthProvider>
         </ThemeProvider>

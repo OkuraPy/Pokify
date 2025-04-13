@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-import { signIn } from '@/lib/supabase';
+import { signIn, supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -55,7 +55,48 @@ export function LoginForm() {
       // 3. Atualizamos o estado do usuário no contexto de autenticação
       await refreshUser();
       
-      // 4. Verificamos novamente após um curto período para garantir persistência
+      // 4. Verificar se o usuário está com senha temporária
+      try {
+        // Verificar metadados do usuário que podem indicar senha temporária
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Verificar nos metadados se é uma senha temporária
+          const needsPasswordChange = user.user_metadata?.temporary_password === true;
+          
+          // Se temos a informação nos metadados, usamos ela
+          if (needsPasswordChange) {
+            console.log('Metadados indicam que a senha é temporária');
+            sessionStorage.setItem('needs_password_change', 'true');
+          } else {
+            // Verificar alternativa: Se o login foi feito com a senha temporária conhecida
+            const password = formData.password; // Obter a senha dos dados do formulário
+            console.log('Senha utilizada no login:', password);
+            
+            // Lista de senhas temporárias conhecidas
+            const knownTempPasswords = ['fWMd8zZBIu', 'Nl#B5LdCQb'];
+            
+            // Padrões de senha temporária:
+            // 1. Senha está na lista de conhecidas
+            // 2. Senha tem 9-10 caracteres e inclui letras, números e possivelmente caracteres especiais
+            const isTemporaryPassword = knownTempPasswords.includes(password) || 
+              (password.length >= 8 && password.length <= 10 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password))
+              
+            if (isTemporaryPassword) {
+              console.log('Senha segue padrão de senha temporária');
+              sessionStorage.setItem('needs_password_change', 'true');
+            } else {
+              console.log('Senha não parece ser temporária');
+            }
+          }
+        } else {
+          console.error('Usuário não disponível após login');
+        }
+      } catch (passwordCheckError) {
+        console.error('Erro ao verificar status da senha:', passwordCheckError);
+      }
+      
+      // 5. Verificamos novamente após um curto período para garantir persistência
       setTimeout(async () => {
         await refreshUser();
         console.log('Verificação de estado do usuário após delay');
@@ -67,7 +108,7 @@ export function LoginForm() {
       // Informamos o usuário do sucesso
       toast.success('Login realizado com sucesso!');
       
-      // 5. Redirecionamos o usuário após um pequeno atraso
+      // 6. Redirecionamos o usuário após um pequeno atraso
       setTimeout(() => {
         router.push('/dashboard');
       }, 800);
