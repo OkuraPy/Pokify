@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
@@ -14,6 +16,15 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     forceSwcTransforms: true,
+  },
+  webpack: (config) => {
+    // Configurar o webpack para ser case-sensitive e resolver o alias @
+    config.resolve.symlinks = false;
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname)
+    };
+    return config;
   }
 };
 
