@@ -35,13 +35,14 @@ export async function GET(request: NextRequest, { params }: { params: { productI
     // Esta tabela contém os reviews já formatados em JSON
     const { data, error } = await (supabase as any)
       .from('published_reviews_json')
-      .select('reviews_data, average_rating, reviews_count, product_name')
+      .select('reviews_data, average_rating, reviews_count, product_name, product_image')
       .eq('product_id', productId)
       .maybeSingle();
     
     // Extrair reviews do objeto retornado
     const reviewsData = data?.reviews_data || { reviews: [] };
     console.log('Dados brutos recebidos:', JSON.stringify(reviewsData).substring(0, 200) + '...');
+    console.log('product_image da tabela:', data?.product_image);
     
     // Se reviewsData for uma string JSON, precisamos fazer parse
     let reviews = [];
@@ -194,16 +195,19 @@ export async function GET(request: NextRequest, { params }: { params: { productI
           const contentPreview = review.content || 'Ótimo produto!';
 
           // Extrair URL da imagem do produto
-          // Verificar nos logs a estrutura do produto e extrair a imagem
           const parsedReviewData = typeof reviewsData === 'string' ? JSON.parse(reviewsData) : reviewsData;
-          const productImageFromData = parsedReviewData?.product?.image || '';
+          let productImageFromData = 
+            data?.product_image ||
+            parsedReviewData?.product_image ||
+            parsedReviewData?.product?.image ||
+            '';
           
-          // URLs para testes, com fallbacks em ordem de preferência
+          if (productImageFromData && productImageFromData.startsWith('http:')) {
+            productImageFromData = productImageFromData.replace('http:', 'https:');
+          }
+          
           const productImage = productImageFromData || 
-                              "https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg" || 
-                              "https://cdn.shopify.com/s/files/1/0704/6378/2947/files/produto-body.jpg" ||
-                              "https://midastime.com.br/cdn/shop/files/2_bodys_shaper-compre_1_leve_2.jpg" ||
-                              "https://via.placeholder.com/80x80.png?text=Produto";
+                              "https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg";
 
           return `
             <div class="review-card ${review.highlight ? 'highlighted' : ''}">
@@ -224,12 +228,12 @@ export async function GET(request: NextRequest, { params }: { params: { productI
                   <img 
                     src="${productImage}" 
                     alt="Produto" 
-                    onerror="this.onerror=null; this.src='https://midastime.com.br/cdn/shop/files/2_bodys_shaper-compre_1_leve_2.jpg'; if(!this.src.includes('placeholder')) this.onerror=function(){this.src='https://via.placeholder.com/80x80.png?text=Produto';}" 
+                    onerror="this.onerror=null; this.src='/placeholder-product.png';" 
                   />
                 </div>
               ` : `
                 <div class="review-image-container">
-                  <img src="https://via.placeholder.com/800x450" alt="Foto do review" class="review-main-image" />
+                  <img src="/placeholder-review.png" alt="Foto do review" class="review-main-image" />
                 </div>
               `}
             </div>
@@ -660,17 +664,20 @@ export async function GET(request: NextRequest, { params }: { params: { productI
               const reviewDate = review.date ? new Date(review.date).toLocaleDateString('pt-BR') : '10/04/2023';
               
               // Extrair URL da imagem do produto
-              // Verificar nos logs a estrutura do produto e extrair a imagem
               const parsedReviewData = typeof reviewsData === 'string' ? JSON.parse(reviewsData) : reviewsData;
-              const productImageFromData = parsedReviewData?.product?.image || '';
+              let productImageFromData = 
+                data?.product_image ||
+                parsedReviewData?.product_image ||
+                parsedReviewData?.product?.image ||
+                '';
               
-              // URLs para testes, com fallbacks em ordem de preferência
+              if (productImageFromData && productImageFromData.startsWith('http:')) {
+                productImageFromData = productImageFromData.replace('http:', 'https:');
+              }
+              
               const productImage = productImageFromData || 
-                                  "https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg" || 
-                                  "https://cdn.shopify.com/s/files/1/0704/6378/2947/files/produto-body.jpg" ||
-                                  "https://midastime.com.br/cdn/shop/files/2_bodys_shaper-compre_1_leve_2.jpg" ||
-                                  "https://via.placeholder.com/80x80.png?text=Produto";
-              
+                                  "https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg";
+
               return `
                 <div class="review-card">
                   <div class="reviewer-header">
@@ -689,7 +696,7 @@ export async function GET(request: NextRequest, { params }: { params: { productI
                     <img 
                       src="${productImage}" 
                       alt="Produto" 
-                      onerror="this.onerror=null; this.src='https://midastime.com.br/cdn/shop/files/2_bodys_shaper-compre_1_leve_2.jpg'; if(!this.src.includes('placeholder')) this.onerror=function(){this.src='https://via.placeholder.com/80x80.png?text=Produto';}" 
+                      onerror="this.onerror=null; this.src='/placeholder-product.png';" 
                     />
                     <div class="review-product-name">2 Bodys Shaper Canelado - Compre 1 Leve 2</div>
                   </div>

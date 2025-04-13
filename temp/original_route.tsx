@@ -191,11 +191,11 @@ export async function GET(request: NextRequest, { params }: { params: { productI
               
               ${hasImages ? `
                 <div class="review-image-container ${imageClass}">
-                  <img src="https://via.placeholder.com/800x450" alt="Foto do review" class="review-main-image" />
+                  <img src="/placeholder-review.png" alt="Foto do review" class="review-main-image" />
                 </div>
               ` : `
                 <div class="review-image-container">
-                  <img src="https://via.placeholder.com/800x450" alt="Foto do review" class="review-main-image" />
+                  <img src="/placeholder-review.png" alt="Foto do review" class="review-main-image" />
                 </div>
               `}
             </div>

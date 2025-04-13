@@ -1,6 +1,7 @@
 // Implementação do cliente Supabase
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/types/supabase';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 // Configuração do cliente Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -1784,72 +1785,129 @@ export async function loadConfig(shopDomain: string, productId: string, userId: 
   }
 }
 
-/**
- * Salva a configuração de reviews para um produto
- */
-export async function saveConfig(config: {
+// Adicionar as interfaces necessárias no topo do arquivo
+export interface ReviewConfig {
   shopDomain: string;
-  productId: string;
-  userId: string;
+  productId?: string;
+  userId?: string;
   reviewPosition: string;
   customSelector?: string;
   active: boolean;
   css_selector?: string;
   display_format?: string;
+  position_type?: string;
   primary_color?: string;
   secondary_color?: string;
-}) {
+}
+
+export interface SaveConfigResult {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+/**
+ * Salva a configuração de reviews para um produto
+ */
+export async function saveConfig(config: ReviewConfig, productId: string): Promise<SaveConfigResult> {
   try {
-    // Verificar se já existe uma configuração
-    const existingConfig = await loadConfig(config.shopDomain, config.productId, config.userId)
-      .catch(() => null);
-    
-    const { data, error } = existingConfig 
-      ? await (supabase as any)
-          .from('review_configs')
-          .update({
-            review_position: config.reviewPosition,
-            custom_selector: config.customSelector || '',
-            active: config.active,
-            css_selector: config.css_selector || '',
-            display_format: config.display_format || 'default',
-            primary_color: config.primary_color || '#7e3af2',
-            secondary_color: config.secondary_color || '#c4b5fd',
-            updated_at: new Date().toISOString()
+    console.log('Salvando config para produto ID:', productId);
+    const user = await getCurrentUser();
+    if (!user) {
+      return {
+        success: false,
+        message: 'Usuário não encontrado. Faça login novamente.',
+      };
+    }
+
+    // Tentar usar a edge function primeiro
+    try {
+      console.log('Tentando usar a edge function para salvar configuração');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/save-review-config`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getSupabaseToken()}`
+          },
+          body: JSON.stringify({
+            config,
+            userId: user.id,
+            productId
           })
-          .eq('shop_domain', config.shopDomain)
-          .eq('product_id', config.productId)
-          .eq('user_id', config.userId)
-          .select()
-          .maybeSingle()
-      : await (supabase as any)
-          .from('review_configs')
-          .insert({
-            shop_domain: config.shopDomain,
-            product_id: config.productId,
-            user_id: config.userId,
-            review_position: config.reviewPosition,
-            custom_selector: config.customSelector || '',
-            active: config.active,
-            css_selector: config.css_selector || '',
-            display_format: config.display_format || 'default',
-            primary_color: config.primary_color || '#7e3af2',
-            secondary_color: config.secondary_color || '#c4b5fd'
-          })
-          .select()
-          .maybeSingle();
-    
-    if (error) throw error;
-    return data;
+        }
+      );
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Configuração salva com sucesso via edge function');
+        return {
+          success: true,
+          message: 'Configuração salva com sucesso!',
+          data: result.data
+        };
+      } else {
+        console.warn('Edge function falhou, tentando método alternativo', result);
+        // Continuar com o método tradicional como fallback
+      }
+    } catch (edgeFunctionError) {
+      console.warn('Erro ao chamar edge function, usando método tradicional:', edgeFunctionError);
+      // Continuar com o método tradicional como fallback
+    }
+
+    // Método tradicional como fallback
+    const { data, error } = await (supabase as any)
+      .from('review_configs')
+      .upsert(
+        {
+          ...config,
+          product_id: productId,
+          user_id: user.id,
+        },
+        { onConflict: 'product_id, user_id' }
+      )
+      .select();
+
+    if (error) {
+      console.error('Erro ao salvar configuração de reviews:', error);
+      return {
+        success: false,
+        message: `Erro ao salvar configuração de reviews: ${error.message}`,
+      };
+    }
+
+    console.log('Configuração salva com sucesso:', data);
+    return {
+      success: true,
+      message: 'Configuração salva com sucesso!',
+      data: data[0],
+    };
   } catch (error) {
     console.error('Erro ao salvar configuração de reviews:', error);
-    throw error;
+    return {
+      success: false,
+      message: `Erro ao salvar configuração de reviews: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+    };
+  }
+}
+
+// Helper para obter o token JWT para as chamadas de edge functions
+async function getSupabaseToken() {
+  try {
+    const supabase = createClientComponentClient<Database>();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token || '';
+  } catch (error) {
+    console.error('Erro ao obter token Supabase:', error);
+    return '';
   }
 }
 
 /**
- * Publica as avaliações de um produto para exibição na loja
- * @param productId ID do produto para publicar avaliações
+ * Publica as avaliações de um produto
+ * @param productId ID do produto
  * @returns Promise com status, mensagem e dados das avaliações
  */
 export async function publishProductReviews(
@@ -1866,9 +1924,44 @@ export async function publishProductReviews(
   try {
     console.log(`Publicando avaliações para o produto: ${productId}`);
     
-    // Chamar a stored procedure para publicar avaliações
-    const { data, error } = await supabase.rpc('publish_product_reviews', {
-      p_product_id: productId,
+    // Tentar usar a edge function primeiro
+    try {
+      console.log('Tentando usar a edge function para publicar reviews');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/publish-reviews`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${await getSupabaseToken()}`
+          },
+          body: JSON.stringify({
+            productId
+          })
+        }
+      );
+
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Reviews publicados com sucesso via edge function');
+        return {
+          success: true,
+          message: 'Reviews publicados com sucesso!',
+          data: result.data
+        };
+      } else {
+        console.warn('Edge function falhou, tentando método tradicional', result);
+        // Continuar com o método tradicional como fallback
+      }
+    } catch (edgeFunctionError) {
+      console.warn('Erro ao chamar edge function, usando método tradicional:', edgeFunctionError);
+      // Continuar com o método tradicional como fallback
+    }
+    
+    // Método tradicional: chamar a função RPC no Supabase
+    const { data, error } = await (supabase as any).rpc('publish_product_reviews', {
+      product_id_param: productId,
     });
     
     if (error) {
@@ -1903,10 +1996,10 @@ export async function publishProductReviews(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
-    console.error(`Erro ao publicar avaliações: ${errorMessage}`, error);
+    console.error('Erro ao publicar avaliações:', errorMessage);
     return {
       success: false,
-      message: `Falha ao publicar avaliações: ${errorMessage}`,
+      message: `Erro ao publicar avaliações: ${errorMessage}`,
     };
   }
 }

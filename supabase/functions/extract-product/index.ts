@@ -171,7 +171,7 @@ async function extractFromAliExpress(url: string): Promise<ProductData> {
       title,
       description,
       price,
-      images: images.length > 0 ? images : ['https://via.placeholder.com/500x500.png?text=Imagem+não+disponível'],
+      images: images.length > 0 ? images : ['https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg'],
       stock: 100, // Valor padrão
       average_rating: 4.0, // Valor padrão
     };
@@ -201,7 +201,7 @@ async function extractFromAliExpress(url: string): Promise<ProductData> {
       title,
       description,
       price,
-      images: images.length > 0 ? images : ['https://via.placeholder.com/500x500.png?text=Imagem+não+disponível'],
+      images: images.length > 0 ? images : ['https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg'],
       stock,
       average_rating: rating,
     };
@@ -300,7 +300,7 @@ async function extractFromShopify(url: string): Promise<ProductData> {
       title,
       description,
       price,
-      images: images.length > 0 ? images : ['https://via.placeholder.com/500x500.png?text=Imagem+não+disponível'],
+      images: images.length > 0 ? images : ['https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg'],
       stock: 100, // Valor padrão
       average_rating: 4.5, // Valor padrão
     };
@@ -351,7 +351,7 @@ async function extractFromShopify(url: string): Promise<ProductData> {
       description,
       price,
       compare_at_price: comparePrice,
-      images: images.length > 0 ? images : ['https://via.placeholder.com/500x500.png?text=Imagem+não+disponível'],
+      images: images.length > 0 ? images : ['https://cdn.shopify.com/s/files/1/0704/6378/2947/files/bodys.jpg'],
       stock,
       variants,
       average_rating: 4.5, // Valor padrão, raramente disponível nos dados

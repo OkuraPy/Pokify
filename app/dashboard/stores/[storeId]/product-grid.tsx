@@ -55,7 +55,7 @@ export function ProductGrid({ storeId, products }: ProductGridProps) {
           <CardContent className="p-0">
             <div className="relative aspect-square overflow-hidden bg-secondary/10">
               <Image
-                src={product.images?.[0] || 'https://via.placeholder.com/300?text=Sem+Imagem'}
+                src={product.images?.[0] || '/placeholder-product.png'}
                 alt={product.title}
                 fill
                 className="object-cover transition-transform duration-300 group-hover:scale-105"

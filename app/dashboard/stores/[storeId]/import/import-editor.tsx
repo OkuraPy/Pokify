@@ -98,12 +98,12 @@ export function ImportProductEditor({ storeId, importUrl, productId }: ImportPro
             setProductData({
               title: 'Camiseta Pokémon Pikachu [Editando]',
               price: 99.90,
-              description: '<p>Camiseta com estampa do Pikachu, perfeita para fãs da franquia. Material de alta qualidade, 100% algodão. Disponível em vários tamanhos e cores.</p><p><img src="https://via.placeholder.com/600x400" alt="Exemplo de camiseta"></p><p>Características:</p><ul><li>Material: 100% algodão</li><li>Estampa de alta qualidade</li><li>Disponível em vários tamanhos</li></ul>',
+              description: '<p>Camiseta com estampa do Pikachu, perfeita para fãs da franquia. Material de alta qualidade, 100% algodão. Disponível em vários tamanhos e cores.</p><p><img src="/placeholder-product.png" alt="Exemplo de camiseta"></p><p>Características:</p><ul><li>Material: 100% algodão</li><li>Estampa de alta qualidade</li><li>Disponível em vários tamanhos</li></ul>',
               images: [
-                'https://via.placeholder.com/800x800',
-                'https://via.placeholder.com/800x800',
-                'https://via.placeholder.com/800x800',
-                'https://via.placeholder.com/800x800',
+                '/placeholder-product.png',
+                '/placeholder-product.png',
+                '/placeholder-product.png',
+                '/placeholder-product.png',
               ],
               reviews: [
                 {
@@ -112,7 +112,7 @@ export function ImportProductEditor({ storeId, importUrl, productId }: ImportPro
                   author: 'João Silva',
                   content: 'Produto excelente, chegou rápido e a qualidade é ótima!',
                   date: '2023-11-10',
-                  images: ['https://via.placeholder.com/200x200'],
+                  images: ['/placeholder-product.png'],
                   selected: false
                 },
                 {
@@ -129,7 +129,7 @@ export function ImportProductEditor({ storeId, importUrl, productId }: ImportPro
                   author: 'Pedro Oliveira',
                   content: 'Melhor camiseta que já comprei! Estampa de ótima qualidade.',
                   date: '2023-12-05',
-                  images: ['https://via.placeholder.com/200x200', 'https://via.placeholder.com/200x200'],
+                  images: ['/placeholder-product.png', '/placeholder-product.png'],
                   selected: false
                 }
               ]
@@ -152,11 +152,11 @@ export function ImportProductEditor({ storeId, importUrl, productId }: ImportPro
             setProductData({
               title: 'Camiseta Pokémon Pikachu [Importado]',
               price: 89.90,
-              description: '<p>Camiseta com estampa do Pikachu. Material: 100% algodão. Disponível em vários tamanhos.</p><p><img src="https://via.placeholder.com/600x400" alt="Imagem do produto"></p>',
+              description: '<p>Camiseta com estampa do Pikachu. Material: 100% algodão. Disponível em vários tamanhos.</p><p><img src="/placeholder-product.png" alt="Imagem do produto"></p>',
               images: [
-                'https://via.placeholder.com/800x800',
-                'https://via.placeholder.com/800x800',
-                'https://via.placeholder.com/800x800',
+                '/placeholder-product.png',
+                '/placeholder-product.png',
+                '/placeholder-product.png',
               ],
               reviews: [
                 {
@@ -165,7 +165,7 @@ export function ImportProductEditor({ storeId, importUrl, productId }: ImportPro
                   author: 'João Silva',
                   content: 'Produto excelente, chegou rápido e a qualidade é ótima!',
                   date: '2023-11-10',
-                  images: ['https://via.placeholder.com/200x200'],
+                  images: ['/placeholder-product.png'],
                   selected: false
                 },
                 {
@@ -218,7 +218,7 @@ export function ImportProductEditor({ storeId, importUrl, productId }: ImportPro
             author: 'Ana Luiza',
             content: 'Good quality product, I recommend it. The sizing is perfect and the fabric is soft.',
             date: '2023-12-10',
-            images: ['https://via.placeholder.com/200x200'],
+            images: ['/placeholder-product.png'],
             selected: false
           },
           {
@@ -294,7 +294,7 @@ export function ImportProductEditor({ storeId, importUrl, productId }: ImportPro
             selected: false,
             // Adiciona imagens em algumas avaliações
             ...(Math.random() > 0.7 ? { 
-              images: ['https://via.placeholder.com/200x200'] 
+              images: ['/placeholder-product.png'] 
             } : {})
           };
         });
