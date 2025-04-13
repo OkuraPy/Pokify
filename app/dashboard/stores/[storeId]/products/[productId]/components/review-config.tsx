@@ -222,7 +222,7 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
                     rows={5}
                     value={`<iframe 
   src="${window.location.origin}${iframeUrl}" 
-  style="width:100%; border:none; height:1000px; overflow:hidden;" 
+  style="width:100%; border:none; height:1300px; overflow:hidden;" 
   title="Avaliações do Produto"
   scrolling="no"
   frameBorder="0"
@@ -233,7 +233,7 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
                     onClick={() => {
                       navigator.clipboard.writeText(`<iframe 
   src="${window.location.origin}${iframeUrl}" 
-  style="width:100%; border:none; height:1000px; overflow:hidden;" 
+  style="width:100%; border:none; height:1300px; overflow:hidden;" 
   title="Avaliações do Produto"
   scrolling="no"
   frameBorder="0"

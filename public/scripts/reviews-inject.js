@@ -121,7 +121,7 @@
     iframe.src = `${CONFIG.apiUrl}/api/reviews/${productId}/iframe?shopDomain=${encodeURIComponent(CONFIG.shopDomain)}&userId=${encodeURIComponent(CONFIG.userId)}`;
     iframe.style.width = '100%';
     iframe.style.border = 'none';
-    iframe.style.height = '1000px';
+    iframe.style.height = '1300px';
     iframe.style.overflow = 'hidden';
     iframe.title = 'Avaliações do Produto';
     iframe.scrolling = 'no';

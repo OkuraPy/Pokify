@@ -25,10 +25,57 @@ export default function ProductReviews({ productId }: { productId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewsData, setReviewsData] = useState<PublishedReviewsData | null>(null);
+  
+  // Função para exibir iframe
+  const renderIframe = () => {
+    if (typeof window === 'undefined') return null;
+    
+    const origin = window.location.origin;
+    // Valores padrão para loja demo e usuário
+    const shopDomain = 'loja-demo';
+    const userId = '10c1173a-02a3-493d-b782-0c6cba9274b2';
+    
+    return (
+      <iframe 
+        src={`${origin}/api/reviews/${productId}/iframe?shopDomain=${shopDomain}&userId=${userId}`} 
+        style={{width:"100%", border:"none", height:"1300px", overflow:"hidden"}} 
+        title="Avaliações do Produto"
+        scrolling="no"
+        frameBorder="0"
+      />
+    );
+  };
+
+  const handlePublishReviews = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await publishProductReviews(productId);
+      if (result.success) {
+        setReviewsData(result.data as PublishedReviewsData);
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError('Erro ao publicar avaliações: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="p-4 bg-white rounded-lg shadow">
       <h2 className="text-2xl font-bold mb-4">Avaliações do Produto</h2>
+      
+      <div className="mb-4">
+        <button
+          onClick={handlePublishReviews}
+          disabled={loading}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-blue-300"
+        >
+          {loading ? 'Publicando...' : 'Publicar Avaliações'}
+        </button>
+      </div>
 
       {error && (
         <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
@@ -72,6 +119,9 @@ export default function ProductReviews({ productId }: { productId: string }) {
           </div>
         </div>
       )}
+
+      {/* Exibir iframe com altura fixa de 1300px */}
+      {renderIframe()}
     </div>
   );
 } 
