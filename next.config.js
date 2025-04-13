@@ -14,6 +14,23 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     forceSwcTransforms: true,
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/reviews/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOWALL'
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: 'frame-ancestors *'
+          }
+        ]
+      }
+    ];
   }
 };
 
