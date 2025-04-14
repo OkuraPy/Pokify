@@ -7,7 +7,13 @@ import { AuthProvider } from '@/hooks/use-auth';
 import { StoresProvider } from '@/hooks/use-stores';
 import { PasswordChangeModal } from '@/components/auth/password-change-modal';
 
-const inter = Inter({ subsets: ['latin'] });
+// Configuração da fonte Inter
+const inter = Inter({ 
+  subsets: ['latin'],
+  display: 'swap',
+  preload: true,
+  weight: ['400', '500', '600', '700']
+});
 
 export const metadata: Metadata = {
   title: 'Pokify - Gerenciamento de Produtos para E-commerce',
@@ -20,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
+    <html lang="pt-BR" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

@@ -40,10 +40,14 @@ export default function LandingLayout({
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <Script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js" strategy="afterInteractive" />
       </head>
       <body className={`${inter.variable} ${poppins.variable} min-h-screen bg-black text-white`}>
-        {/* Tailwind CSS */}
-        <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
+        {/* Remova o import do TailwindCSS via CDN - já está no projeto */}
         
         {children}
       </body>
