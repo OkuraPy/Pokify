@@ -60,7 +60,7 @@ import { UpdateStoreDialog } from './update-store-dialog';
 interface Store {
   id: string;
   name: string;
-  platform: 'aliexpress' | 'shopify' | 'other';
+  platform: 'aliexpress' | 'shopify' | 'other' | string;
   url: string;
   products: number;
   reviews: number;

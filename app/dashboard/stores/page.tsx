@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Plus, Store, Loader2 } from 'lucide-react';
+import { AlertCircle, Plus, Store as StoreIcon, Loader2 } from 'lucide-react';
 import { StoreList } from '@/components/stores/store-list';
 import { StoreForm } from './store-form';
-import { getStores, getProducts } from '@/lib/supabase';
+import { getUserStores, getProducts, Store } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-interface Store {
+// Interface local para dados enriquecidos da loja (com estatísticas)
+interface StoreWithStats {
   id: string;
   name: string;
   platform: string;
@@ -21,7 +22,7 @@ interface Store {
 }
 
 export default function StoresPage() {
-  const [stores, setStores] = useState<Store[]>([]);
+  const [stores, setStores] = useState<StoreWithStats[]>([]);
   const [isCreateStoreOpen, setIsCreateStoreOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -34,7 +35,7 @@ export default function StoresPage() {
   const fetchStores = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await getStores();
+      const { data, error } = await getUserStores();
       
       if (error) {
         console.error('Erro ao buscar lojas:', error);
@@ -43,7 +44,7 @@ export default function StoresPage() {
       }
       
       // Buscar produtos e calcular estatísticas para cada loja
-      const storesWithStats = await Promise.all(data?.map(async (store: any) => {
+      const storesWithStats = await Promise.all(data?.map(async (store) => {
         try {
           // Buscar produtos reais de cada loja
           const { data: storeProducts } = await getProducts(store.id);
@@ -74,6 +75,7 @@ export default function StoresPage() {
             ? (totalRating / productsWithRating)
             : 0;
           
+          // Converter para o tipo StoreWithStats
           return {
             id: store.id,
             name: store.name,
@@ -133,7 +135,7 @@ export default function StoresPage() {
           <h3 className="font-semibold text-gray-800">Limite de Lojas</h3>
           <div className="flex items-center gap-2">
             <div className="bg-blue-100 p-1.5 rounded-full">
-              <Store className="h-5 w-5 text-blue-600" />
+              <StoreIcon className="h-5 w-5 text-blue-600" />
             </div>
             <span className="text-sm text-blue-800 font-medium">{storesCount} de {maxStores} lojas utilizadas</span>
           </div>
@@ -191,7 +193,7 @@ export default function StoresPage() {
           ) : stores.length === 0 ? (
             <div className="py-16 text-center px-4 min-h-[400px] flex flex-col items-center justify-center">
               <div className="mx-auto w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-                <Store className="h-8 w-8 text-blue-500" />
+                <StoreIcon className="h-8 w-8 text-blue-500" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-gray-800">Nenhuma loja encontrada</h3>
               <p className="text-muted-foreground max-w-sm mx-auto mb-6">
