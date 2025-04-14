@@ -18,6 +18,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Pokify - Gerenciamento de Produtos para E-commerce',
   description: 'Seamlessly sync products from AliExpress to your Shopify store',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({

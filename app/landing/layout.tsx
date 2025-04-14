@@ -1,10 +1,11 @@
-import type { Metadata } from 'next';
 import { Inter, Poppins } from 'next/font/google';
+import { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
 
 // Carregando a fonte Inter usando o sistema de fontes do Next.js
-const inter = Inter({ 
+const inter = Inter({
+  weight: ['400', '500', '600', '700'],
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap'
@@ -29,28 +30,11 @@ export default function LandingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Dropfy - IA para Dropshipping</title>
-        <meta name="description" content="Dropfy é a primeira IA para dropshipping que faz tudo por você. Encontre, crie, traduza, melhore e venda com IA." />
-        
-        {/* Font Awesome */}
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-        <Script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js" strategy="afterInteractive" />
-      </head>
-      <body className={`${inter.variable} ${poppins.variable} min-h-screen bg-black text-white`}>
-        {/* Remova o import do TailwindCSS via CDN - já está no projeto */}
-        
-        {children}
-      </body>
-    </html>
+    <div className={`${inter.variable} ${poppins.variable} min-h-screen bg-black text-white`}>
+      {/* Script para animações AOS */}
+      <Script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js" strategy="afterInteractive" />
+      
+      {children}
+    </div>
   );
 } 
