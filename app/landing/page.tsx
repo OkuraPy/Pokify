@@ -1,11 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
 export default function LandingPage() {
   const [activeAccordion, setActiveAccordion] = useState<number | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const testimonialSliderRef = useRef<HTMLDivElement>(null);
+  
+  // Total de depoimentos para controle de navegação
+  const totalTestimonials = 4;
 
   // Detectar quando o usuário rola a página
   useEffect(() => {
@@ -15,9 +20,87 @@ export default function LandingPage() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+  
+  // Inicializar e configurar o slider
+  useEffect(() => {
+    if (testimonialSliderRef.current) {
+      const slider = testimonialSliderRef.current;
+      
+      // Detectar quando o usuário arrasta o slider
+      let startX: number;
+      let scrollLeft: number;
+      
+      const onTouchStart = (e: TouchEvent) => {
+        startX = e.touches[0].pageX - slider.offsetLeft;
+        scrollLeft = slider.scrollLeft;
+      };
+      
+      const onTouchMove = (e: TouchEvent) => {
+        if (!startX) return;
+        const x = e.touches[0].pageX - slider.offsetLeft;
+        const dist = (startX - x);
+        slider.scrollLeft = scrollLeft + dist;
+      };
+      
+      const onTouchEnd = () => {
+        startX = undefined as any;
+        
+        // Determinar para qual card navegar com base na posição atual do scroll
+        const cardWidth = slider.querySelector('.testimonial-card')?.clientWidth || 0;
+        const scrollPosition = slider.scrollLeft;
+        const newIndex = Math.round(scrollPosition / cardWidth);
+        
+        if (newIndex !== currentTestimonial && newIndex >= 0 && newIndex < totalTestimonials) {
+          setCurrentTestimonial(newIndex);
+        }
+      };
+      
+      // Adicionar event listeners para touch devices
+      slider.addEventListener('touchstart', onTouchStart, { passive: true });
+      slider.addEventListener('touchmove', onTouchMove, { passive: true });
+      slider.addEventListener('touchend', onTouchEnd, { passive: true });
+      
+      // Limpeza
+      return () => {
+        slider.removeEventListener('touchstart', onTouchStart);
+        slider.removeEventListener('touchmove', onTouchMove);
+        slider.removeEventListener('touchend', onTouchEnd);
+      };
+    }
+  }, [currentTestimonial, totalTestimonials]);
 
   const toggleAccordion = (index: number) => {
     setActiveAccordion(activeAccordion === index ? null : index);
+  };
+  
+  // Função para navegar para o depoimento anterior
+  const prevTestimonial = () => {
+    setCurrentTestimonial((prev) => (prev === 0 ? totalTestimonials - 1 : prev - 1));
+    scrollToTestimonial(currentTestimonial === 0 ? totalTestimonials - 1 : currentTestimonial - 1);
+  };
+  
+  // Função para navegar para o próximo depoimento
+  const nextTestimonial = () => {
+    setCurrentTestimonial((prev) => (prev === totalTestimonials - 1 ? 0 : prev + 1));
+    scrollToTestimonial(currentTestimonial === totalTestimonials - 1 ? 0 : currentTestimonial + 1);
+  };
+  
+  // Função para ir para um depoimento específico
+  const goToTestimonial = (index: number) => {
+    setCurrentTestimonial(index);
+    scrollToTestimonial(index);
+  };
+  
+  // Função para rolar para um depoimento específico
+  const scrollToTestimonial = (index: number) => {
+    if (testimonialSliderRef.current) {
+      const slider = testimonialSliderRef.current;
+      const cards = slider.querySelectorAll('.testimonial-card');
+      if (cards[index]) {
+        // Usar scrollIntoView com comportamento suave
+        cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
   };
 
   return (
@@ -180,12 +263,18 @@ export default function LandingPage() {
 
           <div className="testimonial-slider relative max-w-6xl mx-auto">
             <div className="slider-controls absolute top-1/2 transform -translate-y-1/2 w-full flex justify-between pointer-events-none">
-              <button className="slider-prev bg-gradient-to-r from-gray-900 to-black/70 backdrop-blur-md text-white p-3 rounded-full shadow-lg pointer-events-auto opacity-75 hover:opacity-100 transition-all duration-300 -ml-4 z-10">
+              <button 
+                onClick={prevTestimonial}
+                className="slider-prev bg-gradient-to-r from-gray-900 to-black/70 backdrop-blur-md text-white p-3 rounded-full shadow-lg pointer-events-auto opacity-75 hover:opacity-100 transition-all duration-300 -ml-4 z-10"
+              >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              <button className="slider-next bg-gradient-to-l from-gray-900 to-black/70 backdrop-blur-md text-white p-3 rounded-full shadow-lg pointer-events-auto opacity-75 hover:opacity-100 transition-all duration-300 -mr-4 z-10">
+              <button 
+                onClick={nextTestimonial}
+                className="slider-next bg-gradient-to-l from-gray-900 to-black/70 backdrop-blur-md text-white p-3 rounded-full shadow-lg pointer-events-auto opacity-75 hover:opacity-100 transition-all duration-300 -mr-4 z-10"
+              >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M9 6L15 12L9 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -193,7 +282,14 @@ export default function LandingPage() {
             </div>
             
             <div className="overflow-hidden">
-              <div className="flex items-stretch space-x-6 pb-12 px-8 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
+              <div 
+                className="flex items-stretch space-x-6 pb-12 px-8 overflow-x-auto snap-x snap-mandatory scrollbar-hide" 
+                ref={testimonialSliderRef}
+                style={{ 
+                  scrollBehavior: 'smooth',
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
                 {/* Testimonial 1 */}
                 <div className="testimonial-card min-w-[280px] w-full md:w-[340px] max-w-[380px] flex-shrink-0 p-6 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/60 to-gray-950/60 backdrop-blur-md hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 snap-start flex flex-col h-auto">
                   <div className="flex items-center mb-4 text-yellow-400">
@@ -298,10 +394,22 @@ export default function LandingPage() {
             
             {/* Pagination dots */}
             <div className="flex justify-center space-x-2 mt-8">
-              <button className="w-3 h-3 rounded-full bg-blue-600"></button>
-              <button className="w-3 h-3 rounded-full bg-gray-600 hover:bg-blue-400 transition-colors"></button>
-              <button className="w-3 h-3 rounded-full bg-gray-600 hover:bg-blue-400 transition-colors"></button>
-              <button className="w-3 h-3 rounded-full bg-gray-600 hover:bg-blue-400 transition-colors"></button>
+              <button 
+                onClick={() => goToTestimonial(0)} 
+                className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === 0 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-blue-400'}`}
+              ></button>
+              <button 
+                onClick={() => goToTestimonial(1)} 
+                className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === 1 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-blue-400'}`}
+              ></button>
+              <button 
+                onClick={() => goToTestimonial(2)} 
+                className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === 2 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-blue-400'}`}
+              ></button>
+              <button 
+                onClick={() => goToTestimonial(3)} 
+                className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === 3 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-blue-400'}`}
+              ></button>
             </div>
           </div>
           
