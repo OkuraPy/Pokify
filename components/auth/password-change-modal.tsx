@@ -18,25 +18,29 @@ export function PasswordChangeModal() {
     // Verificar se o usuário precisa trocar a senha
     const checkPasswordChange = () => {
       const needsChange = sessionStorage.getItem('needs_password_change');
-      console.log('PasswordChangeModal: Verificando se precisa trocar a senha:', { needsChange });
       
       if (needsChange === 'true') {
-        console.log('PasswordChangeModal: Abrindo modal de troca de senha');
         setOpen(true);
-      } else {
-        console.log('PasswordChangeModal: Não há necessidade de trocar a senha');
       }
     };
     
     // Verificar imediatamente
     checkPasswordChange();
     
-    // Configurar um intervalo para verificar a flag a cada segundo
-    // Isso garante que captaremos o flag mesmo se ele for definido após o carregamento inicial
-    const intervalId = setInterval(checkPasswordChange, 1000);
+    // Ouvinte para mudanças no storage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'needs_password_change' && e.newValue === 'true') {
+        setOpen(true);
+      }
+    };
     
-    // Limpar o intervalo quando o componente for desmontado
-    return () => clearInterval(intervalId);
+    // Adicionar listener para mudanças no sessionStorage
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Limpar o listener quando o componente for desmontado
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
   
   const handlePasswordChange = async () => {
@@ -81,7 +85,6 @@ export function PasswordChangeModal() {
           })
           .eq('id', user.user.id);
       } catch (updateError) {
-        console.log('Aviso: Não foi possível atualizar o timestamp', updateError);
         // Não interrompe o fluxo se falhar
       }
       
