@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading) {
       // Rotas que não exigem autenticação
-      const publicRoutes = ['/', '/reset-password', '/signup'];
+      const publicRoutes = ['/', '/reset-password', '/signup', '/login'];
       const isPublicRoute = publicRoutes.includes(pathname);
       
       // Apenas redirecionar em situações específicas:

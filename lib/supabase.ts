@@ -357,15 +357,61 @@ export async function verifyShopifyCredentials(
 // Funções de Gerenciamento de Produtos
 export async function getProducts(storeId?: string, status?: 'imported' | 'editing' | 'ready' | 'published' | 'archived') {
   try {
+    // Verificar usuário autenticado para segurança
+    const { data: userData } = await supabase.auth.getUser();
+    
+    if (!userData?.user) {
+      console.error('Tentativa de acesso a produtos sem autenticação');
+      return { data: [], error: new Error('Usuário não autenticado') };
+    }
+    
+    const userId = userData.user.id;
     console.log(`Buscando produtos ${storeId ? `da loja ${storeId}` : "de todas as lojas"}${status ? ` com status ${status}` : ""}`);
     
+    // Se um storeId foi fornecido, primeiro verificamos se a loja pertence ao usuário atual
+    if (storeId) {
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('user_id')
+        .eq('id', storeId)
+        .single();
+      
+      if (storeError || !storeData) {
+        console.error(`Erro ao verificar propriedade da loja ${storeId}:`, storeError);
+        return { data: [], error: new Error('Loja não encontrada ou acesso não autorizado') };
+      }
+      
+      // Verificar se a loja pertence ao usuário
+      if (storeData.user_id !== userId) {
+        console.error(`ALERTA DE SEGURANÇA: Usuário ${userId} tentou acessar produtos da loja ${storeId} que pertence a outro usuário`);
+        return { data: [], error: new Error('Acesso não autorizado a esta loja') };
+      }
+    }
+    
+    // Construir query base
     let query = supabase
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
     
+    // Se tem storeId (já verificado), filtrar por ele
     if (storeId) {
       query = query.eq('store_id', storeId);
+    } else {
+      // Se não tem storeId, precisamos fazer uma query para pegar apenas produtos das lojas do usuário
+      const { data: userStores } = await supabase
+        .from('stores')
+        .select('id')
+        .eq('user_id', userId);
+      
+      if (!userStores || userStores.length === 0) {
+        console.log(`Usuário ${userId} não possui lojas cadastradas`);
+        return { data: [], error: null };
+      }
+      
+      // Filtrar apenas por lojas do usuário
+      const storeIds = userStores.map(store => store.id);
+      query = query.in('store_id', storeIds);
     }
     
     if (status) {
@@ -1371,23 +1417,41 @@ export async function importReviewsFromUrl(
  */
 export async function getUserStores() {
   try {
-    const { data: user } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
     
-    if (!user?.user) {
+    if (!userData?.user) {
+      console.error('Tentativa de acesso a lojas sem autenticação');
       return { data: [], error: new Error('Usuário não autenticado') };
     }
     
+    const userId = userData.user.id;
+    console.log(`Buscando lojas para o usuário: ${userId}`);
+    
+    // Consulta com verificação rigorosa de user_id
     const { data, error } = await supabase
       .from('stores')
       .select('*')
-      .eq('user_id', user.user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
     
-    return { data, error };
+    if (error) {
+      console.error('Erro ao buscar lojas:', error);
+      return { data: [], error };
+    }
+    
+    // Verificação adicional de segurança
+    const validStores = data?.filter(store => store.user_id === userId) || [];
+    
+    if (data && data.length !== validStores.length) {
+      console.error(`ALERTA DE SEGURANÇA: Filtrados ${data.length - validStores.length} registros de lojas que não pertencem ao usuário ${userId}`);
+    }
+    
+    console.log(`Encontradas ${validStores.length} lojas para o usuário ${userId}`);
+    return { data: validStores, error: null };
   } catch (error) {
     console.error('Erro ao obter lojas do usuário:', error);
     return { 
-      data: null, 
+      data: [], 
       error: error instanceof Error ? error : new Error('Erro desconhecido') 
     };
   }

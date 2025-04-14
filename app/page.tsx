@@ -1,5 +1,5 @@
-import { AuthenticationPage } from '@/components/auth/authentication-page';
+import { default as LandingPage } from '@/app/landing/page';
 
 export default function Home() {
-  return <AuthenticationPage />;
+  return <LandingPage />;
 }

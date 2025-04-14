@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginForm } from './login-form';
 import { ShoppingBag, PlayCircle } from 'lucide-react';
@@ -14,9 +14,15 @@ export function AuthenticationPage() {
   const router = useRouter();
   const { user } = useAuth();
 
-  // Se o usuário já estiver autenticado, redirecione para o dashboard
+  // Usando useEffect para fazer o redirecionamento de forma segura
+  useEffect(() => {
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
+
+  // Se o usuário estiver autenticado, retorne null para não renderizar nada enquanto redireciona
   if (user) {
-    router.push('/dashboard');
     return null;
   }
 
@@ -25,7 +31,7 @@ export function AuthenticationPage() {
     try {
       // Simular chamada API
       await new Promise(resolve => setTimeout(resolve, 1500));
-      router.push('/dashboard');
+      router.push('/');
     } catch (error) {
       toast.error('Falha ao acessar a versão demo. Por favor, tente novamente.');
     } finally {

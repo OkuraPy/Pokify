@@ -35,7 +35,7 @@ export default function LandingPage() {
             <a href="#faq" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">FAQ</a>
           </nav>
           <div className="flex items-center space-x-4">
-            <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Login</a>
+            <a href="#login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">Login</a>
             <a href="#planos" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300">Criar Conta</a>
           </div>
         </div>
