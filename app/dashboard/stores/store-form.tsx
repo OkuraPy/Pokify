@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -9,7 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogOverlay,
+  DialogPortal,
+  DialogClose,
 } from '@/components/ui/dialog';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   Form,
   FormControl,
@@ -43,7 +47,8 @@ import {
   Package,
   HelpCircle,
   PlayCircle,
-  ExternalLink
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { createStore } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -59,6 +64,22 @@ const formSchema = z.object({
   url: z.string().url('URL inválida'),
   apiKey: z.string().optional(),
 });
+
+// Componente personalizado de overlay com opacidade reduzida
+const CustomDialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      'fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      className
+    )}
+    {...props}
+  />
+));
+CustomDialogOverlay.displayName = "CustomDialogOverlay";
 
 interface StoreFormProps {
   open: boolean;
@@ -374,85 +395,95 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
 
       {/* Modal de Ajuda para obter a API Key do Shopify */}
       <Dialog open={showApiKeyHelp} onOpenChange={setShowApiKeyHelp}>
-        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden max-h-[95vh] rounded-xl mx-auto data-[state=open]:bg-background/95 data-[state=open]:backdrop-blur-sm">
-          <DialogHeader className="bg-gradient-to-r from-green-600 to-emerald-700 p-6 text-white sticky top-0 z-10">
-            <div className="flex items-center gap-3">
-              <PlayCircle className="h-8 w-8" />
-              <DialogTitle className="text-2xl font-bold">Como obter sua API Key do Shopify</DialogTitle>
-            </div>
-            <DialogDescription className="text-green-100 text-base">
-              Um tutorial passo a passo para configurar e obter sua chave de API
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="p-6 overflow-y-auto max-h-[65vh]">
-            {/* Espaço reservado para o vídeo do YouTube */}
-            <div className="aspect-video w-full bg-gray-100 mb-6 rounded-lg flex items-center justify-center border">
-              <div className="text-center p-8">
-                <PlayCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">
-                  Vídeo tutorial em breve disponível
-                </p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Estamos finalizando a edição do vídeo explicativo
-                </p>
+        <DialogPortal>
+          <CustomDialogOverlay />
+          <DialogPrimitive.Content
+            className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-[700px] translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-0 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] max-h-[95vh] overflow-hidden rounded-xl mx-auto"
+          >
+            <DialogHeader className="bg-gradient-to-r from-green-600 to-emerald-700 p-6 text-white sticky top-0 z-10">
+              <div className="flex items-center gap-3">
+                <PlayCircle className="h-8 w-8" />
+                <DialogTitle className="text-2xl font-bold">Como obter sua API Key do Shopify</DialogTitle>
               </div>
-            </div>
+              <DialogDescription className="text-green-100 text-base">
+                Um tutorial passo a passo para configurar e obter sua chave de API
+              </DialogDescription>
+            </DialogHeader>
 
-            {/* Instruções passo a passo */}
-            <div className="space-y-4 mb-6">
-              <h3 className="font-medium text-lg">Instruções resumidas:</h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
-                  <p>Acesse o painel administrativo da sua loja Shopify</p>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
-                  <p>Clique em "Configurações" (Settings) e em seguida em "Apps e canais de vendas" (Apps and sales channels)</p>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
-                  <p>Clique em "Desenvolver apps" (Develop apps) → "Criar app" e nomeie seu app como "Dropfy Integration"</p>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">4</div>
-                  <p>Em "Configurações da API", ative as permissões necessárias (Produtos, Pedidos)</p>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">5</div>
-                  <p>Clique em "Instalar app" e copie o "Admin API Access Token" - esta é a chave que você precisa colar aqui</p>
+            <div className="p-6 overflow-y-auto max-h-[65vh]">
+              {/* Espaço reservado para o vídeo do YouTube */}
+              <div className="aspect-video w-full bg-gray-100 mb-6 rounded-lg flex items-center justify-center border">
+                <div className="text-center p-8">
+                  <PlayCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 font-medium">
+                    Vídeo tutorial em breve disponível
+                  </p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Estamos finalizando a edição do vídeo explicativo
+                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Botões de ação */}
-            <div className="flex justify-between sticky bottom-0 pt-2 bg-white">
-              <Button
-                variant="outline"
-                onClick={() => setShowApiKeyHelp(false)}
-              >
-                Fechar
-              </Button>
+              {/* Instruções passo a passo */}
+              <div className="space-y-4 mb-6">
+                <h3 className="font-medium text-lg">Instruções resumidas:</h3>
+                
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
+                    <p>Acesse o painel administrativo da sua loja Shopify</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
+                    <p>Clique em "Configurações" (Settings) e em seguida em "Apps e canais de vendas" (Apps and sales channels)</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
+                    <p>Clique em "Desenvolver apps" (Develop apps) → "Criar app" e nomeie seu app como "Dropfy Integration"</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">4</div>
+                    <p>Em "Configurações da API", ative as permissões necessárias (Produtos, Pedidos)</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">5</div>
+                    <p>Clique em "Instalar app" e copie o "Admin API Access Token" - esta é a chave que você precisa colar aqui</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botões de ação */}
+              <div className="flex justify-between sticky bottom-0 pt-2 bg-white">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowApiKeyHelp(false)}
+                >
+                  Fechar
+                </Button>
+                
+                <Button
+                  variant="default"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank');
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Documentação oficial
+                </Button>
+              </div>
               
-              <Button
-                variant="default"
-                className="bg-green-600 hover:bg-green-700"
-                onClick={() => {
-                  window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank');
-                }}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Documentação oficial
-              </Button>
+              <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+                <X className="h-4 w-4 text-white" />
+                <span className="sr-only">Fechar</span>
+              </DialogPrimitive.Close>
             </div>
-          </div>
-        </DialogContent>
+          </DialogPrimitive.Content>
+        </DialogPortal>
       </Dialog>
     </>
   );
