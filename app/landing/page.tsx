@@ -679,7 +679,7 @@ export default function LandingPage() {
               </div>
               
               <div className="px-8 pb-8">
-                <a href="https://pay.kiwify.com.br/nng7lFD" className="block w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-4 rounded-xl font-medium text-center hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300">
+                <a href="https://pay.kiwify.com.br/ECAEU9v" className="block w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-4 rounded-xl font-medium text-center hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300">
                   Comece Agora
                 </a>
               </div>
