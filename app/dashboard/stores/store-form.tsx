@@ -49,7 +49,8 @@ import {
   HelpCircle,
   PlayCircle,
   ExternalLink,
-  X
+  X,
+  Lightbulb,
 } from 'lucide-react';
 import { createStore } from '@/lib/supabase';
 import { useAuth } from '@/hooks/use-auth';
@@ -394,7 +395,50 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                             className="mt-2"
                           />
                         </FormControl>
-                        <div className="flex items-start justify-between">
+                        
+                        {/* Destaque para o Tutorial do Shopify - Design Premium */}
+                        {selectedPlatform === 'shopify' && (
+                          <div className="mt-4 overflow-hidden rounded-xl border border-blue-100 shadow-md transition-all hover:shadow-lg animate-fadeIn">
+                            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-2">
+                              <div className="flex items-center gap-2 text-white pl-2">
+                                <ShoppingBag className="h-4 w-4" />
+                                <p className="text-xs font-medium">Shopify API</p>
+                              </div>
+                            </div>
+                            <div className="p-4 bg-gradient-to-b from-blue-50 to-white">
+                              <div className="flex items-start gap-3">
+                                <div className="bg-blue-100 rounded-full p-2 mt-0.5 flex-shrink-0">
+                                  <HelpCircle className="h-5 w-5 text-blue-600" />
+                                </div>
+                                <div className="space-y-2">
+                                  <p className="text-sm text-blue-800 font-semibold leading-tight">
+                                    Precisa de ajuda para obter sua chave API do Shopify?
+                                  </p>
+                                  <p className="text-xs text-blue-700/80 leading-relaxed">
+                                    Esta chave é <span className="font-medium">essencial</span> para sincronizar produtos e pedidos 
+                                    entre o Dropfy e sua loja Shopify.
+                                  </p>
+                                  <div className="pt-1">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        setShowApiKeyHelp(true);
+                                      }}
+                                      className="group text-sm bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm hover:shadow transition-all duration-200 w-full sm:w-auto"
+                                    >
+                                      <PlayCircle className="h-4 w-4 group-hover:animate-pulse" />
+                                      <span className="font-medium">Ver vídeo tutorial</span>
+                                      <span className="hidden sm:inline ml-1 text-blue-100 group-hover:translate-x-0.5 transition-transform duration-200">→</span>
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-start justify-between mt-1">
                           <FormDescription className="text-xs text-muted-foreground pt-1">
                             {selectedPlatform === 'shopify' 
                               ? "Necessária para integração com o Shopify" 
@@ -478,16 +522,20 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
 
             <div className="p-6 overflow-y-auto max-h-[65vh]">
               {/* Player de vídeo premium customizado */}
-              <div className="aspect-video w-full mb-6 rounded-lg overflow-hidden border border-gray-100 shadow-md">
+              <div className="aspect-video w-full mb-6 rounded-xl overflow-hidden border border-gray-100 shadow-lg">
                 <div className={cn(
                   "relative w-full h-full",
                   !videoLoaded && "bg-gray-100"
                 )}>
                   {!videoLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-50 rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg">
                       <div className="text-center p-8">
-                        <PlayCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-pulse" />
-                        <p className="text-gray-600 font-medium">Inicializando player premium...</p>
+                        <div className="relative w-20 h-20 mx-auto mb-4">
+                          <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
+                          <div className="absolute inset-0 bg-green-500/40 rounded-full animate-pulse"></div>
+                          <PlayCircle className="absolute inset-0 m-auto h-16 w-16 text-green-600" />
+                        </div>
+                        <p className="text-gray-700 font-medium">Carregando player premium...</p>
                       </div>
                     </div>
                   )}
@@ -505,55 +553,80 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                 </div>
               </div>
 
-              {/* Instruções passo a passo */}
+              {/* Instruções passo a passo - Design aprimorado */}
               <div className="space-y-4 mb-6">
-                <h3 className="font-medium text-lg">Instruções resumidas:</h3>
+                <h3 className="font-medium text-lg flex items-center gap-2 text-green-800">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Instruções passo a passo
+                </h3>
                 
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
-                    <p>Acesse o painel administrativo da sua loja Shopify</p>
+                <div className="space-y-0">
+                  <div className="step-item relative pl-10 pb-5 border-l-2 border-green-200">
+                    <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-green-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">1</div>
+                    <h4 className="font-medium text-green-800">Acesse o painel administrativo</h4>
+                    <p className="text-sm text-gray-600 mt-1">Entre no painel de administração da sua loja Shopify</p>
                   </div>
                   
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
-                    <p>Clique em "Configurações" (Settings) e em seguida em "Apps e canais de vendas" (Apps and sales channels)</p>
+                  <div className="step-item relative pl-10 pb-5 border-l-2 border-green-200">
+                    <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-green-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">2</div>
+                    <h4 className="font-medium text-green-800">Acesse as configurações de Apps</h4>
+                    <p className="text-sm text-gray-600 mt-1">Navegue até "Configurações" (Settings) → "Apps e canais de vendas" (Apps and sales channels)</p>
                   </div>
                   
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
-                    <p>Clique em "Desenvolver apps" (Develop apps) → "Criar app" e nomeie seu app como "Dropfy Integration"</p>
+                  <div className="step-item relative pl-10 pb-5 border-l-2 border-green-200">
+                    <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-green-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">3</div>
+                    <h4 className="font-medium text-green-800">Crie um app personalizado</h4>
+                    <p className="text-sm text-gray-600 mt-1">Clique em "Desenvolver apps" (Develop apps) → "Criar app" e nomeie como "Dropfy Integration"</p>
                   </div>
                   
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">4</div>
-                    <p>Em "Configurações da API", ative as permissões necessárias (Produtos, Pedidos)</p>
+                  <div className="step-item relative pl-10 pb-5 border-l-2 border-green-200">
+                    <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-green-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">4</div>
+                    <h4 className="font-medium text-green-800">Configure as permissões</h4>
+                    <p className="text-sm text-gray-600 mt-1">Em "Configurações da API", ative as permissões necessárias (Produtos, Pedidos)</p>
                   </div>
                   
-                  <div className="flex items-start gap-3">
-                    <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">5</div>
-                    <p>Clique em "Instalar app" e copie o "Admin API Access Token" - esta é a chave que você precisa colar aqui</p>
+                  <div className="step-item relative pl-10 border-l-2 border-green-200">
+                    <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-green-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">5</div>
+                    <h4 className="font-medium text-green-800">Instale o app e copie o token</h4>
+                    <p className="text-sm text-gray-600 mt-1">Clique em "Instalar app" e copie o "Admin API Access Token" - esta é a chave que você precisa colar aqui</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dica pro */}
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="bg-blue-100 text-blue-700 rounded-full p-1 flex-shrink-0">
+                    <Lightbulb className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-800">Dica profissional</h4>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Certifique-se de guardar sua chave API em um lugar seguro. Você não poderá visualizá-la novamente após sair da página de criação do app.
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Botões de ação */}
-              <div className="flex justify-between sticky bottom-0 pt-2 bg-white">
+              <div className="flex justify-between sticky bottom-0 pt-2 pb-1 bg-white">
                 <Button
                   variant="outline"
                   onClick={() => setShowApiKeyHelp(false)}
+                  className="gap-2"
                 >
+                  <X className="h-4 w-4" />
                   Fechar
                 </Button>
                 
                 <Button
                   variant="default"
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 gap-2"
                   onClick={() => {
                     window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank');
                   }}
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
+                  <ExternalLink className="h-4 w-4" />
                   Documentação oficial
                 </Button>
               </div>
