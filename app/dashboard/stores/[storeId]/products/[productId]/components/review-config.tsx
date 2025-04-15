@@ -120,9 +120,9 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
         if (config) {
           setValue('reviewPosition', 'apos_descricao');
           
-          // Verificar se já há reviews publicados
+          // Verificar se já há reviews publicados - usando uma abordagem mais segura
           try {
-            const { data: publishedReviews } = await supabase
+            const { data: publishedReviews } = await (supabase as any)
               .from('published_reviews_json')
               .select('id')
               .eq('product_id', productId)
@@ -167,7 +167,8 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
         secondary_color: '#c4b5fd'
       };
 
-      await saveConfig(configToSave);
+      // Passando o productId como segundo parâmetro
+      await saveConfig(configToSave, productId);
       
       // 2. Publicar os reviews
       const result = await publishProductReviews(productId);
