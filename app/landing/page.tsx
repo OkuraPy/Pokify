@@ -10,7 +10,7 @@ export default function LandingPage() {
   const testimonialSliderRef = useRef<HTMLDivElement>(null);
   
   // Total de depoimentos para controle de navegação
-  const totalTestimonials = 4;
+  const totalTestimonials = 3;
 
   // Detectar quando o usuário rola a página
   useEffect(() => {
@@ -364,31 +364,6 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Testimonial 4 */}
-                <div className="testimonial-card min-w-[280px] w-full md:w-[340px] max-w-[380px] flex-shrink-0 p-6 rounded-2xl border border-gray-800 bg-gradient-to-b from-gray-900/60 to-gray-950/60 backdrop-blur-md hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 snap-start flex flex-col h-auto">
-                  <div className="flex items-center mb-4 text-yellow-400">
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                  </div>
-                  <div className="mb-4 flex-grow">
-                    <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-                      "Eu traduzi um produtinho com um clique e começou a vender na Colômbia no mesmo dia. Nunca pensei que escalar pra fora fosse tão simples. Dropfy virou essencial na minha operação"
-                    </p>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 mr-4">
-                      <img src="/images/dropfy/avatar-luan.png" alt="Foto de perfil" className="w-12 h-12 rounded-full border-2 border-blue-500 object-cover" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-white">Luan Maccario</h4>
-                      <p className="text-sm text-blue-400">E-commerce Manager</p>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
             
@@ -405,10 +380,6 @@ export default function LandingPage() {
               <button 
                 onClick={() => goToTestimonial(2)} 
                 className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === 2 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-blue-400'}`}
-              ></button>
-              <button 
-                onClick={() => goToTestimonial(3)} 
-                className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === 3 ? 'bg-blue-600' : 'bg-gray-600 hover:bg-blue-400'}`}
               ></button>
             </div>
           </div>

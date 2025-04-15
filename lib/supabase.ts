@@ -14,7 +14,7 @@ export const supabase = createClient<Database>(
   {
     auth: {
       persistSession: true,
-      storageKey: 'pokify-auth-token',
+      storageKey: 'dropfy-auth-token',
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       autoRefreshToken: true
     }
