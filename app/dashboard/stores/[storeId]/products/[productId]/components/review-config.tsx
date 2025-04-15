@@ -514,13 +514,13 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
                   <div className="step-item relative pl-10 pb-5 border-l-2 border-blue-200">
                     <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-blue-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">3</div>
                     <h4 className="font-medium text-blue-800">Adicione uma seção personalizada</h4>
-                    <p className="text-sm text-gray-600 mt-1">Clique em "Adicionar seção" → "HTML personalizado"</p>
+                    <p className="text-sm text-gray-600 mt-1">Clique em "Adicionar seção" → "Liquid personalizado"</p>
                   </div>
                   
                   <div className="step-item relative pl-10 pb-5 border-l-2 border-blue-200">
                     <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-blue-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">4</div>
                     <h4 className="font-medium text-blue-800">Cole o código gerado</h4>
-                    <p className="text-sm text-gray-600 mt-1">Cole o código do iframe que você copiou no campo de HTML personalizado</p>
+                    <p className="text-sm text-gray-600 mt-1">Cole o código do iframe que você copiou no campo de Liquid personalizado</p>
                   </div>
                   
                   <div className="step-item relative pl-10 border-l-2 border-blue-200">
