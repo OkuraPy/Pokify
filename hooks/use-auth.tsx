@@ -77,20 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Usuário não autenticado tentando acessar rota protegida. Redirecionando para home.');
         router.push('/');
       } else if (user && pathname === '/' && sessionStorage.getItem('justLoggedIn') !== 'true') {
-        // Verificar se o usuário precisa trocar a senha antes de redirecionar
-        const needsPasswordChange = sessionStorage.getItem('needs_password_change') === 'true';
+        // FUNCIONALIDADE DESABILITADA: Não verificamos mais se o usuário precisa trocar a senha
         
-        if (needsPasswordChange) {
-          console.log('Usuário precisa trocar a senha temporária. Não redirecionando ainda.');
-          // Apenas definir o flag para evitar mais verificações, mas não redirecionar
-          sessionStorage.setItem('justLoggedIn', 'true');
-        } else {
-          // Usuário está autenticado e na página principal
-          // Usamos uma flag para evitar múltiplos redirecionamentos
-          console.log('Usuário autenticado na página inicial. Redirecionando para dashboard.');
-          sessionStorage.setItem('justLoggedIn', 'true');
-          router.push('/dashboard');
-        }
+        // Usuário está autenticado e na página principal
+        // Redirecionamos diretamente para o dashboard
+        console.log('Usuário autenticado na página inicial. Redirecionando para dashboard.');
+        sessionStorage.setItem('justLoggedIn', 'true');
+        router.push('/dashboard');
       }
     }
   }, [user, isLoading, pathname, router]);

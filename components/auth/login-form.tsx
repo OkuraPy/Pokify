@@ -57,6 +57,11 @@ export function LoginForm() {
       
       // 4. Verificar se o usuário está com senha temporária
       try {
+        // FUNCIONALIDADE DESABILITADA POR SOLICITAÇÃO
+        // Não faremos mais a verificação de senha temporária
+        console.log('Verificação de senha temporária desabilitada');
+        
+        /* Código comentado para referência futura
         // Verificar metadados do usuário que podem indicar senha temporária
         const { data: { user } } = await supabase.auth.getUser();
         
@@ -92,6 +97,7 @@ export function LoginForm() {
         } else {
           console.error('Usuário não disponível após login');
         }
+        */
       } catch (passwordCheckError) {
         console.error('Erro ao verificar status da senha:', passwordCheckError);
       }
