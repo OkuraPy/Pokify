@@ -411,17 +411,22 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                 
                 <div className="flex items-start gap-3">
                   <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
-                  <p>Navegue até Configurações → Apps e canais → Desenvolver apps</p>
+                  <p>Clique em "Configurações" (Settings) e em seguida em "Apps e canais de vendas" (Apps and sales channels)</p>
                 </div>
                 
                 <div className="flex items-start gap-3">
                   <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
-                  <p>Clique em "Criar um app" e configure as permissões necessárias</p>
+                  <p>Clique em "Desenvolver apps" (Develop apps) → "Criar app" e nomeie seu app como "Dropfy Integration"</p>
                 </div>
                 
                 <div className="flex items-start gap-3">
                   <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">4</div>
-                  <p>Instale o app na sua loja e copie o "Admin API access token"</p>
+                  <p>Em "Configurações da API", ative as permissões necessárias (Produtos, Pedidos)</p>
+                </div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="bg-green-100 text-green-800 rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0 mt-0.5">5</div>
+                  <p>Clique em "Instalar app" e copie o "Admin API Access Token" - esta é a chave que você precisa colar aqui</p>
                 </div>
               </div>
             </div>
@@ -439,7 +444,7 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                 variant="default"
                 className="bg-green-600 hover:bg-green-700"
                 onClick={() => {
-                  window.open('https://shopify.dev/docs/apps/tools/api-keys', '_blank');
+                  window.open('https://help.shopify.com/en/manual/apps/app-types/custom-apps', '_blank');
                 }}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
