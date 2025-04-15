@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -57,6 +58,9 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
+// Importação dinâmica do ReactPlayer para evitar problemas de SSR
+const ReactPlayer = dynamic(() => import('react-player/lazy'), { ssr: false });
+
 // Schema atualizado - apenas nome e URL são obrigatórios
 const formSchema = z.object({
   name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres'),
@@ -91,6 +95,8 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const playerRef = useRef(null);
   const { user } = useAuth();
   const { maxStores, canAddStore, refreshStores } = useStores();
   const router = useRouter();
@@ -411,16 +417,46 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
             </DialogHeader>
 
             <div className="p-6 overflow-y-auto max-h-[65vh]">
-              {/* Espaço reservado para o vídeo do YouTube */}
-              <div className="aspect-video w-full bg-gray-100 mb-6 rounded-lg flex items-center justify-center border">
-                <div className="text-center p-8">
-                  <PlayCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 font-medium">
-                    Vídeo tutorial em breve disponível
-                  </p>
-                  <p className="text-sm text-gray-400 mt-2">
-                    Estamos finalizando a edição do vídeo explicativo
-                  </p>
+              {/* Player de vídeo personalizado */}
+              <div className="aspect-video w-full mb-6 rounded-lg overflow-hidden">
+                <div className={cn(
+                  "relative w-full h-full",
+                  !videoReady && "bg-gray-100 flex items-center justify-center"
+                )}>
+                  {!videoReady && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                      <div className="text-center p-8">
+                        <PlayCircle className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+                        <p className="text-gray-500 font-medium">Carregando vídeo...</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className={cn("w-full h-full", !videoReady && "opacity-0")}>
+                    <ReactPlayer
+                      ref={playerRef}
+                      url="https://www.youtube.com/watch?v=PCfYqnmvXKA"
+                      width="100%"
+                      height="100%"
+                      playing={false}
+                      controls={true}
+                      light={false}
+                      pip={true}
+                      onReady={() => setVideoReady(true)}
+                      config={{
+                        youtube: {
+                          playerVars: {
+                            modestbranding: 1,
+                            rel: 0
+                          }
+                        }
+                      }}
+                      style={{
+                        borderRadius: '8px',
+                        overflow: 'hidden'
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
 
