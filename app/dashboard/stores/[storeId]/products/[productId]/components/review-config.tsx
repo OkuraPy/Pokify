@@ -514,7 +514,7 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
                   <div className="step-item relative pl-10 pb-5 border-l-2 border-blue-200">
                     <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-blue-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">3</div>
                     <h4 className="font-medium text-blue-800">Adicione uma seção personalizada</h4>
-                    <p className="text-sm text-gray-600 mt-1">Clique em "Adicionar seção" → "Liquid personalizado"</p>
+                    <p className="text-sm text-gray-600 mt-1">Clique em "Adicionar seção" → "Liquid personalizado" (ou "HTML personalizado" em alguns planos/temas)</p>
                   </div>
                   
                   <div className="step-item relative pl-10 pb-5 border-l-2 border-blue-200">
@@ -540,7 +540,7 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
                   <div>
                     <h4 className="text-sm font-medium text-blue-800">Dica profissional</h4>
                     <p className="text-xs text-blue-700 mt-1">
-                      Você também pode usar um app como "Custom Code" ou "Script Editor" para adicionar o código do iframe em todas as páginas de produto de uma vez, sem precisar editar o tema manualmente.
+                      Dependendo do seu tema, a opção pode aparecer como "Liquid personalizado" ou "HTML personalizado". Ambas funcionam da mesma forma para adicionar o código do iframe. Você também pode usar um app como "Custom Code" ou "Script Editor" para adicionar o código em todas as páginas de produto de uma vez.
                     </p>
                   </div>
                 </div>
@@ -561,7 +561,7 @@ const ReviewConfig: React.FC<{ productId: string; userId: string; shopDomain: st
                   variant="default"
                   className="bg-blue-600 hover:bg-blue-700 gap-2"
                   onClick={() => {
-                    window.open('https://help.shopify.com/pt-BR/manual/online-store/themes/theme-structure/customize-sections-and-blocks', '_blank');
+                    window.open('https://help.shopify.com/pt-BR/manual/online-store/themes/theme-structure/extend', '_blank');
                   }}
                 >
                   <ExternalLink className="h-4 w-4" />
