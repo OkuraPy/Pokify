@@ -58,8 +58,9 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-// Importação dinâmica do ReactPlayer para evitar problemas de SSR
-const ReactPlayer = dynamic(() => import('react-player/lazy'), { ssr: false });
+// Importação dinâmica do Plyr para evitar problemas de SSR
+const Plyr = dynamic(() => import('plyr-react'), { ssr: false });
+import 'plyr-react/plyr.css';
 
 // Schema atualizado - apenas nome e URL são obrigatórios
 const formSchema = z.object({
@@ -95,8 +96,7 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
-  const playerRef = useRef(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
   const { user } = useAuth();
   const { maxStores, canAddStore, refreshStores } = useStores();
   const router = useRouter();
@@ -110,6 +110,44 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
       apiKey: '',
     },
   });
+
+  // Configurações avançadas para o Plyr
+  const plyrOptions = {
+    controls: [
+      'play-large', // Botão de play grande no centro
+      'play', // Botão de play na barra de controle
+      'progress', // Barra de progresso
+      'current-time', // Tempo atual
+      'duration', // Duração total
+      'mute', // Botão de mudo
+      'volume', // Controle de volume
+      'settings', // Menu de configurações
+      'fullscreen', // Botão de tela cheia
+    ],
+    settings: ['quality', 'speed'],
+    resetOnEnd: true,
+    blankVideo: '',
+    youtube: {
+      noCookie: true,
+      rel: 0,
+      showinfo: 0,
+      iv_load_policy: 3,
+      modestbranding: 1,
+      playsinline: 1,
+    },
+    autoplay: false,
+  };
+
+  // Configuração do vídeo do YouTube com ID
+  const youtubeSource = {
+    type: 'video',
+    sources: [
+      {
+        src: 'PCfYqnmvXKA', // ID do vídeo do YouTube
+        provider: 'youtube',
+      },
+    ],
+  };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!canAddStore) {
@@ -417,43 +455,27 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
             </DialogHeader>
 
             <div className="p-6 overflow-y-auto max-h-[65vh]">
-              {/* Player de vídeo personalizado */}
-              <div className="aspect-video w-full mb-6 rounded-lg overflow-hidden">
+              {/* Player de vídeo premium customizado */}
+              <div className="aspect-video w-full mb-6 rounded-lg overflow-hidden border border-gray-100 shadow-md">
                 <div className={cn(
                   "relative w-full h-full",
-                  !videoReady && "bg-gray-100 flex items-center justify-center"
+                  !videoLoaded && "bg-gray-100 flex items-center justify-center"
                 )}>
-                  {!videoReady && (
-                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                  {!videoLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-50 rounded-lg">
                       <div className="text-center p-8">
-                        <PlayCircle className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
-                        <p className="text-gray-500 font-medium">Carregando vídeo...</p>
+                        <PlayCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-pulse" />
+                        <p className="text-gray-600 font-medium">Carregando player premium...</p>
                       </div>
                     </div>
                   )}
                   
-                  <div className={cn("w-full h-full", !videoReady && "opacity-0")}>
-                    <ReactPlayer
-                      ref={playerRef}
-                      url="https://www.youtube.com/watch?v=PCfYqnmvXKA"
-                      width="100%"
-                      height="100%"
-                      playing={false}
-                      controls={true}
-                      light={false}
-                      pip={true}
-                      onReady={() => setVideoReady(true)}
-                      config={{
-                        youtube: {
-                          playerVars: {
-                            modestbranding: 1,
-                            rel: 0
-                          }
-                        }
-                      }}
-                      style={{
-                        borderRadius: '8px',
-                        overflow: 'hidden'
+                  <div className="plyr-react-container w-full h-full rounded-lg overflow-hidden">
+                    <Plyr 
+                      options={plyrOptions} 
+                      source={youtubeSource} 
+                      onReady={() => {
+                        setTimeout(() => setVideoLoaded(true), 500);
                       }}
                     />
                   </div>
