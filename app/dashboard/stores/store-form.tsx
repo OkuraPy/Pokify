@@ -582,7 +582,7 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                   <div className="step-item relative pl-10 pb-5 border-l-2 border-green-200">
                     <div className="absolute top-0 left-0 transform -translate-x-1/2 bg-green-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-md">4</div>
                     <h4 className="font-medium text-green-800">Configure as permissões</h4>
-                    <p className="text-sm text-gray-600 mt-1">Em "Configurações da API", ative as permissões necessárias (Produtos, Pedidos)</p>
+                    <p className="text-sm text-gray-600 mt-1">Em "Configurações da API", <span className="font-semibold text-green-700">selecione TODAS as permissões disponíveis</span> para garantir a funcionalidade completa da integração</p>
                   </div>
                   
                   <div className="step-item relative pl-10 border-l-2 border-green-200">
