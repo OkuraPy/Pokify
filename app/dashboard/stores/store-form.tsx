@@ -373,25 +373,23 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
       </Dialog>
 
       {/* Modal de Ajuda para obter a API Key do Shopify */}
-      <Dialog open={showApiKeyHelp} onOpenChange={setShowApiKeyHelp}
-        className="[&_[data-radix-popper-content-wrapper]]:!max-h-[95vh] [&_.overlay]:bg-black/50"
-      >
-        <DialogContent className="sm:max-w-[650px] p-0 overflow-hidden max-h-[90vh] rounded-xl">
-          <DialogHeader className="bg-gradient-to-r from-green-600 to-emerald-700 p-5 text-white sticky top-0 z-10">
+      <Dialog open={showApiKeyHelp} onOpenChange={setShowApiKeyHelp}>
+        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden max-h-[95vh] rounded-xl mx-auto data-[state=open]:bg-background/95 data-[state=open]:backdrop-blur-sm">
+          <DialogHeader className="bg-gradient-to-r from-green-600 to-emerald-700 p-6 text-white sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <PlayCircle className="h-7 w-7" />
-              <DialogTitle className="text-xl font-bold">Como obter sua API Key do Shopify</DialogTitle>
+              <PlayCircle className="h-8 w-8" />
+              <DialogTitle className="text-2xl font-bold">Como obter sua API Key do Shopify</DialogTitle>
             </div>
-            <DialogDescription className="text-green-100 text-sm">
+            <DialogDescription className="text-green-100 text-base">
               Um tutorial passo a passo para configurar e obter sua chave de API
             </DialogDescription>
           </DialogHeader>
 
-          <div className="p-5 overflow-y-auto max-h-[60vh]">
+          <div className="p-6 overflow-y-auto max-h-[65vh]">
             {/* Espaço reservado para o vídeo do YouTube */}
-            <div className="aspect-video w-full bg-gray-100 mb-5 rounded-lg flex items-center justify-center border">
-              <div className="text-center p-6">
-                <PlayCircle className="h-14 w-14 text-gray-400 mx-auto mb-3" />
+            <div className="aspect-video w-full bg-gray-100 mb-6 rounded-lg flex items-center justify-center border">
+              <div className="text-center p-8">
+                <PlayCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 font-medium">
                   Vídeo tutorial em breve disponível
                 </p>
@@ -402,7 +400,7 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
             </div>
 
             {/* Instruções passo a passo */}
-            <div className="space-y-4 mb-5">
+            <div className="space-y-4 mb-6">
               <h3 className="font-medium text-lg">Instruções resumidas:</h3>
               
               <div className="space-y-3">
