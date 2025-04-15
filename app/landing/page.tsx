@@ -615,7 +615,7 @@ export default function LandingPage() {
                 
                 <h3 className="text-2xl font-bold text-center mb-2">Starter</h3>
                 <div className="text-center mb-8">
-                  <span className="text-3xl font-bold text-white">R$ 119,90</span>
+                  <span className="text-3xl font-bold text-white">R$ 149,90</span>
                   <span className="text-gray-400 ml-1">/mês</span>
                 </div>
                 
