@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,7 +59,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 // Importação dinâmica do Plyr para evitar problemas de SSR
-const Plyr = dynamic(() => import('plyr-react'), { ssr: false });
+const Plyr = dynamic(() => import('plyr-react').then(mod => mod.default), { 
+  ssr: false,
+  loading: () => (
+    <div className="aspect-video w-full bg-gray-100 flex items-center justify-center rounded-lg">
+      <div className="text-center p-8">
+        <PlayCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-pulse" />
+        <p className="text-gray-600 font-medium">Carregando player premium...</p>
+      </div>
+    </div>
+  )
+});
 import 'plyr-react/plyr.css';
 
 // Schema atualizado - apenas nome e URL são obrigatórios
@@ -97,9 +107,22 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef = useRef(null);
   const { user } = useAuth();
   const { maxStores, canAddStore, refreshStores } = useStores();
   const router = useRouter();
+
+  // Efeito para detectar quando o modal é aberto e definir um tempo para marcar o vídeo como carregado
+  useEffect(() => {
+    if (showApiKeyHelp) {
+      // Simula o tempo de carregamento do player
+      const timer = setTimeout(() => {
+        setVideoLoaded(true);
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showApiKeyHelp]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -126,7 +149,6 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
     ],
     settings: ['quality', 'speed'],
     resetOnEnd: true,
-    blankVideo: '',
     youtube: {
       noCookie: true,
       rel: 0,
@@ -140,11 +162,11 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
 
   // Configuração do vídeo do YouTube com ID
   const youtubeSource = {
-    type: 'video',
+    type: 'video' as const,
     sources: [
       {
-        src: 'PCfYqnmvXKA', // ID do vídeo do YouTube
-        provider: 'youtube',
+        src: 'PCfYqnmvXKA',
+        provider: 'youtube' as const,
       },
     ],
   };
@@ -459,24 +481,25 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
               <div className="aspect-video w-full mb-6 rounded-lg overflow-hidden border border-gray-100 shadow-md">
                 <div className={cn(
                   "relative w-full h-full",
-                  !videoLoaded && "bg-gray-100 flex items-center justify-center"
+                  !videoLoaded && "bg-gray-100"
                 )}>
                   {!videoLoaded && (
                     <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-50 rounded-lg">
                       <div className="text-center p-8">
                         <PlayCircle className="h-16 w-16 text-green-500 mx-auto mb-4 animate-pulse" />
-                        <p className="text-gray-600 font-medium">Carregando player premium...</p>
+                        <p className="text-gray-600 font-medium">Inicializando player premium...</p>
                       </div>
                     </div>
                   )}
                   
-                  <div className="plyr-react-container w-full h-full rounded-lg overflow-hidden">
+                  <div className={cn(
+                    "plyr-react-container w-full h-full rounded-lg overflow-hidden transition-opacity duration-500",
+                    videoLoaded ? "opacity-100" : "opacity-0"
+                  )}>
                     <Plyr 
+                      ref={videoRef}
                       options={plyrOptions} 
                       source={youtubeSource} 
-                      onReady={() => {
-                        setTimeout(() => setVideoLoaded(true), 500);
-                      }}
                     />
                   </div>
                 </div>
