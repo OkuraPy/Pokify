@@ -8,17 +8,69 @@ export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const testimonialSliderRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   // Total de depoimentos para controle de navegação
   const totalTestimonials = 3;
-
+  
+  // Timer de contagem regressiva para a promoção
+  useEffect(() => {
+    // Verificar se já existe uma data de expiração no localStorage
+    const savedExpireDate = localStorage.getItem('promoExpireDate');
+    const expireDate = savedExpireDate 
+      ? new Date(savedExpireDate) 
+      : new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000); // 7 dias
+    
+    // Se não existe, salvar a nova data de expiração
+    if (!savedExpireDate) {
+      localStorage.setItem('promoExpireDate', expireDate.toString());
+    }
+    
+    const updateTimer = () => {
+      const now = new Date();
+      const diff = expireDate.getTime() - now.getTime();
+      
+      // Se a data expirou, resetar o timer
+      if (diff <= 0) {
+        localStorage.removeItem('promoExpireDate');
+        return;
+      }
+      
+      // Calcular dias, horas, minutos e segundos
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      // Atualizar os elementos do timer
+      const daysElement = document.getElementById('days');
+      const hoursElement = document.getElementById('hours');
+      const minutesElement = document.getElementById('minutes');
+      const secondsElement = document.getElementById('seconds');
+      
+      if (daysElement) daysElement.textContent = days.toString().padStart(2, '0');
+      if (hoursElement) hoursElement.textContent = hours.toString().padStart(2, '0');
+      if (minutesElement) minutesElement.textContent = minutes.toString().padStart(2, '0');
+      if (secondsElement) secondsElement.textContent = seconds.toString().padStart(2, '0');
+    };
+    
+    // Atualizar o timer a cada segundo
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer(); // Executar imediatamente
+    
+    return () => clearInterval(timerInterval);
+  }, []);
+  
   // Detectar quando o usuário rola a página
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
   
   // Inicializar e configurar o slider
@@ -583,7 +635,7 @@ export default function LandingPage() {
           </div>
           
           <div className="text-center mt-12">
-            <span className="inline-block bg-gradient-to-r from-green-600 to-green-400 text-white px-6 py-3 rounded-full font-medium shadow-lg shadow-green-500/20">
+            <span className="inline-block bg-gradient-to-r from-green-600 to-green-400 text-white px-6 py-3 rounded-full font-medium shadow-lg shadow-green-500/20 border border-green-500/30 transition-all duration-300 hover:shadow-green-500/20 hover:scale-105 cursor-pointer">
               Teste com 7 dias de garantia
             </span>
           </div>
@@ -591,32 +643,143 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section - Modernizada */}
-      <section id="planos" className="py-24 relative overflow-hidden">
+      <section id="planos" className="py-36 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#070920] to-[#050614] z-0"></div>
-        <div className="absolute top-40 right-10 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
-        <div className="absolute bottom-40 left-10 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
+        
+        {/* Blobs de fundo mais suaves e translúcidos */}
+        <div className="absolute top-40 right-10 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob"></div>
+        <div className="absolute bottom-40 left-10 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/3 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-blob animation-delay-4000"></div>
+        
+        {/* Elementos decorativos de pontos e linhas */}
+        <div className="absolute top-20 left-20 w-[1px] h-32 bg-gradient-to-b from-blue-500/0 via-blue-500/20 to-blue-500/0"></div>
+        <div className="absolute top-60 right-40 w-[1px] h-24 bg-gradient-to-b from-purple-500/0 via-purple-500/20 to-purple-500/0"></div>
+        <div className="absolute bottom-40 left-1/3 w-[1px] h-40 bg-gradient-to-b from-indigo-500/0 via-indigo-500/20 to-indigo-500/0"></div>
+        
+        {/* Círculos decorativos sutis */}
+        <div className="absolute left-1/4 top-1/3 w-6 h-6 rounded-full bg-blue-500/10 blur-sm"></div>
+        <div className="absolute right-1/4 top-2/3 w-3 h-3 rounded-full bg-indigo-500/10 blur-sm"></div>
+        <div className="absolute left-1/3 bottom-1/4 w-4 h-4 rounded-full bg-purple-500/10 blur-sm"></div>
+        <div className="absolute right-1/3 top-1/4 w-2 h-2 rounded-full bg-amber-500/10 blur-sm"></div>
+        <div className="absolute left-2/3 bottom-1/3 w-5 h-5 rounded-full bg-yellow-500/10 blur-sm"></div>
+        
+        {/* Promo Banner com design aprimorado */}
+        <div className="relative z-10 max-w-5xl mx-auto mb-36">
+          <div className="bg-gradient-to-r from-amber-500/60 via-yellow-500/60 to-orange-500/60 rounded-2xl p-[1px] shadow-xl shadow-yellow-500/20 backdrop-blur-sm overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 rounded-2xl opacity-30"></div>
+            <div className="bg-gradient-to-b from-gray-900/90 to-black/90 rounded-2xl p-10 text-center backdrop-blur-md relative overflow-hidden">
+              {/* Elementos decorativos dentro do banner */}
+              <div className="absolute -top-16 -right-16 w-32 h-32 bg-yellow-500/10 rounded-full blur-xl"></div>
+              <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-amber-500/10 rounded-full blur-xl"></div>
+              
+              <h3 className="text-3xl md:text-4xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-amber-300 to-yellow-500 tracking-tight">
+                PROMOÇÃO ESPECIAL POR TEMPO LIMITADO
+              </h3>
+              <p className="text-white text-xl mb-10">
+                Preços com <span className="font-bold text-yellow-400">até 60% OFF</span> por apenas 7 dias!
+              </p>
+              
+              {/* Countdown Timer com design refinado */}
+              <div className="flex flex-wrap justify-center items-center gap-6 mb-8" id="countdown-container">
+                <div className="flex flex-col items-center">
+                  <div className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 rounded-xl p-4 w-24 text-center shadow-inner border border-gray-700/30 backdrop-blur-sm">
+                    <span className="text-4xl font-bold text-white" id="days">07</span>
+                  </div>
+                  <span className="text-sm mt-2 text-gray-300">Dias</span>
+                </div>
+                <div className="text-2xl text-yellow-500 font-bold">:</div>
+                <div className="flex flex-col items-center">
+                  <div className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 rounded-xl p-4 w-24 text-center shadow-inner border border-gray-700/30 backdrop-blur-sm">
+                    <span className="text-4xl font-bold text-white" id="hours">24</span>
+                  </div>
+                  <span className="text-sm mt-2 text-gray-300">Horas</span>
+                </div>
+                <div className="text-2xl text-yellow-500 font-bold">:</div>
+                <div className="flex flex-col items-center">
+                  <div className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 rounded-xl p-4 w-24 text-center shadow-inner border border-gray-700/30 backdrop-blur-sm">
+                    <span className="text-4xl font-bold text-white" id="minutes">60</span>
+                  </div>
+                  <span className="text-sm mt-2 text-gray-300">Minutos</span>
+                </div>
+                <div className="text-2xl text-yellow-500 font-bold">:</div>
+                <div className="flex flex-col items-center">
+                  <div className="bg-gradient-to-b from-gray-800/60 to-gray-900/60 rounded-xl p-4 w-24 text-center shadow-inner border border-gray-700/30 backdrop-blur-sm">
+                    <span className="text-4xl font-bold text-white" id="seconds">60</span>
+                  </div>
+                  <span className="text-sm mt-2 text-gray-300">Segundos</span>
+                </div>
+              </div>
+              
+              <div className="inline-block px-6 py-3 bg-gradient-to-r from-yellow-600/20 to-orange-600/20 rounded-full backdrop-blur-sm border border-yellow-600/10">
+                <p className="text-yellow-300 font-medium animate-pulse">
+                  Não perca esta oportunidade! Preços sobem quando o contador chegar a zero.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 inline-block bg-clip-text text-transparent bg-gradient-to-r from-white to-blue-200">
+          <div className="text-center mb-36">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-5 inline-block bg-clip-text text-transparent bg-gradient-to-r from-white via-blue-100 to-blue-200 tracking-tight">
               Planos para você vender todo dia
             </h2>
+            
+            <div className="flex justify-center mb-6">
+              <div className="inline-block px-6 py-2.5 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 rounded-xl backdrop-blur-md border border-blue-500/20 shadow-lg shadow-blue-500/10 animate-pulse-slow">
+                <span className="text-blue-300 font-semibold tracking-wide flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"></path>
+                  </svg>
+                  Planos Flexíveis
+                  <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"></path>
+                  </svg>
+                </span>
+              </div>
+            </div>
+            
+            <p className="text-gray-300 text-xl max-w-3xl mx-auto mb-8">
+              Escolha o plano ideal para o seu negócio e comece a vender mais com a Dropfy
+            </p>
+            
+            {/* Linha decorativa abaixo do título */}
+            <div className="w-24 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500/80 to-blue-500/0 mx-auto"></div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 lg:gap-16 max-w-6xl mx-auto">
             {/* Plano Starter */}
-            <div className="pricing-card rounded-2xl border border-gray-800 overflow-hidden transition-all duration-300 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-2 bg-gradient-to-b from-gray-900/80 to-gray-950/80 backdrop-blur-sm">
-              <div className="p-8">
-                <div className="flex justify-center mb-6">
-                  <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-full w-16 h-16 flex items-center justify-center shadow-inner">
-                    <img src="/images/dropfy/rocket-black.png" alt="Starter" className="h-8 w-8" />
+            <div className="pricing-card rounded-2xl border border-gray-800/50 transition-all duration-500 hover:border-blue-500/50 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-3 bg-gradient-to-b from-gray-900/60 to-gray-950/60 backdrop-blur-sm relative group overflow-hidden">
+              {/* Efeito de luz no canto superior */}
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/5 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+              
+              {/* Discount Badge corrigido */}
+              <div className="absolute -top-2 -right-2 bg-blue-600 text-white font-bold rounded-full w-20 h-20 flex items-center justify-center z-20 shadow-lg shadow-blue-500/30 border-2 border-blue-400">
+                <div className="text-center">
+                  <span className="block text-xs font-light">POUPE</span>
+                  <span className="block text-xl font-extrabold">50%</span>
+                </div>
+              </div>
+              
+              <div className="p-8 lg:p-10">
+                <div className="flex justify-center mb-10">
+                  <div className="bg-gradient-to-b from-gray-800/40 to-gray-900/40 rounded-full w-24 h-24 flex items-center justify-center shadow-inner backdrop-blur-sm border border-gray-700/20 transition-all duration-500 group-hover:scale-110 group-hover:shadow-blue-500/5 overflow-hidden">
+                    <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-full"></div>
+                    <img src="/images/dropfy/rocket-black.png" alt="Starter" className="h-12 w-12 relative z-10" />
                   </div>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-center mb-2">Starter</h3>
-                <div className="text-center mb-8">
-                  <span className="text-3xl font-bold text-white">R$ 149,90</span>
+                <h3 className="text-2xl lg:text-3xl font-bold text-center mb-6">Starter</h3>
+                <div className="text-center mb-3">
+                  <span className="text-lg text-gray-400 line-through inline-block mr-2">R$ 299,80</span>
+                  <span className="text-sm text-white bg-gradient-to-r from-green-600/90 to-emerald-500/90 px-3 py-1 rounded-full inline-block shadow-sm border border-green-500/20">-50%</span>
+                </div>
+                <div className="text-center mb-10">
+                  <span className="text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-200">R$ 149,90</span>
                   <span className="text-gray-400 ml-1">/mês</span>
+                </div>
+                <div className="py-3 px-4 bg-blue-900/5 rounded-xl mb-10 text-center backdrop-blur-sm border border-blue-800/10">
+                  <span className="text-blue-400 text-sm font-medium">Economize R$ 149,90 por mês!</span>
                 </div>
                 
                 <ul className="space-y-4 mb-8">
@@ -679,27 +842,67 @@ export default function LandingPage() {
               </div>
               
               <div className="px-8 pb-8">
-                <a href="https://pay.kiwify.com.br/ECAEU9v" className="block w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-4 rounded-xl font-medium text-center hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300">
+                <div className="mb-4 flex justify-center">
+                  <div className="flex items-center bg-green-900/10 px-4 py-2 rounded-lg border border-green-900/10">
+                    <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span className="text-sm text-white">7 dias de garantia</span>
+                  </div>
+                </div>
+                <a href="https://pay.kiwify.com.br/ECAEU9v" className="block w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-4 rounded-xl font-medium text-center hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 animate-pulse-slow">
                   Comece Agora
                 </a>
               </div>
             </div>
 
             {/* Plano Growth (Popular) */}
-            <div className="pricing-card rounded-2xl border border-yellow-500/30 overflow-hidden transition-all duration-300 hover:border-yellow-500/80 hover:shadow-xl hover:shadow-yellow-500/10 hover:-translate-y-2 bg-gradient-to-b from-gray-900/80 to-gray-950/80 backdrop-blur-sm relative z-10 lg:scale-110">
+            <div className="pricing-card rounded-2xl border border-yellow-500/30 transition-all duration-500 hover:border-yellow-500/50 hover:shadow-2xl hover:shadow-yellow-500/20 hover:-translate-y-3 bg-gradient-to-b from-gray-900/60 to-gray-950/60 backdrop-blur-sm relative group overflow-hidden scale-105 z-10">
+              {/* Efeito de luz no canto superior */}
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-yellow-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
               
-              <div className="p-8">
-                <div className="flex justify-center mb-6">
-                  <div className="bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-full w-16 h-16 flex items-center justify-center shadow-inner">
-                    <img src="/images/dropfy/rocket-gold.png" alt="Growth" className="h-8 w-8" />
+              {/* Faixa "MAIS POPULAR" refinada */}
+              <div className="absolute top-0 inset-x-0 bg-gradient-to-r from-yellow-600/80 via-amber-500/80 to-yellow-600/80 text-white font-bold py-2 rounded-t-xl text-center text-sm tracking-wider shadow-md backdrop-blur-sm border-b border-yellow-500/30">
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                  </svg>
+                  <span className="font-semibold tracking-wider">MAIS POPULAR</span>
+                </div>
+              </div>
+              
+              {/* Discount Badge corrigido */}
+              <div className="absolute -top-2 -right-2 bg-yellow-600 text-white font-bold rounded-full w-20 h-20 flex items-center justify-center z-20 shadow-lg shadow-yellow-500/30 border-2 border-yellow-400">
+                <div className="text-center">
+                  <span className="block text-xs font-light">POUPE</span>
+                  <span className="block text-xl font-extrabold">60%</span>
+                </div>
+              </div>
+              
+              <div className="p-8 lg:p-10 pt-14">
+                <div className="flex justify-center mb-10">
+                  <div className="bg-gradient-to-b from-yellow-500/20 to-amber-600/20 rounded-full w-24 h-24 flex items-center justify-center shadow-inner backdrop-blur-sm border border-yellow-500/20 transition-all duration-500 group-hover:scale-110 group-hover:shadow-yellow-500/10 overflow-hidden">
+                    <div className="absolute inset-0 bg-yellow-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-full"></div>
+                    <img src="/images/dropfy/rocket-gold.png" alt="Growth" className="h-12 w-12 relative z-10" />
                   </div>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-center mb-2">Growth</h3>
-                <div className="text-center mb-2">
-                  <span className="text-3xl font-bold text-white">12x R$ 49,90</span>
+                <h3 className="text-2xl lg:text-3xl font-bold text-center mb-6">Growth</h3>
+                <div className="text-center mb-3">
+                  <span className="text-lg text-gray-400 line-through inline-block mr-2">12x R$ 124,75</span>
+                  <span className="text-sm text-white bg-gradient-to-r from-green-600/90 to-emerald-500/90 px-3 py-1 rounded-full inline-block shadow-sm border border-green-500/20">-60%</span>
                 </div>
-                <p className="text-center text-gray-400 mb-8">ou R$ 499 à vista (6 Meses)</p>
+                <div className="text-center mb-3">
+                  <span className="text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-yellow-200">12x R$ 49,90</span>
+                </div>
+                <div className="text-center mb-3">
+                  <span className="text-lg text-gray-400 line-through inline-block mr-2">R$ 1.247,50 à vista</span>
+                  <span className="text-sm text-white bg-gradient-to-r from-green-600/90 to-emerald-500/90 px-3 py-1 rounded-full inline-block shadow-sm border border-green-500/20">-60%</span>
+                </div>
+                <p className="text-center text-gray-400 mb-6">ou R$ 499 à vista (6 Meses)</p>
+                <div className="py-3 px-4 bg-yellow-900/5 rounded-xl mb-10 text-center backdrop-blur-sm border border-yellow-800/10">
+                  <span className="text-yellow-400 text-sm font-medium">Economize R$ 748,50 agora!</span>
+                </div>
                 
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-start">
@@ -761,26 +964,58 @@ export default function LandingPage() {
               </div>
               
               <div className="px-8 pb-8">
-                <a href="https://pay.kiwify.com.br/CFAs8xx" className="block w-full bg-gradient-to-r from-yellow-600 to-yellow-400 text-gray-900 py-4 rounded-xl font-bold text-center hover:shadow-lg hover:shadow-yellow-500/30 hover:scale-105 transition-all duration-300">
-                  Comece Agora
+                <div className="mb-4 flex justify-center">
+                  <div className="flex items-center bg-green-900/10 px-4 py-2 rounded-lg border border-green-900/10">
+                    <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span className="text-sm text-white">7 dias de garantia</span>
+                  </div>
+                </div>
+                <a href="https://pay.kiwify.com.br/CFAs8xx" className="block w-full bg-gradient-to-r from-yellow-600 to-yellow-400 text-gray-900 py-4 rounded-xl font-bold text-center hover:shadow-lg hover:shadow-yellow-500/30 hover:scale-105 transition-all duration-300 relative overflow-hidden group">
+                  <span className="relative z-10">Comece Agora</span>
+                  <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                 </a>
               </div>
             </div>
 
             {/* Plano Pro */}
-            <div className="pricing-card rounded-2xl border border-indigo-500/30 overflow-hidden transition-all duration-300 hover:border-indigo-500/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-2 bg-gradient-to-b from-gray-900/80 to-gray-950/80 backdrop-blur-sm">
-              <div className="p-8">
-                <div className="flex justify-center mb-6">
-                  <div className="bg-gradient-to-b from-indigo-400 to-indigo-600 rounded-full w-16 h-16 flex items-center justify-center shadow-inner">
-                    <img src="/images/dropfy/rocket-blue.png" alt="Pro" className="h-8 w-8" />
+            <div className="pricing-card rounded-2xl border border-indigo-500/30 transition-all duration-500 hover:border-indigo-500/50 hover:shadow-2xl hover:shadow-indigo-500/20 hover:-translate-y-3 bg-gradient-to-b from-gray-900/60 to-gray-950/60 backdrop-blur-sm relative group overflow-hidden">
+              {/* Efeito de luz no canto superior */}
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+              
+              {/* Discount Badge corrigido */}
+              <div className="absolute -top-2 -right-2 bg-indigo-600 text-white font-bold rounded-full w-20 h-20 flex items-center justify-center z-20 shadow-lg shadow-indigo-500/30 border-2 border-indigo-400">
+                <div className="text-center">
+                  <span className="block text-xs font-light">POUPE</span>
+                  <span className="block text-xl font-extrabold">60%</span>
+                </div>
+              </div>
+              
+              <div className="p-8 lg:p-10">
+                <div className="flex justify-center mb-10">
+                  <div className="bg-gradient-to-b from-indigo-500/20 to-purple-600/20 rounded-full w-24 h-24 flex items-center justify-center shadow-inner backdrop-blur-sm border border-indigo-500/20 transition-all duration-500 group-hover:scale-110 group-hover:shadow-indigo-500/10 overflow-hidden">
+                    <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-full"></div>
+                    <img src="/images/dropfy/rocket-blue.png" alt="Pro" className="h-12 w-12 relative z-10" />
                   </div>
                 </div>
                 
-                <h3 className="text-2xl font-bold text-center mb-2">Pro</h3>
-                <div className="text-center mb-2">
-                  <span className="text-3xl font-bold text-white">12x R$ 99,90</span>
+                <h3 className="text-2xl lg:text-3xl font-bold text-center mb-6">Pro</h3>
+                <div className="text-center mb-3">
+                  <span className="text-lg text-gray-400 line-through inline-block mr-2">12x R$ 249,75</span>
+                  <span className="text-sm text-white bg-gradient-to-r from-green-600/90 to-emerald-500/90 px-3 py-1 rounded-full inline-block shadow-sm border border-green-500/20">-60%</span>
                 </div>
-                <p className="text-center text-gray-400 mb-8">ou R$ 997 à vista (Vitalício)</p>
+                <div className="text-center mb-3">
+                  <span className="text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-indigo-200">12x R$ 99,90</span>
+                </div>
+                <div className="text-center mb-3">
+                  <span className="text-lg text-gray-400 line-through inline-block mr-2">R$ 2.492,50 à vista</span>
+                  <span className="text-sm text-white bg-gradient-to-r from-green-600/90 to-emerald-500/90 px-3 py-1 rounded-full inline-block shadow-sm border border-green-500/20">-60%</span>
+                </div>
+                <p className="text-center text-gray-400 mb-6">ou R$ 997 à vista (Vitalício)</p>
+                <div className="py-3 px-4 bg-indigo-900/5 rounded-xl mb-10 text-center backdrop-blur-sm border border-indigo-800/10">
+                  <span className="text-indigo-400 text-sm font-medium">Economize R$ 1.495,50 agora!</span>
+                </div>
                 
                 <ul className="space-y-4 mb-8">
                   <li className="flex items-start">
@@ -870,11 +1105,25 @@ export default function LandingPage() {
               </div>
               
               <div className="px-8 pb-8">
-                <a href="https://pay.kiwify.com.br/h5Q8YNF" className="block w-full bg-gradient-to-r from-indigo-600 to-indigo-400 text-white py-4 rounded-xl font-medium text-center hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-105 transition-all duration-300">
+                <div className="mb-4 flex justify-center">
+                  <div className="flex items-center bg-green-900/10 px-4 py-2 rounded-lg border border-green-900/10">
+                    <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    <span className="text-sm text-white">7 dias de garantia</span>
+                  </div>
+                </div>
+                <a href="https://pay.kiwify.com.br/h5Q8YNF" className="block w-full bg-gradient-to-r from-indigo-600 to-indigo-400 text-white py-4 rounded-xl font-medium text-center hover:shadow-lg hover:shadow-indigo-500/30 hover:scale-105 transition-all duration-300 animate-pulse-slow">
                   Comece Agora
                 </a>
               </div>
             </div>
+          </div>
+          
+          <div className="text-center mt-16">
+            <span className="inline-block bg-gradient-to-r from-green-600/80 to-green-400/80 text-white px-6 py-3 rounded-full font-medium shadow-lg shadow-green-500/10 border border-green-500/30 transition-all duration-300 hover:shadow-green-500/20 hover:scale-105 cursor-pointer">
+              Teste com 7 dias de garantia
+            </span>
           </div>
         </div>
       </section>
