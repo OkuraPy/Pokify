@@ -987,7 +987,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
-            <p>© 2023 Dropfy. Todos os direitos reservados.</p>
+            <p>© 2025 Dropfy. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
