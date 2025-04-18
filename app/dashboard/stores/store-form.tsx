@@ -73,12 +73,16 @@ const Plyr = dynamic(() => import('plyr-react').then(mod => mod.default), {
 });
 import 'plyr-react/plyr.css';
 
-// Schema atualizado - apenas nome e URL são obrigatórios
+// Schema atualizado - todos os campos obrigatórios para Shopify
 const formSchema = z.object({
-  name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres'),
-  platform: z.string().optional(),
-  url: z.string().url('URL inválida'),
-  apiKey: z.string().optional(),
+  name: z.string({ required_error: 'O nome da loja é obrigatório' })
+    .min(2, 'O nome deve ter pelo menos 2 caracteres'),
+  platform: z.string({ required_error: 'A plataforma é obrigatória' })
+    .min(1, 'A plataforma é obrigatória'),
+  url: z.string({ required_error: 'A URL da loja é obrigatória' })
+    .url('URL inválida'),
+  apiKey: z.string({ required_error: 'A chave da API é obrigatória' })
+    .min(1, 'A chave da API é obrigatória'),
 });
 
 // Componente personalizado de overlay com opacidade reduzida
