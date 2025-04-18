@@ -53,6 +53,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { createStore } from '@/lib/supabase';
+import { verifyShopifyCredentials } from '@/lib/shopify';
 import { useAuth } from '@/hooks/use-auth';
 import { useStores } from '@/hooks/use-stores';
 import { useRouter } from 'next/navigation';
@@ -112,6 +113,34 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+
+  // Estados para validação Shopify
+  const [shopifyCheck, setShopifyCheck] = useState<'idle'|'checking'|'valid'|'invalid'>('idle');
+  const [shopifyError, setShopifyError] = useState<string | null>(null);
+
+  // Função para checar credenciais em tempo real
+  async function checkShopifyCreds(url: string, apiKey: string) {
+    if (!url || !apiKey) {
+      setShopifyCheck('idle');
+      setShopifyError(null);
+      return;
+    }
+    setShopifyCheck('checking');
+    setShopifyError(null);
+    try {
+      const result = await verifyShopifyCredentials(url, apiKey);
+      if (result.valid) {
+        setShopifyCheck('valid');
+        setShopifyError(null);
+      } else {
+        setShopifyCheck('invalid');
+        setShopifyError('Chave da API ou URL inválida. Confira se você digitou corretamente. Veja o tutorial para aprender a pegar a chave correta.');
+      }
+    } catch (err: any) {
+      setShopifyCheck('invalid');
+      setShopifyError('Chave da API ou URL inválida. Confira se você digitou corretamente. Veja o tutorial para aprender a pegar a chave correta.');
+    }
+  }
   const videoRef = useRef(null);
   const { user } = useAuth();
   const { maxStores, canAddStore, refreshStores } = useStores();
@@ -361,17 +390,45 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                         <div className="flex items-center gap-2">
                           <Globe className="h-4 w-4 text-muted-foreground" />
                           <FormLabel className="text-sm font-medium">URL da Loja *</FormLabel>
+                          {/* Feedback visual para Shopify */}
+                          {selectedPlatform === 'shopify' && (
+                            <span>
+                              {shopifyCheck === 'checking' && <Loader2 className="h-4 w-4 text-blue-500 animate-spin ml-2" />}
+                              {shopifyCheck === 'valid' && <CheckCircle2 className="h-4 w-4 text-green-500 ml-2" />}
+                              {shopifyCheck === 'invalid' && <X className="h-4 w-4 text-red-500 ml-2" />}
+                            </span>
+                          )}
                         </div>
                         <FormControl>
                           <Input
                             placeholder="https://minhaloja.com.br"
                             {...field}
                             className="mt-2"
+                            onBlur={async (e) => {
+                              field.onBlur?.(e);
+                              if (selectedPlatform === 'shopify') {
+                                await checkShopifyCreds(e.target.value, form.getValues('apiKey'));
+                              }
+                            }}
+                            onChange={async (e) => {
+                              field.onChange(e);
+                              if (selectedPlatform === 'shopify') {
+                                // Checagem ao digitar
+                                await checkShopifyCreds(e.target.value, form.getValues('apiKey'));
+                              }
+                            }}
                           />
                         </FormControl>
                         <FormDescription className="text-xs text-muted-foreground pt-1">
                           URL completa da sua loja (ex: https://minhaloja.com.br)
                         </FormDescription>
+                        {/* Mensagem de erro Shopify */}
+                        {selectedPlatform === 'shopify' && shopifyCheck === 'invalid' && shopifyError && (
+                          <div className="text-xs text-red-600 font-medium flex items-center gap-1 mt-1">
+                            <X className="h-3 w-3" />
+                            {shopifyError} <button type="button" className="ml-1 underline text-blue-700" onClick={() => setShowApiKeyHelp(true)}>Ver tutorial</button>
+                          </div>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -386,6 +443,14 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                         <div className="flex items-center gap-2">
                           <Key className="h-4 w-4 text-muted-foreground" />
                           <FormLabel className="text-sm font-medium">Chave da API</FormLabel>
+                          {/* Feedback visual para Shopify */}
+                          {selectedPlatform === 'shopify' && (
+                            <span>
+                              {shopifyCheck === 'checking' && <Loader2 className="h-4 w-4 text-blue-500 animate-spin ml-2" />}
+                              {shopifyCheck === 'valid' && <CheckCircle2 className="h-4 w-4 text-green-500 ml-2" />}
+                              {shopifyCheck === 'invalid' && <X className="h-4 w-4 text-red-500 ml-2" />}
+                            </span>
+                          )}
                         </div>
                         <FormControl>
                           <Input
@@ -397,6 +462,19 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                               : "Chave da API da plataforma (opcional)"}
                             {...field}
                             className="mt-2"
+                            onBlur={async (e) => {
+                              field.onBlur?.(e);
+                              if (selectedPlatform === 'shopify') {
+                                await checkShopifyCreds(form.getValues('url'), e.target.value);
+                              }
+                            }}
+                            onChange={async (e) => {
+                              field.onChange(e);
+                              if (selectedPlatform === 'shopify') {
+                                // Checagem ao digitar
+                                await checkShopifyCreds(form.getValues('url'), e.target.value);
+                              }
+                            }}
                           />
                         </FormControl>
                         
@@ -481,7 +559,7 @@ export function StoreForm({ open, onClose, storesCount = 0 }: StoreFormProps) {
                     </Button>
                     <Button 
                       type="submit" 
-                      disabled={isLoading || !canAddStore}
+                      disabled={isLoading || !canAddStore || (selectedPlatform === 'shopify' && shopifyCheck !== 'valid')}
                       className={cn(
                         "flex-1 sm:flex-initial gap-2",
                         !canAddStore && "opacity-50"
