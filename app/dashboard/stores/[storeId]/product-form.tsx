@@ -52,7 +52,7 @@ interface ProductFormProps {
 export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [method, setMethod] = useState<'manual' | 'import'>('manual');
+  const [method, setMethod] = useState<'manual' | 'import'>('import');
   const [extractorType, setExtractorType] = useState<'simple' | 'ai' | 'pro_copy'>('simple');
   const [imageCount, setImageCount] = useState(0);
   const [importProgress, setImportProgress] = useState(0);
@@ -372,10 +372,10 @@ export function ProductForm({ storeId, open, onClose }: ProductFormProps) {
         </DialogDescription>
 
         <div className="flex-1 overflow-y-auto">
-          <Tabs defaultValue="manual" value={method} onValueChange={(value) => setMethod(value as 'manual' | 'import')}>
+          <Tabs defaultValue="import" value={method} onValueChange={(value) => setMethod(value as 'manual' | 'import')}>
             <TabsList className="grid w-full grid-cols-2 sticky top-0 z-10 bg-background">
-              <TabsTrigger value="manual">Cadastro Manual</TabsTrigger>
               <TabsTrigger value="import">Importar Produto</TabsTrigger>
+              <TabsTrigger value="manual">Cadastro Manual</TabsTrigger>
             </TabsList>
 
             <TabsContent value="import">
